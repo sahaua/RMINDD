@@ -1,12 +1,12 @@
-#	>> Code: RMINDD.py, module file: RecedU.py
-#	>> Perform: Recoil energy distributions of nuclei from basic ENDF-6 files
-#	>> Author: Dr. Uttiyoarnab Saha
-#	>> Version and Date: 1.0 and 25/03/2021
-#	>> Last modified: 25/03/2021, Kolkata
-#	>> Update: 25/03/2021
-#	>> Major changes:
-#
-#======================================================================================================
+## >> Code: RMINDD.py, module file: RecedU.py
+## >> Perform: Recoil energy distributions of nuclei from basic ENDF-6 files
+## >> Author: Uttiyoarnab Saha
+## >> Version and Date: 1.0 and 25/03/2021
+## >> Last modified: 25/03/2021, Kolkata
+## >> Update: 25/03/2021
+## >> Major changes:
+##
+## ======================================================================================================
 
 import numpy
 import math

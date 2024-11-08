@@ -1,22 +1,27 @@
-#	>> Code: RMINDD (Radiation Matter Interaction from Nuclear Data and Damage)
-#	>> Perform: Calcuation of Effects of Radiation in Matter from ENDF-6 files
-#	>> Author: Dr. Uttiyoarnab Saha
-#	>> Version and Date: 1.0 and 01/07/2022
-#	>> Last modified: 01/07/2022, Kolkata
-#	>> Update: 01/07/2022
-#	>> Major changes: 
-#
-#=========================================================================================
+## >> Code: RMINDD - (Radiation-Matter Interaction and Damage calculation using Nuclear Data)
+## >> Perform: Calcuation of metrics of neutron radiation damage in an isotope of a material using ENDF-6 files
+## >> Author: Uttiyoarnab Saha
+## >> Version and Date: 1.0 and 01/07/2022
+## >> Last modified: 01/07/2022, Kolkata
+## >> Update: 01/07/2022
+## >> Major changes: 
+##
+## =========================================================================================
 
-import RecedU
-import EngdepU
-import numpy
-#use TransmU
+import RecedU, EngdepU #use TransmU
+
+import numpy, datetime, sys
 
 from time import process_time
-	
-ifile_inpRMINDD = open ("Input_RMINDD.txt", 'r')
-	
+
+day_execution = datetime.date.today()
+time_execution = datetime.datetime.now().strftime('%H:%M:%S')
+
+## command line input for input file name
+inpRMINDD = sys.argv[1]
+
+ifile_inpRMINDD = open (inpRMINDD, 'r')
+
 ntasks = int(ifile_inpRMINDD.readline().split()[0])
 
 if (ntasks < 1 or ntasks > 3):
