@@ -8,14 +8,19 @@
 ##
 ## =========================================================================================
 
-import RecedU, EngdepU #use TransmU
-
 import numpy, datetime, sys
-
 from time import process_time
+## import calculation modules
+import RecedU, EngdepU #use TransmU
 
 day_execution = datetime.date.today()
 time_execution = datetime.datetime.now().strftime('%H:%M:%S')
+
+outRMINDD = "Output_RMINDD.txt"
+ofile_outRMINDD = open (outRMINDD, 'a')
+
+print('~~~~ RMINDD ~~~~', file = ofile_outRMINDD)
+print(day_execution, ' ', time_execution, '\n', file = ofile_outRMINDD)
 
 ## command line input for input file name
 inpRMINDD = sys.argv[1]
@@ -36,13 +41,13 @@ if (1 <= ntasks and ntasks <= 3):
 	# First one is for energy deposition to estimate dpa and heating
 		if (cmetric == 'EngdepU'):
 
-			ofile51 = open ("Output_RadEMC-EngdepU.txt", 'a')
 			ifile52 = open ("tape01", 'r')
 
-			print( '~~ RadEMC-EngdepU ~~')
-			print( ':Messages for you:', file = ofile51)
-			print('--------------------', file = ofile51)
-			print('', file = ofile51)
+			print( '~~ RMINDD-EngdepU ~~')
+			print( '~~ RMINDD-EngdepU ~~', file = ofile_outRMINDD)
+			print( ':Messages for you:', file = ofile_outRMINDD)
+			print('--------------------', file = ofile_outRMINDD)
+			print('', file = ofile_outRMINDD)
 		
 			ifile52.readline()
 			mat = ifile52.readline().split()[5][-4:] 				# read mat number in ENDF = 52
@@ -53,20 +58,20 @@ if (1 <= ntasks and ntasks <= 3):
 			iso = data[0] + data[1]
 			ifile52.close()
 	
-			print( 'Evaluation on tape01', file = ofile51)
-			print( iso, file = ofile51)
-			print('', file = ofile51)
+			print( 'Evaluation on tape01', file = ofile_outRMINDD)
+			print( iso, file = ofile_outRMINDD)
+			print('', file = ofile_outRMINDD)
 			matg = ifile_inpRMINDD.readline().split()[0] 			# given mat number in input = 50
 			
 			# Check if given mat number matches with ENDF mat number
 			
 			##
-			print(mat, matg, file = ofile51)
+			print(mat, matg, file = ofile_outRMINDD)
 			
 			if (mat != matg):
-				print( 'Error', file = ofile51)
-				print( 'Material does not exist on tape01', file = ofile51)
-				print('', file = ofile51)
+				print( 'Error', file = ofile_outRMINDD)
+				print( 'Material does not exist on tape01', file = ofile_outRMINDD)
+				print('', file = ofile_outRMINDD)
 				break
 			
 			nreac = int(ifile_inpRMINDD.readline().split()[0])   		# given number of reactions in input = 50
@@ -92,7 +97,7 @@ if (1 <= ntasks and ntasks <= 3):
 			# Check if nreac is within 1 and 7 and proceed in main calculatiun (uqce), else print error
 			if (1 <= nreac and nreac <= 7):
 			
-				EngdepU.uqce (insp,nra,nreac,mdisp,Ed,bad,cad,mgyn,igtype)
+				EngdepU.uqce (ofile_outRMINDD,insp,nra,nreac,mdisp,Ed,bad,cad,mgyn,igtype)
 			#call extractdata(nra(i))
 			#call filerecds()
 				if (NpMTtg > 0):
@@ -102,48 +107,45 @@ if (1 <= ntasks and ntasks <= 3):
 						#call groupmulti (insp,nMTprtg(i),igtype,1)
 						#call groupmulti (insp,nMTprtg(i),igtype,2)
 			else:
-				print( 'Error', file = ofile51)
-				print( 'wrong reaction index; please follow the list', file = ofile51)
-				print( "1 = n,g" , file = ofile51)
-				print( "2 = n,n" , file = ofile51)
-				print( "3 = n,n'" , file = ofile51)
-				print( "4 = n,xn" , file = ofile51)
-				print( "5 = n,particle", file = ofile51)
-				print( "6 = n,anything", file = ofile51)
-				print( "7 = total", file = ofile51)
-				print('', file = ofile51)
+				print( 'Error', file = ofile_outRMINDD)
+				print( 'wrong reaction index; please follow the list', file = ofile_outRMINDD)
+				print( "1 = n,g" , file = ofile_outRMINDD)
+				print( "2 = n,n" , file = ofile_outRMINDD)
+				print( "3 = n,n'" , file = ofile_outRMINDD)
+				print( "4 = n,xn" , file = ofile_outRMINDD)
+				print( "5 = n,particle", file = ofile_outRMINDD)
+				print( "6 = n,anything", file = ofile_outRMINDD)
+				print( "7 = total", file = ofile_outRMINDD)
+				print('', file = ofile_outRMINDD)
 			
-			print('------------------------------------------------', file = ofile51)
-			print('', file = ofile51)
-			print('The computed dpa and heating cross sections can', file = ofile51)
-			print('be found in files:', file = ofile51)
-			print('ndpa--.txt and nheat--.txt and', file = ofile51)
-			print('ndpagrouped--.txt and nheatgrouped--.txt' , file = ofile51)
-			print('for each reaction', file = ofile51)
-			print('', file = ofile51)
-			print('Total from CPO reactions is in: ....3001.txt', file = ofile51)
-			print('Total from (n, xn) reactions is in: ....1601.txt', file = ofile51)
-			print('Total from (n, anything) reactions is in: ....5001.txt', file = ofile51)
+			print('------------------------------------------------', file = ofile_outRMINDD)
+			print('', file = ofile_outRMINDD)
+			print('The computed dpa and heating cross sections can', file = ofile_outRMINDD)
+			print('be found in files:', file = ofile_outRMINDD)
+			print('ndpa--.txt and nheat--.txt and', file = ofile_outRMINDD)
+			print('ndpagrouped--.txt and nheatgrouped--.txt' , file = ofile_outRMINDD)
+			print('for each reaction', file = ofile_outRMINDD)
+			print('', file = ofile_outRMINDD)
+			print('Total from CPO reactions is in: ....3001.txt', file = ofile_outRMINDD)
+			print('Total from (n, xn) reactions is in: ....1601.txt', file = ofile_outRMINDD)
+			print('Total from (n, anything) reactions is in: ....5001.txt', file = ofile_outRMINDD)
 			
 			stop_time = process_time()
 			total_time = stop_time - start_time
-			print('', file = ofile51)
-			print( 'Total time taken:', file = ofile51)
-			print(total_time, file = ofile51)
-			
-			ofile51.close()
+			print('', file = ofile_outRMINDD)
+			print( 'Total time taken:', file = ofile_outRMINDD)
+			print(total_time, file = ofile_outRMINDD)
 
 		# Second one is to calculate recoil energy distribution
 
 		if (cmetric == 'RecedU'):
-			
-			ofile51 = open ("Output_RadEMC-RecedU.txt", 'a')
+
 			ifile102 = open("tape01", 'r')
 
-			print( '~~ RadEMC-RecedU ~~')
-			print( ':Messages for you:', file = ofile51)
-			print('--------------------', file = ofile51)
-			print('', file = ofile51)
+			print( '~~ RMINDD-RecedU ~~')
+			print( ':Messages for you:', file = ofile_outRMINDD)
+			print('--------------------', file = ofile_outRMINDD)
+			print('', file = ofile_outRMINDD)
 	  
 			ifile102.readline()
 			mat = ifile102.readline().split()[5][-4:] 				# read mat number in ENDF = 52
@@ -155,19 +157,19 @@ if (1 <= ntasks and ntasks <= 3):
 			iso = data[0] + data[1]
 			ifile102.close()
 			
-			print( 'Evaluation on tape01', file = ofile51)
-			print( iso, file = ofile51)
-			print('', file = ofile51)
+			print( 'Evaluation on tape01', file = ofile_outRMINDD)
+			print( iso, file = ofile_outRMINDD)
+			print('', file = ofile_outRMINDD)
 			
 			# Check if given mat number matches with ENDF mat number
 			
 			##
-			print(mat, matg, file = ofile51)
+			print(mat, matg, file = ofile_outRMINDD)
 			
 			if (mat != matg):
-				print( 'Error', file = ofile51)
-				print( 'Material does not exist on tape01', file = ofile51)
-				print('', file = ofile51)
+				print( 'Error', file = ofile_outRMINDD)
+				print( 'Material does not exist on tape01', file = ofile_outRMINDD)
+				print('', file = ofile_outRMINDD)
 				break
 
 			# nrct = Number of reactions to calculate
@@ -209,7 +211,7 @@ if (1 <= ntasks and ntasks <= 3):
 			
 			if (1 <= nrct and nrct <= 6):
 				for i in range (nrct):
-					RecedU.FINE_ENERGY_CALL_REAC(insp,eliso,igtype,nrg,nbpoints,nrcta[i],nrcta)
+					RecedU.FINE_ENERGY_CALL_REAC(ofile_outRMINDD,insp,eliso,igtype,nrg,nbpoints,nrcta[i],nrcta)
 
 			if (num_partial_reac_tosum > 0):
 				ofile1001 = open('n-sum-partialsPKAspectra.txt', 'a')
@@ -221,18 +223,18 @@ if (1 <= ntasks and ntasks <= 3):
 					print (['{:.6E}'.format(dsdt[it][jt]) for jt in range (nre)], file = ofile1001)
 				ofile1001.close()
 			
-			print('------------------------------------------------', file = ofile51)
-			print('', file = ofile51)
-			print('The computed PKA spectra can be found in files:', file = ofile51)
-			print('PKA-MATRICES.txt -- each reaction', file = ofile51)
-			print('n-allPKAspectra.txt -- sum total', file = ofile51)
+			print('------------------------------------------------', file = ofile_outRMINDD)
+			print('', file = ofile_outRMINDD)
+			print('The computed PKA spectra can be found in files:', file = ofile_outRMINDD)
+			print('PKA-MATRICES.txt -- each reaction', file = ofile_outRMINDD)
+			print('n-allPKAspectra.txt -- sum total', file = ofile_outRMINDD)
 		
 			stop_time = process_time()
 			total_time = stop_time - start_time
-			print('', file = ofile51)
-			print( 'Total time taken:', file = ofile51)
-			print(total_time, file = ofile51)
+			print('', file = ofile_outRMINDD)
+			print( 'Total time taken:', file = ofile_outRMINDD)
+			print(total_time, file = ofile_outRMINDD)
 
-			ofile51.close()
+ofile_outRMINDD.close()
 
-	ifile_inpRMINDD.close()
+ifile_inpRMINDD.close()

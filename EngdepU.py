@@ -15,7 +15,8 @@ import UtilsU
 #=======Linear interpolation=======*		
         
 def crstd(x,x1,x2,y1,y2):
-	y = y1 + ((y2-y1)*(x-x1)/(x2-x1))
+	if ((x2-x1) != 0):
+		y = y1 + ((y2-y1)*(x-x1)/(x2-x1))
 	return(y)
 
 # =======Interpolate cross section to unique common energy=======*
@@ -778,16 +779,16 @@ def Tinteg(z1,A1,z2,A2,Ed,E,Q,bta,mdisp,bad,cad,n3,f1,f2,f3):
 
 #=======Interpolation Schemes=======*
         
-    # Definitions of different interpolation schemes
-    
+# Definitions of different interpolation schemes
 def TERPOLIN (intflg,x,x1,x2,y1,y2):
+	y = y1
 	if (intflg==1 or intflg==11 or intflg==21):
 		y = y1
-	if (intflg==2 or intflg==12 or intflg==22):
+	if ((intflg==2 or intflg==12 or intflg==22) and (x2-x1) != 0):
 		y = y1+(y2-y1)*(x-x1)/(x2-x1)
 	if (intflg==3 or intflg==13 or intflg==23):
 		y = y1+(y2-y1)*(log(x/x1))/log(x2/x1)
-	if (intflg==4 or intflg==14 or intflg==24):
+	if ((intflg==4 or intflg==14 or intflg==24) and (x2-x1) != 0):
 		y = y1*exp((x-x1)*log(y2/y1)/(x2-x1))
 	if (intflg==5 or intflg==15 or intflg==25):
 		y = y1*exp(log(x/x1)*log(y2/y1)/log(x2/x1))
@@ -1036,7 +1037,7 @@ def gtYMf6Mt5():
 	## Calculation of neutron dpa and heating cross sections due to
 	## charged particle out reactions of neutrons.
 	
-def n_CPO (MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
+def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 	sdpat = numpy.zeros(NPt); snhtt = numpy.zeros(NPt)
 	signcpol = numpy.zeros(NPt); tot_energy_products1 = numpy.zeros(NPt); num_of_displ1 = numpy.zeros(NPt)
 	# for energy-balance heating
@@ -1113,12 +1114,12 @@ def n_CPO (MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 		ze[i] = 2
 	for i in range(231,281):
 		ze[i] = 2
-#--------------------------------------------------------------------		
-	ofile51 = open('output_RadEMC-EngdepU.txt', 'a')
-	print('', file = ofile51)
-	print('CPO reaction MT=',MTi,' dpa/heating cross section', file = ofile51)
-	print('-------------------------------------------------', file = ofile51)
-#--------------------------------------------------------------------		
+#--------------------------------------------------------------------
+
+	print('', file = ofile_outRMINDD)
+	print('CPO reaction MT=',MTi,' dpa/heating cross section', file = ofile_outRMINDD)
+	print('-------------------------------------------------', file = ofile_outRMINDD)
+#--------------------------------------------------------------------
 
 	iflpresent = 0 		# flag for the presence of cross sections MF=3. 
 
@@ -1182,8 +1183,8 @@ def n_CPO (MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 
 	ifile.close()
 
-	print('', file = ofile51)
-	print('Number of energy points given is ',NP, file = ofile51)
+	print('', file = ofile_outRMINDD)
+	print('Number of energy points given is ',NP, file = ofile_outRMINDD)
 
 	Z = ZA//1000
 	A = AWR
@@ -1452,8 +1453,8 @@ def n_CPO (MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 		(xabc, wg) = GQ()
 
 		if (ifl4 == 1):
-			print('', file = ofile51)
-			print('Emitted charged particle data are given in File 4', file = ofile51)
+			print('', file = ofile_outRMINDD)
+			print('Emitted charged particle data are given in File 4', file = ofile_outRMINDD)
 
 			if (LTT==3 or LTT==2):
 
@@ -1593,8 +1594,8 @@ def n_CPO (MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 						alfull[i][k] = 0
 
 			if (ifspad6 == 1):
-				print('', file = ofile51)
-				print('Emitted charged particle data are given in File 6', file = ofile51)
+				print('', file = ofile_outRMINDD)
+				print('Emitted charged particle data are given in File 6', file = ofile_outRMINDD)
 
 				if (LG[isps] == 0):
 					for i in range (NP):
@@ -1658,7 +1659,7 @@ def n_CPO (MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 
 					for i in range (NP):
 						for j in range (64):
-							fmuE[j][i] = 0.5	
+							fmuE[j][i] = 0.5
 					for i in range (NP):
 						for j in range (int(NE6[isps])-1):
 							if (Eall[i] == En[isps][j]):
@@ -1712,9 +1713,9 @@ def n_CPO (MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 	# When the energy distribution of the recoil nucleus is present
 
 			if (iflr==1 and ifspad6==0):
-				print('', file = ofile51)
-				print('Recoil nucleus and charged particle energy', file = ofile51)
-				print('distribution data are given in File 6', file = ofile51)
+				print('', file = ofile_outRMINDD)
+				print('Recoil nucleus and charged particle energy', file = ofile_outRMINDD)
+				print('distribution data are given in File 6', file = ofile_outRMINDD)
 
 				kdim = int(numpy.amax(NEP))
 				ter6 = [0]*kdim; tf6 = [0]*kdim; ntm = [0]*NP
@@ -1904,9 +1905,9 @@ def n_CPO (MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 						shall[i] = 0
 
 				if (iflnrcyp == 1):
-					print('', file = ofile51)
-					print('Energy distribution data is given for emitted', file = ofile51)
-					print('charged particle, but not for recoil nucleus', file = ofile51)
+					print('', file = ofile_outRMINDD)
+					print('Energy distribution data is given for emitted', file = ofile_outRMINDD)
+					print('charged particle, but not for recoil nucleus', file = ofile_outRMINDD)
 
 					kdim = int(numpy.amax(NEP))
 
@@ -1969,9 +1970,9 @@ def n_CPO (MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 				tnYldg = TERPOL (NBT[NSS][:], INTr[NSS][:], Nyld[NSS], Eint6[NSS][:], yi[NSS][:], NP, Eall)
 				ntm = [0]*NP; ntmd = [0]*NP
 				if ( (AWP[NSS] == 0 and ZAP[NSS] == 0) or (AWP[NSS] == 1.0 and ZAP[NSS] == 1.0) ):
-					print('', file = ofile51)
-					print('Secondary neutrons and photons energy', file = ofile51)
-					print('distribution data are given in MF 6 MT 5', file = ofile51)
+					print('', file = ofile_outRMINDD)
+					print('Secondary neutrons and photons energy', file = ofile_outRMINDD)
+					print('distribution data are given in MF 6 MT 5', file = ofile_outRMINDD)
 	
 					# for neutrons
 					if ( AWP[NSS] == 1.0 and ZAP[NSS] == 1.0 ):
@@ -2021,14 +2022,14 @@ def n_CPO (MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 								dn5_photons[i] = abs(tnYldg[i]*Tinteg1heat(AWP[NSS],ter6,tf6,int(ntm[i])))
 	
 							tot_energy_n_photons[i] = dn4_neutrons[i] + dn5_photons[i]
-							shall_EB[i] = sall[i]*(Eall[i] - tot_energy_n_photons[i])				
+							shall_EB[i] = sall[i]*(Eall[i] - tot_energy_n_photons[i])		
 
 		# if for the File 6 data are present
 
 		if (ifl4 == 0 and ifl6 == 0):
-			print('', file = ofile51)
-			print('Reaction product distribution data are not given', file = ofile51)
-			print('in File 4 and File 6', file = ofile51)
+			print('', file = ofile_outRMINDD)
+			print('Reaction product distribution data are not given', file = ofile_outRMINDD)
+			print('in File 4 and File 6', file = ofile_outRMINDD)
 
 			for i in range (NP):
 				Estar = n1[lpr]*Eall[i]
@@ -2102,8 +2103,6 @@ def n_CPO (MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 	#--------------
 	# **** the above is done only if MF3 for that MT is present ****
 
-		ofile51.close()
-
 	return (signcpol,num_of_displ1,tot_energy_products1,tot_energy_n_photons1,sdpat,snhtt,snhtt_EB,ifdpd,iflpresent)
 
 #=======Contributions from (n, xn) reactions=======*
@@ -2114,7 +2113,7 @@ def n_CPO (MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 	# number 1601. This number is also used in the file name giving the
 	# total from (n,xn) reactions.
 
-def CONTROL_nxn (NPt,Etu,mdisp,Ed,bad,cad):
+def CONTROL_nxn (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 	dpaxn1 = [0]*NPt; snhtxn1 = [0]*NPt; signxntot = [0]*NPt
 	num_of_displnxntot = [0]*NPt; tot_energy_productsnxntot = [0]*NPt
 		# snhtt = Heating cross section from (n,(i)n)				
@@ -2131,7 +2130,7 @@ def CONTROL_nxn (NPt,Etu,mdisp,Ed,bad,cad):
 		MTfind = MTnum[i]
 		iflMTpr = FindMT (MTfind)
 		if (iflMTpr == 1):
-			(signxnl, num_disp, tot_en_products, sdpat, snhtt, iflpresent) = n_xn (MTnum[i],NPt,Etu,mdisp,Ed,bad,cad)
+			(signxnl, num_disp, tot_en_products, sdpat, snhtt, iflpresent) = n_xn (ofile_outRMINDD,MTnum[i],NPt,Etu,mdisp,Ed,bad,cad)
 			if (iflpresent == 1):
 				MTc = MTnum[i]
 				print ( 'MT = ', MTc)
@@ -2155,7 +2154,7 @@ def CONTROL_nxn (NPt,Etu,mdisp,Ed,bad,cad):
 	# and kept in an arbitrarily assigned MT number 3001. This number is 
 	# also used in the file name giving the total from (n,CPO) reactions.
 
-def CONTROL_nCPO (NPt,Etu,mdisp,Ed,bad,cad):
+def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 
 	tmdpaMT103 = [0]*NPt; tmdpaMT104 = [0]*NPt
 	tmdpaMT105 = [0]*NPt; tmdpaMT106 = [0]*NPt; tmdpaMT107 = [0]*NPt
@@ -2207,9 +2206,7 @@ def CONTROL_nCPO (NPt,Etu,mdisp,Ed,bad,cad):
 
 		# n2=A/A+1, n3 = 1.0/A+1
 
-	ofile51 = open('output_RadEMC-EngdepU.txt', 'a')
-
-	print('n, CPO .....', file = ofile51)
+	print('n, CPO .....', file = ofile_outRMINDD)
 	print('n, CPO .....')
 
 	MTnum[0]=11;MTnum[1]=22;MTnum[2]=23;MTnum[3]=24
@@ -2257,11 +2254,11 @@ def CONTROL_nCPO (NPt,Etu,mdisp,Ed,bad,cad):
 		iflMTpr = 0
 		iflMTpr = FindMT(MTtpnum[j])
 		if (iflMTpr==1):
-			print('', file = ofile51)
-			print(':: MESSAGE :: CPO reaction cross section', file = ofile51)
-			print('-------------------------------------------------', file = ofile51)
-			print('Total charged particle production MTs are found.', file = ofile51)
-			print('', file = ofile51)
+			print('', file = ofile_outRMINDD)
+			print(':: MESSAGE :: CPO reaction cross section', file = ofile_outRMINDD)
+			print('-------------------------------------------------', file = ofile_outRMINDD)
+			print('Total charged particle production MTs are found.', file = ofile_outRMINDD)
+			print('', file = ofile_outRMINDD)
 			print('Total charged particle production MTs are found.')
 			print('Calculate from these reaction cross sections?')
 			print('..... Enter: 0 / 1 for No / Yes .....')
@@ -2269,13 +2266,13 @@ def CONTROL_nCPO (NPt,Etu,mdisp,Ed,bad,cad):
 			if(iflMTtppr == 1):
 				print('calculating from these MTs')
 			if(iflMTtppr == 1):
-				print('User chose to consider these MTs', file = ofile51)
+				print('User chose to consider these MTs', file = ofile_outRMINDD)
 			if(iflMTtppr == 0):
 				print('not considering these MTs')
 			if(iflMTtppr == 0):
-				print('User chose not to consider the total particle', file = ofile51)
-				print('production MTs. So the individual (n,CPO) MTs', file = ofile51)
-				print('are considered', file = ofile51)
+				print('User chose not to consider the total particle', file = ofile_outRMINDD)
+				print('production MTs. So the individual (n,CPO) MTs', file = ofile_outRMINDD)
+				print('are considered', file = ofile_outRMINDD)
 			break
 
 	if (iflMTtppr == 1):
@@ -2296,7 +2293,7 @@ def CONTROL_nCPO (NPt,Etu,mdisp,Ed,bad,cad):
 			if (iflMTpr == 1):
 				(signcpol,num_of_displ1,tot_energy_products1, \
 				tot_energy_n_photons1,dpanth, snhtt, snhtt_EB, ifdpd, iflpresent) = \
-											n_CPO (MTtpnum[j],lpr,mdisp,Ed,bad,cad,NPt,Etu)
+											n_CPO (ofile_outRMINDD,MTtpnum[j],lpr,mdisp,Ed,bad,cad,NPt,Etu)
 				if (iflpresent == 1):
 					MTc = MTtpnum[j]
 					print('MT = ', MTc)
@@ -2384,7 +2381,7 @@ def CONTROL_nCPO (NPt,Etu,mdisp,Ed,bad,cad):
 
 				(signcpol,num_of_displ1,tot_energy_products1, \
 				tot_energy_n_photons1,dpanth, snhtt, snhtt_EB, ifdpd, iflpresent) = \
-											n_CPO (int(MTnum[j]),j,mdisp,Ed,bad,cad,NPt,Etu)
+											n_CPO (ofile_outRMINDD,int(MTnum[j]),j,mdisp,Ed,bad,cad,NPt,Etu)
 				if (iflpresent == 1):
 					MTc = int(MTnum[j])
 					print('MT = ', MTc)
@@ -2789,12 +2786,12 @@ def CONTROL_nCPO (NPt,Etu,mdisp,Ed,bad,cad):
 			(ifdisdata106==1 and iffldd106==0 and ifl106pr==0) or\
 			(ifdisdata107==1 and iffldd107==0 and ifl107pr==0)):
 
-			print('', file = ofile51)
-			print(':: MESSAGE :: CPO reaction cross section', file = ofile51)
-			print('-------------------------------------------------', file = ofile51)
-			print('Contributions are taken from MT = 5, since any of', file = ofile51)
-			print('the following reactions: (n,p), (n,d), (n,t), ', file = ofile51)
-			print('(n,3He), (n,a) cross section(s) is/are incomplete', file = ofile51)
+			print('', file = ofile_outRMINDD)
+			print(':: MESSAGE :: CPO reaction cross section', file = ofile_outRMINDD)
+			print('-------------------------------------------------', file = ofile_outRMINDD)
+			print('Contributions are taken from MT = 5, since any of', file = ofile_outRMINDD)
+			print('the following reactions: (n,p), (n,d), (n,t), ', file = ofile_outRMINDD)
+			print('(n,3He), (n,a) cross section(s) is/are incomplete', file = ofile_outRMINDD)
 
 			dpaMT5 = 0
 			snhtMT5 = 0
@@ -2870,8 +2867,8 @@ def CONTROL_nCPO (NPt,Etu,mdisp,Ed,bad,cad):
 				ifltfr5[0] = 1
 				print( '.....for incomplete MT = 103')
 				print( '.....contributions taken from MT = 5')
-				print('', file = ofile51)
-				print('.....for incomplete MT = 103', file = ofile51) 
+				print('', file = ofile_outRMINDD)
+				print('.....for incomplete MT = 103', file = ofile_outRMINDD) 
 
 			if (ifdisdata104 == 1 and iffldd104 == 0 and ifl104pr == 0):
 				Eyldd = [0]*int(Nyld[1]); Yldd = [0]*int(Nyld[1])
@@ -2884,8 +2881,8 @@ def CONTROL_nCPO (NPt,Etu,mdisp,Ed,bad,cad):
 				ifltfr5[1] = 1
 				print( '.....for incomplete MT = 104')
 				print( '.....contributions taken from MT = 5')
-				print('', file = ofile51)
-				print('.....for incomplete MT = 104', file = ofile51)
+				print('', file = ofile_outRMINDD)
+				print('.....for incomplete MT = 104', file = ofile_outRMINDD)
 
 			if (ifdisdata105 == 1 and iffldd105 == 0 and ifl105pr == 0):
 				Eyldtr = [0]*int(Nyld[2]); Yldtr = [0]*int(Nyld[2])
@@ -2898,8 +2895,8 @@ def CONTROL_nCPO (NPt,Etu,mdisp,Ed,bad,cad):
 				ifltfr5[2] = 1
 				print( '.....for incomplete MT = 105')
 				print( '.....contributions taken from MT = 5')
-				print('', file = ofile51)
-				print('.....for incomplete MT = 105', file = ofile51)
+				print('', file = ofile_outRMINDD)
+				print('.....for incomplete MT = 105', file = ofile_outRMINDD)
 
 			if (ifdisdata106 == 1 and iffldd106 == 0 and ifl106pr == 0):
 				Eyld3He = [0]*int(Nyld[3]); Yld3He = [0]*int(Nyld[3])
@@ -2912,8 +2909,8 @@ def CONTROL_nCPO (NPt,Etu,mdisp,Ed,bad,cad):
 				ifltfr5[3] = 1
 				print( '.....for incomplete MT = 106')
 				print( '.....contributions taken from MT = 5')
-				print('', file = ofile51)
-				print('.....for incomplete MT = 106', file = ofile51)
+				print('', file = ofile_outRMINDD)
+				print('.....for incomplete MT = 106', file = ofile_outRMINDD)
 
 			if (ifdisdata107 == 1 and iffldd107 == 0 and ifl107pr == 0):
 				EyldHe = [0]*int(Nyld[4]); YldHe = [0]*int(Nyld[4])
@@ -2926,8 +2923,8 @@ def CONTROL_nCPO (NPt,Etu,mdisp,Ed,bad,cad):
 				ifltfr5[4] = 1
 				print( '.....for incomplete MT = 107')
 				print( '.....contributions taken from MT = 5')
-				print('', file = ofile51)
-				print('.....for incomplete MT = 107', file = ofile51)
+				print('', file = ofile_outRMINDD)
+				print('.....for incomplete MT = 107', file = ofile_outRMINDD)
 
 			n2 = A/(A+1)
 			n3 = 1.0/(A+1)
@@ -3060,8 +3057,6 @@ def CONTROL_nCPO (NPt,Etu,mdisp,Ed,bad,cad):
 	printtofile(NPt,Etu,signcpo3,tot_energy_products3,snht3,3001,0,2)
 	printtofile(NPt,Etu,signcpo3,tot_energy_n_photons3,snht3_EB,3001,0,3)
 
-	ofile51.close()
-
 #=======Average Eg2 from Continuum and discrete (File 6)=======*	
 
 	# To find Egamma square from continuum of File 15 and 
@@ -3112,7 +3107,7 @@ def avegsqc(Ep1,fEEp,nfe,iplaw,ndisc,Yd,iFile):
 	## Calculation of neutron dpa and heating cross sections due to
 	## radiative capture of neutron reaction.
 
-def RADIATIVE_CAPTURE (NPt,Etu,mdisp,Ed,bad,cad):
+def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 	siget = numpy.zeros(NPt); sdpa = numpy.zeros(NPt); snht = numpy.zeros(NPt)
 	s1 = numpy.zeros(NPt); s2 = numpy.zeros(NPt)
 	num_of_displ = numpy.zeros(NPt); tot_energy_products = numpy.zeros(NPt)
@@ -3135,10 +3130,9 @@ def RADIATIVE_CAPTURE (NPt,Etu,mdisp,Ed,bad,cad):
 
 	print("n, g .....")
 
-	ofile51 = open('output_RadEMC-EngdepU.txt', 'a')
-	print('', file = ofile51)
-	print(' Radiative capture dpa/heating cross section', file = ofile51)
-	print('------------------------------------------------', file = ofile51)
+	print('', file = ofile_outRMINDD)
+	print(' Radiative capture dpa/heating cross section', file = ofile_outRMINDD)
+	print('------------------------------------------------', file = ofile_outRMINDD)
 
 #------------------------------------------------------------
 
@@ -3533,8 +3527,8 @@ def RADIATIVE_CAPTURE (NPt,Etu,mdisp,Ed,bad,cad):
 			break
 	ifile.close()
 
-	print('', file = ofile51)
-	print('Number of energy points given is ',NP, file = ofile51)
+	print('', file = ofile_outRMINDD)
+	print('Number of energy points given is ',NP, file = ofile_outRMINDD)
 
 #-------------------------------------------------------------
 	# Finding basic cross sections in unique energy array because 
@@ -3556,21 +3550,21 @@ def RADIATIVE_CAPTURE (NPt,Etu,mdisp,Ed,bad,cad):
 				break
 	
 	if (ifl6 == 1):
-		print('', file = ofile51)
-		print('Emitted photon data are given in File 6', file = ofile51)
-		print('', file = ofile51)
-		print('Neutron energy/ discrete gamma/ continuum gamma', file = ofile51)
+		print('', file = ofile_outRMINDD)
+		print('Emitted photon data are given in File 6', file = ofile_outRMINDD)
+		print('', file = ofile_outRMINDD)
+		print('Neutron energy/ discrete gamma/ continuum gamma', file = ofile_outRMINDD)
 		for i in range(0,NE6,5):
-			print('', file = ofile51)
-			print(En6[i],' ',ND6[i],' ',NPg6[i]-ND6[i], file = ofile51)
+			print('', file = ofile_outRMINDD)
+			print(En6[i],' ',ND6[i],' ',NPg6[i]-ND6[i], file = ofile_outRMINDD)
 	
 	if (ifl12 == 1):
-		print('', file = ofile51)
-		print('Emitted photon data are given in File 12', file = ofile51)
+		print('', file = ofile_outRMINDD)
+		print('Emitted photon data are given in File 12', file = ofile_outRMINDD)
 
 	if (ifl15 == 1):
-		print('', file = ofile51)
-		print('Emitted photon data are given in File 15 ', file = ofile51)
+		print('', file = ofile_outRMINDD)
+		print('Emitted photon data are given in File 15 ', file = ofile_outRMINDD)
 		
 	# ENERGY OF THE EMITTED DISCRETE PHOTON FROM FILE 12
 	
@@ -3586,9 +3580,9 @@ def RADIATIVE_CAPTURE (NPt,Etu,mdisp,Ed,bad,cad):
 					EGkp[i][j] = EGk[i] + (AWR*Etu[j]/(AWR+1))
 				else:
 					EGkp[i][j] = EGk[i]
-		print('', file = ofile51)
-		print('Total number of emitted gamma sections', file = ofile51)
-		print(NKd,' discrete and',NK-NKd,' continuum', file = ofile51)
+		print('', file = ofile_outRMINDD)
+		print('Total number of emitted gamma sections', file = ofile_outRMINDD)
+		print(NKd,' discrete and',NK-NKd,' continuum', file = ofile_outRMINDD)
 
 	# For each neutron energy, Total yield over all NK contributions
 	# must be normalized to Y12tot. Total yields are given only
@@ -3770,15 +3764,13 @@ def RADIATIVE_CAPTURE (NPt,Etu,mdisp,Ed,bad,cad):
 
 	printtofile(NPt,Etu,siget,num_of_displ,sdpa,102,0,1)
 	printtofile(NPt,Etu,siget,tot_energy_products,snht,102,0,2)
-		
-	ofile51.close()
 
 #=========== ELASTIC INTERACTION ===========*
 		
     # Calculation of neutron dpa and heating cross sections due to the elastic
 	# scattering interactions.
 	
-def ELASTIC_SCATTERING(NPt,Etu,mdisp,Ed,bad,cad):
+def ELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 
 	siget = [0]*NPt; sdpat = [0]*NPt; snht = [0]*NPt
 	alfull = numpy.zeros((NPt,65)); fmuE = numpy.zeros((NPt,64))
@@ -3787,10 +3779,9 @@ def ELASTIC_SCATTERING(NPt,Etu,mdisp,Ed,bad,cad):
 	xabc = [0]*nquad; wg = [0]*nquad; fpr = [0]*nquad
 # ------------------------------------------------------------------		
 	print( "n, n .....")
-	ofile51 = open('output_RadEMC-EngdepU.txt', 'a')
-	print('', file = ofile51)
-	print(' Elastic scattering dpa/heating cross section', file = ofile51)
-	print('------------------------------------------------', file = ofile51)
+	print('', file = ofile_outRMINDD)
+	print(' Elastic scattering dpa/heating cross section', file = ofile_outRMINDD)
+	print('------------------------------------------------', file = ofile_outRMINDD)
 
 # ------------------------------------------------------------------
 
@@ -3816,8 +3807,8 @@ def ELASTIC_SCATTERING(NPt,Etu,mdisp,Ed,bad,cad):
 			break
 	ifile.close()
 
-	print('', file = ofile51)
-	print('Number of energy points given is ',NP, file = ofile51)
+	print('', file = ofile_outRMINDD)
+	print('Number of energy points given is ',NP, file = ofile_outRMINDD)
 
  	# Extraction of Legendre Polynomial Coefficients and 
 	# Tabulated Probability
@@ -3890,18 +3881,18 @@ def ELASTIC_SCATTERING(NPt,Etu,mdisp,Ed,bad,cad):
 			break
 	ifile.close()
 
-	print('', file = ofile51)
+	print('', file = ofile_outRMINDD)
 	if(LTT == 3):
-		print('Legendre coefficients and tabulated probability', file = ofile51)
-		print('data representations of angular distribution', file = ofile51)
+		print('Legendre coefficients and tabulated probability', file = ofile_outRMINDD)
+		print('data representations of angular distribution', file = ofile_outRMINDD)
 	if(LTT == 1):
-		print('Legendre coefficients representation of angular', file = ofile51)
-		print('distribution', file = ofile51)
+		print('Legendre coefficients representation of angular', file = ofile_outRMINDD)
+		print('distribution', file = ofile_outRMINDD)
 	if(LTT == 2):
-		print('Tabulated probability data representation of', file = ofile51)
-		print('angular distribution', file = ofile51)
+		print('Tabulated probability data representation of', file = ofile_outRMINDD)
+		print('angular distribution', file = ofile_outRMINDD)
 	if(LTT == 0):
-		print('All energy scattering are isotropic', file = ofile51)
+		print('All energy scattering are isotropic', file = ofile_outRMINDD)
 
 #-------------------------------------------------------------------------
 	A = AWR
@@ -4052,7 +4043,6 @@ def ELASTIC_SCATTERING(NPt,Etu,mdisp,Ed,bad,cad):
 	printtofile (NPt,Etu,siget,num_of_displ,sdpat,2,0,1) 
 	printtofile (NPt,Etu,siget,tot_energy_products,snht,2,0,2)
 
-	ofile51.close()
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 
@@ -4077,7 +4067,7 @@ def AKPel(A,Z,En,Ed):
 	# Calculation of neutron dpa and heating cross sections due to the inelastic
 	# scattering interactions.
 	
-def INELASTIC_SCATTERING(NPt,Etu,mdisp,Ed,bad,cad):
+def INELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 
 	sdpa = [0]*NPt; sdpatemp = [0]*NPt; snhttemp = [0]*NPt
 	snht = [0]*NPt; alc = [0]*65; alfull = numpy.zeros((NPt,65))
@@ -4099,10 +4089,9 @@ def INELASTIC_SCATTERING(NPt,Etu,mdisp,Ed,bad,cad):
 #--------------------------------------------------------------------
 	print( "n, n' .....")
 
-	ofile51 = open('output_RadEMC-EngdepU.txt','a')
-	print('', file = ofile51)
-	print(' Inelastic scattering dpa/heating cross section', file = ofile51)
-	print('------------------------------------------------', file = ofile51)
+	print('', file = ofile_outRMINDD)
+	print(' Inelastic scattering dpa/heating cross section', file = ofile_outRMINDD)
+	print('------------------------------------------------', file = ofile_outRMINDD)
 
 	ifile = open("tape01", 'r')
 	ifile.readline()
@@ -4146,8 +4135,8 @@ def INELASTIC_SCATTERING(NPt,Etu,mdisp,Ed,bad,cad):
 					break
 			ifile.close()
 
-			print('', file = ofile51)
-			print('Level MT=',mta,' has ',NP,' cross section points', file = ofile51)
+			print('', file = ofile_outRMINDD)
+			print('Level MT=',mta,' has ',NP,' cross section points', file = ofile_outRMINDD)
 
 			if (iflpr == 1):	# do the following only if MT is present in MF=3
 				if4d = 0
@@ -4358,9 +4347,9 @@ def INELASTIC_SCATTERING(NPt,Etu,mdisp,Ed,bad,cad):
 
 	# TO GET THE AL(E) FOR THE FULL ENERGY RANGE
 				if (if6d == 1):
-					print ('', file = ofile51)
-					print ('Angular distribution data of discrete level', file = ofile51)
-					print ('scattering are given in File 6', file = ofile51)
+					print ('', file = ofile_outRMINDD)
+					print ('Angular distribution data of discrete level', file = ofile_outRMINDD)
+					print ('scattering are given in File 6', file = ofile_outRMINDD)
 
 					if (iflawiso == 1):
 						for i in range(NP):
@@ -4403,13 +4392,13 @@ def INELASTIC_SCATTERING(NPt,Etu,mdisp,Ed,bad,cad):
 	# are given in File 4
 
 				if (if4d == 1 or if4c == 1):
-					print ('', file = ofile51)
-					print ('Angular distribution data of discrete level', file = ofile51)
-					print ('scattering are given in File 4', file = ofile51)
+					print ('', file = ofile_outRMINDD)
+					print ('Angular distribution data of discrete level', file = ofile_outRMINDD)
+					print ('scattering are given in File 4', file = ofile_outRMINDD)
 					if (if4c == 1):
-						print ('', file = ofile51)
-						print ('Angular distribution data for continuum', file = ofile51)
-						print (' scattering are given in File 4', file = ofile51)
+						print ('', file = ofile_outRMINDD)
+						print ('Angular distribution data for continuum', file = ofile_outRMINDD)
+						print (' scattering are given in File 4', file = ofile_outRMINDD)
 					if (LTT == 0):
 						for i in range(NP):
 							alfull[i][0] = 1
@@ -4486,13 +4475,13 @@ def INELASTIC_SCATTERING(NPt,Etu,mdisp,Ed,bad,cad):
 						if (NK == 1):
 							Nrc = 0
 						if (Nrc == 1):
-							print ('', file = ofile51)
-							print ('Energy distribution of recoil is given in File 6', file = ofile51)
+							print ('', file = ofile_outRMINDD)
+							print ('Energy distribution of recoil is given in File 6', file = ofile_outRMINDD)
 						if (Nrc == 0):
-							print ('', file = ofile51)
-							print ('Energy distribution of recoil is not given in', file = ofile51) 
-							print ('File 6, calculating using neutron energy' , file = ofile51)
-							print ('distribution data', file = ofile51)
+							print ('', file = ofile_outRMINDD)
+							print ('Energy distribution of recoil is not given in', file = ofile_outRMINDD) 
+							print ('File 6, calculating using neutron energy' , file = ofile_outRMINDD)
+							print ('distribution data', file = ofile_outRMINDD)
 
 	# Interpolation of secondary energies and their distributions 
 	# corresponding to the incident energies in File 3.
@@ -4538,9 +4527,9 @@ def INELASTIC_SCATTERING(NPt,Etu,mdisp,Ed,bad,cad):
 	# found rarely.
 
 					if (if5c == 1):
-						print('', file = ofile51)
-						print('Emitted neutron distribution for continuum', file = ofile51)
-						print('reaction is given in File 5', file = ofile51)
+						print('', file = ofile_outRMINDD)
+						print('Emitted neutron distribution for continuum', file = ofile_outRMINDD)
+						print('reaction is given in File 5', file = ofile_outRMINDD)
 
 						if (LF[0] != 9):
 							for i in range (NP):
@@ -4659,7 +4648,6 @@ def INELASTIC_SCATTERING(NPt,Etu,mdisp,Ed,bad,cad):
 	printtofile (NPt,Etu,tot_siginel4,num_of_displ,sdpa,4,0,1)
 	printtofile (NPt,Etu,tot_siginel4,tot_energy_products,snht,4,0,2)
 
-	ofile51.close()
 #=============================================
 
 #=======(n,xn)=======*
@@ -4667,7 +4655,7 @@ def INELASTIC_SCATTERING(NPt,Etu,mdisp,Ed,bad,cad):
 	# Calculation of neutron dpa and heating cross sections due to
 	# (n, 2n), (n, 3n) and (n, 4n) reactions.
 
-def n_xn (MTi,NPt,Etu,mdisp,Ed,bad,cad):
+def n_xn (ofile_outRMINDD,MTi,NPt,Etu,mdisp,Ed,bad,cad):
 
 	sdpat = [0]*NPt; snhtt = [0]*NPt; signxnl = [0]*NPt; alc = [0]*65
 	num_of_displ = [0]*NPt; tot_energy_products = [0]*NPt
@@ -4687,10 +4675,9 @@ def n_xn (MTi,NPt,Etu,mdisp,Ed,bad,cad):
 #-----------------------------------------------------------------------------------*
 	iflpresent = 0
 
-	ofile51 = open ('output_RadEMC-EngdepU.txt', 'w')
-	print ('', file = ofile51)
-	print ('  (n, xn) MT=',MTi,' dpa/heating cross section', file = ofile51)
-	print ('------------------------------------------------', file = ofile51)
+	print ('', file = ofile_outRMINDD)
+	print ('  (n, xn) MT=',MTi,' dpa/heating cross section', file = ofile_outRMINDD)
+	print ('------------------------------------------------', file = ofile_outRMINDD)
 
 	ifile = open ("tape01", 'r')
 	ifile.readline() 
@@ -4723,8 +4710,8 @@ def n_xn (MTi,NPt,Etu,mdisp,Ed,bad,cad):
 			break
 	ifile.close()
 
-	print('', file = ofile51)
-	print('Number of energy points given is ', NP, file = ofile51)
+	print('', file = ofile_outRMINDD)
+	print('Number of energy points given is ', NP, file = ofile_outRMINDD)
 
 	if (iflpresent == 1):
 		ift5 = 0
@@ -4901,13 +4888,13 @@ def n_xn (MTi,NPt,Etu,mdisp,Ed,bad,cad):
 
 		if (if6 == 1):
 			if (Nrc == 1):
-				print ('', file = ofile51)
-				print ('Energy distribution of recoil nucleus is given in File 6', file = ofile51)
+				print ('', file = ofile_outRMINDD)
+				print ('Energy distribution of recoil nucleus is given in File 6', file = ofile_outRMINDD)
 			if (Nrc == 0):
-				print ('', file = ofile51)
-				print ('Energy distribution of recoil nucleus is', file = ofile51)
-				print ('not given in File 6, calculations performed', file = ofile51)
-				print ('using emitted neutron distribution data', file = ofile51)
+				print ('', file = ofile_outRMINDD)
+				print ('Energy distribution of recoil nucleus is', file = ofile_outRMINDD)
+				print ('not given in File 6, calculations performed', file = ofile_outRMINDD)
+				print ('using emitted neutron distribution data', file = ofile_outRMINDD)
 
 			for i in range (NP):
 				for j in range (int(NE6[Nrc])-1):
@@ -4952,9 +4939,9 @@ def n_xn (MTi,NPt,Etu,mdisp,Ed,bad,cad):
 	# have not occured.
 
 		if (if5 == 1):
-			print ('', file = ofile51)
-			print ('Emitted neutron energy distribution data', file = ofile51)
-			print ('are given in File 5', file = ofile51)
+			print ('', file = ofile_outRMINDD)
+			print ('Emitted neutron energy distribution data', file = ofile_outRMINDD)
+			print ('are given in File 5', file = ofile_outRMINDD)
 
 			if (LF[1] != 9):
 				for i in range (NP):
@@ -5050,7 +5037,6 @@ def n_xn (MTi,NPt,Etu,mdisp,Ed,bad,cad):
 		snhtt = trptuqce (E,snht,Etu)
 		printtofile (NPt,Etu,signxnl,tot_energy_products,snhtt,MTi,0,2)
 
-	ofile51.close()
 	return(signxnl, num_of_displ, tot_energy_products, sdpat, snhtt, iflpresent)
 #============================================
 
@@ -5058,17 +5044,15 @@ def n_xn (MTi,NPt,Etu,mdisp,Ed,bad,cad):
 	# Calculation of neutron dpa and heating cross sections due to
 	# all inexplicitly given neutron reactions.
 
-def anytnMF6MT5 (NPt,Etu,mdisp,Ed,bad,cad):
+def anytnMF6MT5 (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 	sdpat = [0]*NPt; snhtt = [0]*NPt; snhtt_EB = [0]*NPt
 	num_of_displ = [0]*NPt; tot_energy_products = [0]*NPt; tot_energy_n_photons = [0]*NPt
 	siget = [0]*NPt
 
 	print("n, anything .....")
-
-	ofile51 = open('output_RadEMC-EngdepU.txt', 'a')
-	print('', file = ofile51)
-	print('n, anything reaction MT=',5,' dpa/heating cross section', file = ofile51)
-	print('-------------------------------------------------', file = ofile51)
+	print('', file = ofile_outRMINDD)
+	print('n, anything reaction MT=',5,' dpa/heating cross section', file = ofile_outRMINDD)
+	print('-------------------------------------------------', file = ofile_outRMINDD)
 
 	iflpresent = 0 		# flag for the presence of cross sections MF=3. 
 	ifile = open ("tape02", 'r')
@@ -5103,8 +5087,8 @@ def anytnMF6MT5 (NPt,Etu,mdisp,Ed,bad,cad):
 			break
 	ifile.close()
 
-	print('', file = ofile51)
-	print('Number of energy points given is ', NP, file = ofile51)
+	print('', file = ofile_outRMINDD)
+	print('Number of energy points given is ', NP, file = ofile_outRMINDD)
 
 ## only if MF3 cross sections are available then do the following
 
@@ -5242,9 +5226,9 @@ def anytnMF6MT5 (NPt,Etu,mdisp,Ed,bad,cad):
 			tnYldg = TERPOL(NBT[NSS][:],INTr[NSS][:],Nyld[NSS], Eint6[NSS][:],Yi[NSS][:],NP,Eall)
 			ntm = [0]*NP; ntmd = [0]*NP
 			if (AWP[NSS] != 0 and ZAP[NSS] != 0 and AWP[NSS] != 1.0 and ZAP[NSS] != 1.0):
-				print('', file = ofile51)
-				print('Recoil nucleus and charged particle energy', file = ofile51)
-				print('distribution data are given in MF 6 MT 5', file = ofile51)
+				print('', file = ofile_outRMINDD)
+				print('Recoil nucleus and charged particle energy', file = ofile_outRMINDD)
+				print('distribution data are given in MF 6 MT 5', file = ofile_outRMINDD)
 
 				# this part is for heavy recoil nuclei
 				if (Avalue >= 4 and Zvalue > 2):
@@ -5363,9 +5347,9 @@ def anytnMF6MT5 (NPt,Etu,mdisp,Ed,bad,cad):
 		# IT CORRESPONDS TO ONLY HEATING CALCULATIONS BY ENERGY BALANCE METHOD.
 
 			if ( (AWP[NSS] == 0 and ZAP[NSS] == 0) or (AWP[NSS] == 1.0 and ZAP[NSS] == 1.0) ):
-				print('', file = ofile51)
-				print('Secondary neutrons and photons energy', file = ofile51)
-				print('distribution data are given in MF 6 MT 5', file = ofile51)
+				print('', file = ofile_outRMINDD)
+				print('Secondary neutrons and photons energy', file = ofile_outRMINDD)
+				print('distribution data are given in MF 6 MT 5', file = ofile_outRMINDD)
 
 				# for neutrons
 				if ( AWP[NSS] == 1.0 and ZAP[NSS] == 1.0 ):
@@ -5490,7 +5474,6 @@ def anytnMF6MT5 (NPt,Etu,mdisp,Ed,bad,cad):
 		#--------------
 	# **** the above is done only if MF3 for that MT is present ****
 
-	ofile51.close()
 	# anytnMF6MT5 (n, anything) completes here
 #====================================================
 
@@ -5505,9 +5488,7 @@ def anytnMF6MT5 (NPt,Etu,mdisp,Ed,bad,cad):
 	# only once. It calls other reaction-specific subroutines and their required
 	# multigrouping according to the inputs given.
 	
-def uqce (insp,nra,nreac,mdisp,Ed,bad,cad,mgyn,igtype):
-
-	ofile51 = open('output_RadEMC-EngdepU.txt', 'a')
+def uqce (ofile_outRMINDD,insp,nra,nreac,mdisp,Ed,bad,cad,mgyn,igtype):
 
 	# Et=Energy array in MT=1, Etu=unique of Et
 	# extraction of total energy points
@@ -5543,8 +5524,8 @@ def uqce (insp,nra,nreac,mdisp,Ed,bad,cad,mgyn,igtype):
 			break
 	ifile.close()
 
-	print('', file = ofile51)
-	print(NPt,' Total cross sections energy points', file = ofile51)
+	print('', file = ofile_outRMINDD)
+	print(NPt,' Total cross sections energy points', file = ofile_outRMINDD)
 	
 	# make unique common energy
 	
@@ -5552,10 +5533,8 @@ def uqce (insp,nra,nreac,mdisp,Ed,bad,cad,mgyn,igtype):
 	Etu = numpy.unique(Etu)
 	NPt = len(Etu)
 	
-	print('', file = ofile51)
-	print(NPt,' Unique total cross sections energy points', file = ofile51)
-
-	ofile51.close()
+	print('', file = ofile_outRMINDD)
+	print(NPt,' Unique total cross sections energy points', file = ofile_outRMINDD)
 
 	# call reactions
 	
@@ -5567,37 +5546,37 @@ def uqce (insp,nra,nreac,mdisp,Ed,bad,cad,mgyn,igtype):
 
 		irct = nra[i]
 		if (irct == 1):
-			RADIATIVE_CAPTURE (NPt,Etu,mdisp,Ed,bad,cad) # MT=102
+			RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad) # MT=102
 			if (mgyn==1):
 				groupmulti(insp,102,igtype,1) 	# 102=id for output file, 1=DPA
 				groupmulti(insp,102,igtype,2) 	# 102=id for output file, 2=Heating
 			irct1y=1
 		if (irct==2):
-			ELASTIC_SCATTERING (NPt,Etu,mdisp,Ed,bad,cad) 	# MT=2
+			ELASTIC_SCATTERING (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad) 	# MT=2
 			if (mgyn==1): 
 				groupmulti(insp,2,igtype,1)
 				groupmulti(insp,2,igtype,2)
 			irct2y=1
 		if (irct==3):
-			INELASTIC_SCATTERING (NPt,Etu,mdisp,Ed,bad,cad) 		# MT=51 to 91
+			INELASTIC_SCATTERING (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad) 		# MT=51 to 91
 			if (mgyn==1):
 				groupmulti(insp,4,igtype,1)
 				groupmulti(insp,4,igtype,2)
 			irct3y=1
 		if (irct==4):							 # (n,2n), (n,3n) and (n,4n)
-			CONTROL_nxn (NPt,Etu,mdisp,Ed,bad,cad) 
+			CONTROL_nxn (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad) 
 			if (mgyn==1):
 				groupmulti(insp,1601,igtype,1)
 				groupmulti(insp,1601,igtype,2)
 			irct4y=1
 		if (irct==5):
-			CONTROL_nCPO(NPt,Etu,mdisp,Ed,bad,cad) 		# (n,CPO)
+			CONTROL_nCPO(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad) 		# (n,CPO)
 			if (mgyn==1):
 				groupmulti(insp,3001,igtype,1)
 				groupmulti(insp,3001,igtype,2)
 			irct5y=1
 		if (irct==6):
-			anytnMF6MT5(NPt,Etu,mdisp,Ed,bad,cad)		# (n, anything)
+			anytnMF6MT5(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad)		# (n, anything)
 			if (mgyn==1):
 				groupmulti(insp,5001,igtype,1)
 				groupmulti(insp,5001,igtype,2)
@@ -5605,17 +5584,17 @@ def uqce (insp,nra,nreac,mdisp,Ed,bad,cad,mgyn,igtype):
 			irct6y=1
 		if (irct==7): 				# Total DPA and Heating due to incident neutron
 			if(irct1y==0):
-				RADIATIVE_CAPTURE (NPt,Etu,mdisp,Ed,bad,cad)
+				RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad)
 			if(irct2y==0):
-				ELASTIC_SCATTERING (NPt,Etu,mdisp,Ed,bad,cad)
+				ELASTIC_SCATTERING (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad)
 			if(irct3y==0):
-				INELASTIC_SCATTERING (NPt,Etu,mdisp,Ed,bad,cad)
+				INELASTIC_SCATTERING (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad)
 			if(irct4y==0):
-				CONTROL_nxn(NPt,Etu,mdisp,Ed,bad,cad)
+				CONTROL_nxn(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad)
 			if(irct5y==0):
-				CONTROL_nCPO(NPt,Etu,mdisp,Ed,bad,cad)
+				CONTROL_nCPO(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad)
 			if(irct6y==0):
-				anytnMF6MT5(NPt,Etu,mdisp,Ed,bad,cad)
+				anytnMF6MT5(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad)
 			total(NPt,Etu)				# Add contributions to DPA,Heating from all partial reactions
 			if (mgyn==1):
 				groupmulti(insp,1,igtype,1) 		# 1= id for output file, 1 = DPA
