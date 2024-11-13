@@ -170,7 +170,7 @@ def GQ():
 	# expansion coefficients representation of secondary particle angular 
 	# distribution.
 	
-def discrec1(alc1,NLa,E,Q,bta,Z1,A1,Z2,A2,Ed,mdisp,bad,cad):
+def discreteLevelReactionsLC(alc1,NLa,E,Q,bta,Z1,A1,Z2,A2,Ed,mdisp,bad,cad):
 	nquad = 64
 	Pl1 = [0]*NLa
 	xabc = [0]*nquad; wg = [0]*nquad
@@ -194,10 +194,10 @@ def discrec1(alc1,NLa,E,Q,bta,Z1,A1,Z2,A2,Ed,mdisp,bad,cad):
 			p1 = 0
 			for l in range(NLa):
 				p1 = p1 + (((2 * l)+1) * Pl1[l] * alc1[l])/2
-			s = s + (wg[i] * p1 * ADisM(Z1,A1,Z2,A2,T,Ed,mdisp,bad,cad))
+			s = s + (wg[i] * p1 * atomDisplacementModels(Z1,A1,Z2,A2,T,Ed,mdisp,bad,cad))
 
 		if (NLa == 3):
-			s = s + (wg[i] * 0.5 * ADisM(Z1,A1,Z2,A2,T,Ed,mdisp,bad,cad))
+			s = s + (wg[i] * 0.5 * atomDisplacementModels(Z1,A1,Z2,A2,T,Ed,mdisp,bad,cad))
 
 	return(s)
 
@@ -207,7 +207,7 @@ def discrec1(alc1,NLa,E,Q,bta,Z1,A1,Z2,A2,Ed,mdisp,bad,cad):
 	# mu vs. f(mu,E) representation of secondary particle angular 
 	# distribution.
 	
-def discrec2(fpr,E,Q,bta,Z1,A1,Z2,A2,Ed,mdisp,bad,cad):
+def discreteLevelReactionsMuf(fpr,E,Q,bta,Z1,A1,Z2,A2,Ed,mdisp,bad,cad):
 	nquad = 64
 	xabc = [0]*nquad; wg = [0]*nquad
 	A = A2
@@ -222,7 +222,7 @@ def discrec2(fpr,E,Q,bta,Z1,A1,Z2,A2,Ed,mdisp,bad,cad):
 	s = 0
 	for i in range(nquad):
 		T = E * (A+1-bta) * (1+R1*R1-2*R1*xabc[i]) / (A+1)**2
-		s = s + (wg[i] * fpr[i] * ADisM(Z1,A1,Z2,A2,T,Ed,mdisp,bad,cad))
+		s = s + (wg[i] * fpr[i] * atomDisplacementModels(Z1,A1,Z2,A2,T,Ed,mdisp,bad,cad))
 		
 	return(s)
 		
@@ -231,21 +231,14 @@ def discrec2(fpr,E,Q,bta,Z1,A1,Z2,A2,Ed,mdisp,bad,cad):
 	# Atom-displacement damage models: NRT and arc-dpa to find damage
 	# energy for a given recoil energy in a given target material.
 	
-def ADisM(Z1,A1,Z2,A2,En,Ed,mdisp,bad,cad):
+def atomDisplacementModels(Z1,A1,Z2,A2,En,Ed,mdisp,bad,cad):
 		
-# z2 = 6			!14	! Z !				!z1, A1 = recoil nuclei
-# A2 = 11.898 		!28.085	!			!z2, A2 = lattice nuclei
-# Ed = 31.0!25.0	!42.0!24.0!20.0 !35.0 !25.0! 	!31.0 
+## Z1, A1 = recoil nuclei
+## Z2, A2 = lattice nuclei
 		
-	twothd = 0.666666667
-	threeq = 0.75
-	sixth = 0.166666667
-	onep5 = 1.5
-	c1 = 30.724
-	c2 = 0.0793
-	c3 = 3.4008
-	c4 = 0.40244
-	dont = 40.0
+	twothd = 0.666666667; threeq = 0.75; sixth = 0.166666667; onep5 = 1.5
+	c1 = 30.724; c2 = 0.0793; c3 = 3.4008; c4 = 0.40244
+
 	el = c1*Z1*Z2*(math.sqrt(Z1**twothd+Z2**twothd))*(A1+A2)/A2
 	rel = 1/el
 	fl1 = c2*Z1**twothd*(math.sqrt(Z2))*(A1+A2)**onep5
@@ -253,9 +246,7 @@ def ADisM(Z1,A1,Z2,A2,En,Ed,mdisp,bad,cad):
 	fl = fl1/fl2
 	ep = En*rel
 	dam = En / (1 + fl * (c3*ep**sixth+c4*ep**threeq+ep))
-		   
 	df = dam
-		
 	if (Ed == 0):
 		if (Z2==5):
 			Ed = 40.0
@@ -389,7 +380,7 @@ def ADisM(Z1,A1,Z2,A2,En,Ed,mdisp,bad,cad):
 	# Average energy of recoil nucleus for heating from Legendre
 	# expansion coefficient representation.
 	
-def discrec3(alc1,NLa,E,Q,bta,A2):
+def averageEnergyRecoilsLC(alc1,NLa,E,Q,bta,A2):
 	nquad = 64
 	Pl1 = [0]*NLa
 	xabc = [0]*nquad; wg = [0]*nquad
@@ -425,7 +416,7 @@ def discrec3(alc1,NLa,E,Q,bta,A2):
 	# Average energy of charged particle for heating from Legendre 
 	# expansion coefficient representation.
 	
-def discrec5(alc1,NLa,E,Q,bta,A2):
+def averageEnergyChargedParticlesLC(alc1,NLa,E,Q,bta,A2):
 	nquad = 64
 	Pl1 = [0]*NLa
 	xabc = [0]*nquad; wg = [0]*nquad
@@ -462,7 +453,7 @@ def discrec5(alc1,NLa,E,Q,bta,A2):
 	# from tabulated mu vs. f(mu,E) representation of secondary 
 	# particle angular distribution.
  	
-def discrec4(fpr,E,Q,bta,A2):
+def averageEnergyRecoilsMuf(fpr,E,Q,bta,A2):
 	nquad = 64	
 	xabc = [0]*nquad; wg = [0]*nquad
 	A = A2
@@ -486,7 +477,7 @@ def discrec4(fpr,E,Q,bta,A2):
 	# from tabulated mu vs. f(mu,E) representation of secondary 
 	# particle angular distribution.
 	
-def discrec6(fpr,E,Q,bta,A2):
+def averageEnergyChargedParticlesMuf(fpr,E,Q,bta,A2):
 	nquad = 64
 	xabc = [0]*nquad; wg = [0]*nquad
 	A = A2
@@ -517,7 +508,7 @@ def Tinteg1(z1,A1,z2,A2,Ed,ter6,tf6,n,mdisp,bad,cad):
 	for i in range(n):
 		eru = ter6[i]
 		fu = tf6[i]
-		p2 = ADisM(z1,A1,z2,A2,eru,Ed,mdisp,bad,cad)
+		p2 = atomDisplacementModels(z1,A1,z2,A2,eru,Ed,mdisp,bad,cad)
 		p = fu*p2
 		ti = p2*fl + p1
 		d = (eru-erl)*ti/2
@@ -566,7 +557,7 @@ def conint(Z1,A1,Z2,A2,En,Ed,Ep1,fEEp,nfe,Nrc,mdisp,bad,cad):
 		et = (En+eru)/A1
 		fu = fEEp[i]
 		if (Nrc > 0):
-			p2 = ADisM(Z1,A1,Z2,A2,eru,Ed,mdisp,bad,cad)
+			p2 = atomDisplacementModels(Z1,A1,Z2,A2,eru,Ed,mdisp,bad,cad)
 		if (Nrc == 0):
 			p2 = eru # for using emitted neutron data
 		p = fu*p2
@@ -658,7 +649,7 @@ def conint1heat(Z1,A1,Z2,A2,En,Ep1,fEEp,nfe):
 
 	return(s)
 #===============================================	
-	# Calculation of average daamge recoil energy from average neutron energy
+	# Calculation of average damage recoil energy from average neutron energy
 
 def dscrs3(Z1,A1,Z2,A2,En,Ed,f,mdisp,bad,cad):
 	nquad = 64
@@ -669,7 +660,7 @@ def dscrs3(Z1,A1,Z2,A2,En,Ed,f,mdisp,bad,cad):
 	s = 0
 	for i in range(nquad):
 		T = (En-2*math.sqrt(En*f)*xabl[i]+f)/A2
-		s = s + (wg[i]*ADisM(Z1,A1,Z2,A2,T,Ed,mdisp,bad,cad))
+		s = s + (wg[i]*atomDisplacementModels(Z1,A1,Z2,A2,T,Ed,mdisp,bad,cad))
 	return(s)	
 #===============================================
 def dscrs3heat(Z1,A1,Z2,A2,En,f):
@@ -703,12 +694,12 @@ def Tinteg3 (A,theta,Em1max,Z,Ed,En,mdisp,bad,cad):
 		f11 = 0.
 		for i in range(nq):
 			T = (En-2*qx1[i]*math.sqrt(En*r)+r)/A
-			f11 = f11 + qx2[i]*r*math.exp(-r/theta)*ADisM(Z,A,Z,A,T,Ed,mdisp,bad,cad)/2
+			f11 = f11 + qx2[i]*r*math.exp(-r/theta)*atomDisplacementModels(Z,A,Z,A,T,Ed,mdisp,bad,cad)/2
 		r1 = r+h
 		f22 = 0.0
 		for i in range(nq):
 			T = (En-2*qx1[i]*math.sqrt(En*r1)+r1)/A
-			f22 = f22 + qx2[i]*(r1)*math.exp(-(r1)/theta)*ADisM(Z,A,Z,A,T,Ed,mdisp,bad,cad)/2
+			f22 = f22 + qx2[i]*(r1)*math.exp(-(r1)/theta)*atomDisplacementModels(Z,A,Z,A,T,Ed,mdisp,bad,cad)/2
 
 		s = s + (h/2) * (f11 + f22)
 	return(s/IE)
@@ -754,7 +745,7 @@ def Tinteg(z1,A1,z2,A2,Ed,E,Q,bta,mdisp,bad,cad,n3,f1,f2,f3):
 	s = 0
 	for i in range(nquad):
 		td = n3*(f1-(f2*xabc[i])+f3)
-		s = s + (wg[i]*ADisM(z1,A1,z2,A2,td,Ed,mdisp,bad,cad))
+		s = s + (wg[i]*atomDisplacementModels(z1,A1,z2,A2,td,Ed,mdisp,bad,cad))
 
 # 		if (z2 == 5) s = s/1.5
 # 		if (z2 == 6 .or. z2 == 14) s = s/2
@@ -772,7 +763,7 @@ def Tinteg(z1,A1,z2,A2,Ed,E,Q,bta,mdisp,bad,cad,n3,f1,f2,f3):
 # 		!s = 0
 # 		do i = 1, 64
 # 			T = E*(A+1-bta)*(1+R1*R1-2*R1*xabc(i))/(A+1)**2
-# 			s = s + (wg(i)*0.5*T)!ADisM(Z1,A1,Z2,A2,T,Ed,mdisp,bad,cad))
+# 			s = s + (wg(i)*0.5*T)!atomDisplacementModels(Z1,A1,Z2,A2,T,Ed,mdisp,bad,cad))
 # 		end do
 # 		!end if
 	return(s)
@@ -1540,13 +1531,13 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 										alfull[i][k] = alfull[i-1][k]
 								break
 
-	# discrec1-- average damage energy from Legendre Polynomial 
+	# discreteLevelReactionsLC-- average damage energy from Legendre Polynomial 
 	# expansion Coeffiecients
-	# discrec3-- average energy of recoil nucleus from " " " "
-	# discrec5-- average energy of charged particle from " " " " 
-	# discrec2-- average damage energy from tabulated mu vs. f(mu,E)
-	# discrec4-- average energy of recoil nucleus from " " " "
-	# discrec6-- average energy of charged particle from " " " " 
+	# averageEnergyRecoilsLC-- average energy of recoil nucleus from " " " "
+	# averageEnergyChargedParticlesLC-- average energy of charged particle from " " " " 
+	# discreteLevelReactionsMuf-- average damage energy from tabulated mu vs. f(mu,E)
+	# averageEnergyRecoilsMuf-- average energy of recoil nucleus from " " " "
+	# averageEnergyChargedParticlesMuf-- average energy of charged particle from " " " " 
 
 			NLa = 65
 			if (LTT==0):
@@ -1556,20 +1547,20 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 					if((LTT==3 and Eall[i]<=EL[NE1]) or LTT==1 or LTT==0):
 						for k in range (NLa):
 							alc[k] = alfull[i][k] 
-						dn1 = abs(discrec1(alc,NLa,Eall[i],QI,beta[lpr],Z-ze[lpr], \
+						dn1 = abs(discreteLevelReactionsLC(alc,NLa,Eall[i],QI,beta[lpr],Z-ze[lpr], \
 										A+1-beta[lpr],Z,A,Ed,mdisp,bad,cad))
 
-						dn2 = abs(discrec3(alc,NLa,Eall[i],QI,beta[lpr],A))	
-						dn3 = abs(discrec5(alc,NLa,Eall[i],QI,beta[lpr],A))
+						dn2 = abs(averageEnergyRecoilsLC(alc,NLa,Eall[i],QI,beta[lpr],A))	
+						dn3 = abs(averageEnergyChargedParticlesLC(alc,NLa,Eall[i],QI,beta[lpr],A))
 
 					if((LTT == 3 and Eall[i]>Enf[0]) or LTT == 2):
 						for j in range (64):
 							fpr[j] = fmuE[i][j]
-						dn1 = abs(discrec2(fpr,Eall[i],QI,beta[lpr],Z-ze[lpr], \
+						dn1 = abs(discreteLevelReactionsMuf(fpr,Eall[i],QI,beta[lpr],Z-ze[lpr], \
 									A+1-beta[lpr],Z,A,Ed,mdisp,bad,cad))
 
-						dn2 = abs(discrec4(fpr,Eall[i],QI,beta[lpr],A))
-						dn3 = abs(discrec6(fpr,Eall[i],QI,beta[lpr],A))
+						dn2 = abs(averageEnergyRecoilsMuf(fpr,Eall[i],QI,beta[lpr],A))
+						dn3 = abs(averageEnergyChargedParticlesMuf(fpr,Eall[i],QI,beta[lpr],A))
 
 					if (sall[i] == 0):
 						sdall[i] = 0
@@ -1684,17 +1675,17 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 						if (LG[isps] == 0 or iflawiso == 1):
 							for k in range (NLa):
 								alc[k] = alfull[i][k] 
-							dn1 = abs(discrec1(alc,NLa,Eall[i],QI,beta[lpr],Z-ze[lpr],\
+							dn1 = abs(discreteLevelReactionsLC(alc,NLa,Eall[i],QI,beta[lpr],Z-ze[lpr],\
 											A+1-beta[lpr],Z,A,Ed,mdisp,bad,cad))
-							dn2 = abs(discrec3(alc,NLa,Eall[i],QI,beta[lpr],A))
-							dn3 = abs(discrec5(alc,NLa,Eall[i],QI,beta[lpr],A))
+							dn2 = abs(averageEnergyRecoilsLC(alc,NLa,Eall[i],QI,beta[lpr],A))
+							dn3 = abs(averageEnergyChargedParticlesLC(alc,NLa,Eall[i],QI,beta[lpr],A))
 						if (LG[isps] > 0):			
 							for j in range (64):
 								fpr[j] = fmuE[i][j]
-							dn1 = abs(discrec2(fpr,Eall[i],QI,beta[lpr],Z-ze[lpr],\
+							dn1 = abs(discreteLevelReactionsMuf(fpr,Eall[i],QI,beta[lpr],Z-ze[lpr],\
 											A+1-beta[lpr],Z,A,Ed,mdisp,bad,cad))	
-							dn2 = abs(discrec4(fpr,Eall[i],QI,beta[lpr],A))
-							dn3 = abs(discrec6(fpr,Eall[i],QI,beta[lpr],A))
+							dn2 = abs(averageEnergyRecoilsMuf(fpr,Eall[i],QI,beta[lpr],A))
+							dn3 = abs(averageEnergyChargedParticlesMuf(fpr,Eall[i],QI,beta[lpr],A))
 
 						if (sall[i] == 0):
 							sdall[i] = 0
@@ -3741,7 +3732,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 
 	for i in range(NPt):
 		Er = Eg2Av[i]*rtm/2
-		dn1 = ADisM(Z,AWR+1,Z,AWR,Er,Ed,mdisp,bad,cad)*0.8/(2*Ed)
+		dn1 = atomDisplacementModels(Z,AWR+1,Z,AWR,Er,Ed,mdisp,bad,cad)*0.8/(2*Ed)
 		dn2 = Er + Etu[i]*A1f
 		num_of_displ[i] = dn1
 		tot_energy_products[i] = dn2
@@ -3749,7 +3740,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 			Ea = Etu[i]*A1f
 			Ea1 =  QM  			# AWR*Ea +		
 			Er = Ea1*Ea1*rtm/2				
-			dn1 =  ADisM(Z,AWR+1,Z,AWR,Er,Ed,mdisp,bad,cad)*0.8/(2*Ed)
+			dn1 =  atomDisplacementModels(Z,AWR+1,Z,AWR,Er,Ed,mdisp,bad,cad)*0.8/(2*Ed)
 			dn2 = Er
 			num_of_displ[i] = dn1
 			tot_energy_products[i] = dn2
@@ -4022,8 +4013,8 @@ def ELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 					alfull[i][k] = 0	# TO AVOID VERY SMALL NUMBERS
 				if (abs(alfull[i][k])>0):
 					alc[k] = alfull[i][k]	# TO AVOID NaN
-			dn1 = abs(discrec1(alc,NLa,Etu[i],0.0,1.0,Z,A,Z,A,Ed,mdisp,bad,cad))*0.8/(2*Ed)
-			dn2 = abs(discrec3(alc,NLa,Etu[i],0.0,1.0,A))
+			dn1 = abs(discreteLevelReactionsLC(alc,NLa,Etu[i],0.0,1.0,Z,A,Z,A,Ed,mdisp,bad,cad))*0.8/(2*Ed)
+			dn2 = abs(averageEnergyRecoilsLC(alc,NLa,Etu[i],0.0,1.0,A))
 			num_of_displ[i] = dn1
 			tot_energy_products[i] = dn2
 			
@@ -4031,9 +4022,9 @@ def ELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 			for j in range(64):
 				fpr[j] = fmuE[i][j]
 
-			dn1 = abs(discrec2(fpr,Etu[i],0.0,1.0,Z,A,Z,A,Ed,mdisp,bad,cad))*0.8/(2*Ed)
+			dn1 = abs(discreteLevelReactionsMuf(fpr,Etu[i],0.0,1.0,Z,A,Z,A,Ed,mdisp,bad,cad))*0.8/(2*Ed)
 
-			dn2 = abs(discrec4(fpr,Etu[i],0.0,1.0,A))
+			dn2 = abs(averageEnergyRecoilsMuf(fpr,Etu[i],0.0,1.0,A))
 			num_of_displ[i] = dn1
 			tot_energy_products[i] = dn2
 
@@ -4455,8 +4446,8 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 							dn2 = 0
 						if (sig[i] != 0):
 							bta = 1.0
-							dn1 = abs(discrec1(alc,NLa,E[i],Q,bta,Z,A,Z,A, Ed,mdisp,bad,cad))*0.8/(2*Ed)
-							dn2 = abs(discrec3(alc,NLa,E[i],Q,bta,A))
+							dn1 = abs(discreteLevelReactionsLC(alc,NLa,E[i],Q,bta,Z,A,Z,A, Ed,mdisp,bad,cad))*0.8/(2*Ed)
+							dn2 = abs(averageEnergyRecoilsLC(alc,NLa,E[i],Q,bta,A))
 							num_of_displ[i] = dn1
 							tot_energy_products[i] = dn2
 
