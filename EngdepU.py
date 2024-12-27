@@ -1,5 +1,5 @@
 ## >> Code: RMINDD.py, module file: EngdepU.py
-## >> Perform: Recoil energy distributions of nuclei from basic ENDF-6 files
+## >> Perform: Heating and dpa estimation due to energy deposition in neutron reaction using basic ENDF-6 files
 ## >> Author: Uttiyoarnab Saha
 ## >> Version and Date: 1.0 and 25/03/2021
 ## >> Last modified: 25/03/2021, Kolkata
@@ -14,19 +14,19 @@ import UtilsU
 
 #=======Linear interpolation=======*		
         
-def crstd(x,x1,x2,y1,y2):
+def linerInterpolation(x,x1,x2,y1,y2):
 	if ((x2-x1) != 0):
 		y = y1 + ((y2-y1)*(x-x1)/(x2-x1))
 	return(y)
 
 # =======Interpolate cross section to unique common energy=======*
-	
+
 	# When the basic / dpa / heating cross sections from partial reactions
 	# have to be computed corresponding to the unique energy points from
 	# from their individual energy arrays, linear interpolation is performed
 	# to find the cross sections corresponding to unique energy points.
 	
-def trptuqce (E,s1,Etu):
+def interpolateXSToUniqueEnergyArray (E,s1,Etu):
 	s2 = numpy.interp(Etu, E, s1)
 	return(s2)
 
@@ -99,8 +99,8 @@ def line_type3_info(filehandle,numdata,numvariables):
 		ydata = [0]*numdata
 	if (numvariables == 1):
 		xdata = [0]*numdata
-	i = 0
 
+	i = 0
 	if (numvariables == 2):
 		while (i < numdata):
 			line = filehandle.readline()
@@ -165,11 +165,11 @@ def GQ():
 	return(xabc, wg)
 
 #=======Integrate over displacement model:: 'al' coeffcients =======*
-		
+
 	# Average damage energy for discrete level reactions from Legendre
 	# expansion coefficients representation of secondary particle angular 
 	# distribution.
-	
+
 def discreteLevelReactionsLC(alc1,NLa,E,Q,bta,Z1,A1,Z2,A2,Ed,mdisp,bad,cad):
 	nquad = 64
 	Pl1 = [0]*NLa
@@ -216,26 +216,28 @@ def discreteLevelReactionsMuf(fpr,E,Q,bta,Z1,A1,Z2,A2,Ed,mdisp,bad,cad):
 		U = 0
 	R = math.sqrt((A*(A+1-bta)/bta)*(1-U/E))
 	R1 = bta*R/(A+1-bta)
-	
+
 	(xabc, wg) = GQ()	# Gauss-quadrature values and weights
 
 	s = 0
 	for i in range(nquad):
 		T = E * (A+1-bta) * (1+R1*R1-2*R1*xabc[i]) / (A+1)**2
 		s = s + (wg[i] * fpr[i] * atomDisplacementModels(Z1,A1,Z2,A2,T,Ed,mdisp,bad,cad))
-		
+
 	return(s)
-		
+
 #=======Energy partition and displacement models=======*
-		
+
 	# Atom-displacement damage models: NRT and arc-dpa to find damage
 	# energy for a given recoil energy in a given target material.
-	
+
 def atomDisplacementModels(Z1,A1,Z2,A2,En,Ed,mdisp,bad,cad):
-		
+
 ## Z1, A1 = recoil nuclei
 ## Z2, A2 = lattice nuclei
-		
+## mdisp = 1 --> NRT model
+## mdisp = 2 --> arc-dpa model
+
 	twothd = 0.666666667; threeq = 0.75; sixth = 0.166666667; onep5 = 1.5
 	c1 = 30.724; c2 = 0.0793; c3 = 3.4008; c4 = 0.40244
 
@@ -331,7 +333,7 @@ def atomDisplacementModels(Z1,A1,Z2,A2,En,Ed,mdisp,bad,cad):
 					bad = -0.564		# W
 				if (Z2 == 78):
 					bad = -1.122		# Pt
-			
+
 			if (cad == 0):
 				if (Z2 == 5):
 					cad = 0.58
@@ -369,16 +371,16 @@ def atomDisplacementModels(Z1,A1,Z2,A2,En,Ed,mdisp,bad,cad):
 					cad = 0.119
 				if (Z2 == 78):
 					cad = 0.11
-			
+
 			zi = (1-cad)*((0.8*dam)/(2*Ed))**bad + cad
 			df = zi*dam
-	
+
 	return(df)
+
+##=======Integrate over secondary energy transfer kernel :: 'al' coeffcients =======*
 	
-#=======Integrate over secondary energy transfer kernel :: 'al' coeffcients =======*
-	
-	# Average energy of recoil nucleus for heating from Legendre
-	# expansion coefficient representation.
+	## Average energy of recoil nucleus for heating from Legendre
+	## expansion coefficient representation.
 	
 def averageEnergyRecoilsLC(alc1,NLa,E,Q,bta,A2):
 	nquad = 64
@@ -405,16 +407,16 @@ def averageEnergyRecoilsLC(alc1,NLa,E,Q,bta,A2):
 			for l in range(NLa):
 				p1 = p1 + (((2*l)+1)*Pl1[l] * alc1[l])/2
 			s = s + wg[i]*p1*T
-		
+
 		if (NLa == 3):
 			s = s + (wg[i]*0.5*T)
 
 	return(s)
 
-#=================================================================
+##=================================================================
 
-	# Average energy of charged particle for heating from Legendre 
-	# expansion coefficient representation.
+	## Average energy of charged particle for heating from Legendre 
+	## expansion coefficient representation.
 	
 def averageEnergyChargedParticlesLC(alc1,NLa,E,Q,bta,A2):
 	nquad = 64
@@ -447,12 +449,12 @@ def averageEnergyChargedParticlesLC(alc1,NLa,E,Q,bta,A2):
 
 	return(s)
 
-#=======Integrate over secondary energy transfer kernel :: tabulated fmuE =======*
+##=======Integrate over secondary energy transfer kernel :: tabulated fmuE =======*
 
-	# Average energy of recoil nucleus for discrete level reactions
-	# from tabulated mu vs. f(mu,E) representation of secondary 
-	# particle angular distribution.
- 	
+	## Average energy of recoil nucleus for discrete level reactions
+	## from tabulated mu vs. f(mu,E) representation of secondary 
+	## particle angular distribution.
+
 def averageEnergyRecoilsMuf(fpr,E,Q,bta,A2):
 	nquad = 64	
 	xabc = [0]*nquad; wg = [0]*nquad
@@ -471,12 +473,12 @@ def averageEnergyRecoilsMuf(fpr,E,Q,bta,A2):
 		s = s + wg[i]*fpr[i]*T
 	return(s)
 
-# ---------------------------------------
+## ---------------------------------------
 	
-	# Average energy of charged particle for discrete level reactions
-	# from tabulated mu vs. f(mu,E) representation of secondary 
-	# particle angular distribution.
-	
+	## Average energy of charged particle for discrete level reactions
+	## from tabulated mu vs. f(mu,E) representation of secondary 
+	## particle angular distribution.
+
 def averageEnergyChargedParticlesMuf(fpr,E,Q,bta,A2):
 	nquad = 64
 	xabc = [0]*nquad; wg = [0]*nquad
@@ -495,10 +497,10 @@ def averageEnergyChargedParticlesMuf(fpr,E,Q,bta,A2):
 		s = s + wg[i]*fpr[i]*T
 	return(s)
 
-#=======Continuum (n,particle) when recoil data are present========*
+##=======Continuum (n,particle) when recoil data are present========*
 		
-	# Average damage energy from tabulated energy distributions in 
-	# File 6.
+	## Average damage energy from tabulated energy distributions in 
+	## File 6.
 
 def Tinteg1(z1,A1,z2,A2,Ed,ter6,tf6,n,mdisp,bad,cad):
 	s = 0
@@ -519,10 +521,10 @@ def Tinteg1(z1,A1,z2,A2,Ed,ter6,tf6,n,mdisp,bad,cad):
 
 	return(s)
 
-#=======Calculate heating from continuum particle and recoil data=======*
+##=======Calculate heating from continuum particle and recoil data=======*
 
-	# Average recoil energy from tabulated energy distributions in 
-	# File 6.
+	## Average recoil energy from tabulated energy distributions in 
+	## File 6.
 
 def Tinteg1heat(A2,ter6,tf6,n):
 	s = 0
@@ -1420,7 +1422,7 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 						sall[i] = sall1[j]
 						break
 					if (Eall1[j] < Eall[i] and Eall[i] < Eall1[j+1]):
-						sall[i] = crstd(Eall[i],Eall1[j],Eall1[j+1],sall1[j],sall1[j+1])
+						sall[i] = linerInterpolation(Eall[i],Eall1[j],Eall1[j+1],sall1[j],sall1[j+1])
 						break
 			ifllargeNP = 1
 			NP = NPt
@@ -1485,7 +1487,7 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 							for k in range (64):
 								y1 = ftotal[j][k]
 								y2 = ftotal[j+1][k]
-								fmuE[i][k] = crstd(x,x1,x2,y1,y2)
+								fmuE[i][k] = linerInterpolation(x,x1,x2,y1,y2)
 							break
 
 			if (LTT == 0):
@@ -1517,7 +1519,7 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 										x2 = EL[j+1]
 										y1 = al4[j][k]
 										y2 = al4[j+1][k]
-										alfull[i][k] = crstd(x,x1,x2,y1,y2)
+										alfull[i][k] = linerInterpolation(x,x1,x2,y1,y2)
 								if (diff2 < diff1):
 									for k in range (1, 65):
 										x = Eall[i]
@@ -1525,7 +1527,7 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 										x2 = EL[j+1]
 										y1 = alfull[i-1][k]
 										y2 = al4[j+1][k]
-										alfull[i][k] = crstd(x,x1,x2,y1,y2)
+										alfull[i][k] = linerInterpolation(x,x1,x2,y1,y2)
 								for k in range (1, 65):
 									if (alfull[i][k] == 0):
 										alfull[i][k] = alfull[i-1][k]
@@ -1610,7 +1612,7 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 											x2 = En[isps][j+1]
 											y1 = al6[isps][j][k]
 											y2 = al6[isps][j+1][k]
-											alfull[i][k] = crstd(x,x1,x2,y1,y2)
+											alfull[i][k] = linerInterpolation(x,x1,x2,y1,y2)
 									if (diff2 < diff1):
 										for k in range (1, 65):
 											x = Eall[i]
@@ -1618,7 +1620,7 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 											x2 = En[isps][j+1]
 											y1 = alfull[i-1][k]
 											y2 = al6[isps][j+1][k]
-											alfull[i][k] = crstd(x,x1,x2,y1,y2)
+											alfull[i][k] = linerInterpolation(x,x1,x2,y1,y2)
 									for k in range (1, 65):
 										if (alfull[i][k] == 0):
 											alfull[i][k] = alfull[i-1][k]
@@ -1643,7 +1645,7 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 									if (LG[isps] == 14):
 										ftotal[i][j] = y1*math.exp((x-x1)*math.log(y2/y1)/(x2-x1))
 									if(LG[isps] == 12):
-										ftotal[i][j] = crstd(x,x1,x2,y1,y2)
+										ftotal[i][j] = linerInterpolation(x,x1,x2,y1,y2)
 									break
 
 		## TO GET THE F(MU,E) FOR THE FULL ENERGY RANGE
@@ -1664,7 +1666,7 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 								for k in range (64):
 									y1 = ftotal[j][k]
 									y2 = ftotal[j+1][k]
-									fmuE[i][k] = crstd(x,x1,x2,y1,y2)
+									fmuE[i][k] = linerInterpolation(x,x1,x2,y1,y2)
 								break
 
 				NLa = 65
@@ -1728,8 +1730,8 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 								y2 = Enp[irs][j+1][k]
 								y11 = f[irs][j][k]
 								y22 = f[irs][j+1][k]
-								ter6[k] = crstd(x,x1,x2,y1,y2)
-								tf6[k] = crstd(x,x1,x2,y11,y22)
+								ter6[k] = linerInterpolation(x,x1,x2,y1,y2)
+								tf6[k] = linerInterpolation(x,x1,x2,y11,y22)
 
 							ntm[i] = int(NEP[irs][j]) #TENDL-2017 Ni59 --> NEP(irs,j+1)
 							break
@@ -1805,8 +1807,8 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 									y2 = Enp[iparticle][j+1][k]
 									y11 = f[iparticle][j][k]
 									y22 = f[iparticle][j+1][k]
-									ter6[k] = crstd(x,x1,x2,y1,y2)
-									tf6[k] = crstd(x,x1,x2,y11,y22)
+									ter6[k] = linerInterpolation(x,x1,x2,y1,y2)
+									tf6[k] = linerInterpolation(x,x1,x2,y11,y22)
 
 								ntm[i] = int(NEP[iparticle][j])
 								break
@@ -1923,8 +1925,8 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 										y2 = Enp[iparticle][j+1][k]
 										y11 = f[iparticle][j][k]
 										y22 = f[iparticle][j+1][k]
-										ter6[k] = crstd(x,x1,x2,y1,y2)
-										tf6[k] = crstd(x,x1,x2,y11,y22)
+										ter6[k] = linerInterpolation(x,x1,x2,y1,y2)
+										tf6[k] = linerInterpolation(x,x1,x2,y11,y22)
 									ntm[i] = int(NEP[iparticle][j])
 									break
 
@@ -2074,13 +2076,13 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 			num_of_displ = numpy.asarray(num_of_displ)
 			tot_energy_products = numpy.asarray(tot_energy_products)
 			tot_energy_n_photons = numpy.asarray(tot_energy_n_photons)
-			sdpat = trptuqce(Eall,sdall,Etu)
-			snhtt = trptuqce(Eall,shall,Etu)
-			snhtt_EB = trptuqce(Eall,shall_EB,Etu)
-			signcpol = trptuqce(Eall,sall,Etu)
-			num_of_displ1 = trptuqce(Eall,num_of_displ,Etu)
-			tot_energy_products1 = trptuqce(Eall,tot_energy_products,Etu)
-			tot_energy_n_photons1 = trptuqce(Eall,tot_energy_n_photons,Etu)
+			sdpat = interpolateXSToUniqueEnergyArray(Eall,sdall,Etu)
+			snhtt = interpolateXSToUniqueEnergyArray(Eall,shall,Etu)
+			snhtt_EB = interpolateXSToUniqueEnergyArray(Eall,shall_EB,Etu)
+			signcpol = interpolateXSToUniqueEnergyArray(Eall,sall,Etu)
+			num_of_displ1 = interpolateXSToUniqueEnergyArray(Eall,num_of_displ,Etu)
+			tot_energy_products1 = interpolateXSToUniqueEnergyArray(Eall,tot_energy_products,Etu)
+			tot_energy_n_photons1 = interpolateXSToUniqueEnergyArray(Eall,tot_energy_n_photons,Etu)
 
 		if (ifllargeNP == 1):
 			sdpat = sdall
@@ -2981,11 +2983,11 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 			shMT5 = numpy.asarray(shMT5)
 			num_of_displMT5 = numpy.asarray(num_of_displMT5)
 			tot_energy_productsMT5 = numpy.asarray(tot_energy_productsMT5)
-			sigetMT5 = trptuqce(E5, sig5, Etu)
-			dpaMT5 = trptuqce(E5, sdMT5, Etu)
-			snhtMT5 = trptuqce(E5, shMT5, Etu)
-			num_of_displ3 = trptuqce(E5, num_of_displMT5, Etu)
-			tot_energy_products3 = trptuqce(E5, tot_energy_productsMT5, Etu)
+			sigetMT5 = interpolateXSToUniqueEnergyArray(E5, sig5, Etu)
+			dpaMT5 = interpolateXSToUniqueEnergyArray(E5, sdMT5, Etu)
+			snhtMT5 = interpolateXSToUniqueEnergyArray(E5, shMT5, Etu)
+			num_of_displ3 = interpolateXSToUniqueEnergyArray(E5, num_of_displMT5, Etu)
+			tot_energy_products3 = interpolateXSToUniqueEnergyArray(E5, tot_energy_productsMT5, Etu)
 
 			printtofile(NPt,Etu,sigetMT5,num_of_displ3,dpaMT5,5,0,1)
 			printtofile(NPt,Etu,sigetMT5,tot_energy_products3,snhtMT5,5,0,2)
@@ -3536,7 +3538,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 					siget[i] = sig[j+1]
 					k = j+1
 				else:
-					siget[i] = crstd(Etu[i],E[j],E[j+1],sig[j],sig[j+1])
+					siget[i] = linerInterpolation(Etu[i],E[j],E[j+1],sig[j],sig[j+1])
 					k = j
 				break
 	
@@ -3906,7 +3908,7 @@ def ELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 					siget[i] = sig[j+1]
 					k = j+1
 				else:
-					siget[i] = crstd(Etu[i],E[j],E[j+1],sig[j],sig[j+1])
+					siget[i] = linerInterpolation(Etu[i],E[j],E[j+1],sig[j],sig[j+1])
 					k = j
 				break
 
@@ -4622,13 +4624,13 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 	# adding all discrete and continuum dpa cross sections
 	# into the sdpa array from sdpal at each l
 
-				sdpatemp = trptuqce (E,sdpal,Etu)
+				sdpatemp = interpolateXSToUniqueEnergyArray (E,sdpal,Etu)
 				for i in range (NPt):
 					sdpa[i] = sdpa[i] + sdpatemp[i]
-				snhttemp = trptuqce (E,snhtl,Etu)
+				snhttemp = interpolateXSToUniqueEnergyArray (E,snhtl,Etu)
 				for i in range (NPt):
 					snht[i] = snht[i] + snhttemp[i]
-				siginel_temp = trptuqce (E,sig,Etu)
+				siginel_temp = interpolateXSToUniqueEnergyArray (E,sig,Etu)
 				for i in range (NPt):
 					tot_siginel4[i] = tot_siginel4[i] + siginel_temp[i]
 #--------------------------------------------------------------------	
@@ -5022,10 +5024,10 @@ def n_xn (ofile_outRMINDD,MTi,NPt,Etu,mdisp,Ed,bad,cad):
 			sdpa[i] = sig[i] * dn1
 			snht[i] = sig[i] * dn2
 
-		sdpat = trptuqce (E,sdpa,Etu)
-		signxnl = trptuqce (E,sig,Etu)
+		sdpat = interpolateXSToUniqueEnergyArray (E,sdpa,Etu)
+		signxnl = interpolateXSToUniqueEnergyArray (E,sig,Etu)
 		printtofile (NPt,Etu,signxnl,num_of_displ,sdpat,MTi,0,1)
-		snhtt = trptuqce (E,snht,Etu)
+		snhtt = interpolateXSToUniqueEnergyArray (E,snht,Etu)
 		printtofile (NPt,Etu,signxnl,tot_energy_products,snhtt,MTi,0,2)
 
 	return(signxnl, num_of_displ, tot_energy_products, sdpat, snhtt, iflpresent)
@@ -5202,7 +5204,7 @@ def anytnMF6MT5 (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 						sall[i] = sall1[j]
 						break
 					if (Eall1[j] < Eall[i] and Eall[i] < Eall1[j+1]):
-						sall[i] = crstd(Eall[i],Eall1[j],Eall1[j+1],sall1[j],sall1[j+1])
+						sall[i] = linerInterpolation(Eall[i],Eall1[j],Eall1[j+1],sall1[j],sall1[j+1])
 						break
 			ifllargeNP = 1
 			NP = NPt
@@ -5403,13 +5405,13 @@ def anytnMF6MT5 (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 			num_of_displ1 = numpy.asarray(num_of_displ1)
 			tot_energy_products1 = numpy.asarray(tot_energy_products1)
 			tot_energy_n_photons1 = numpy.asarray(tot_energy_n_photons1)
-			sdpat = trptuqce(Eall,sdall,Etu)
-			snhtt = trptuqce(Eall,shall,Etu)
-			snhtt_EB = trptuqce(Eall,shall_EB,Etu)
-			siget = trptuqce(Eall,sall,Etu)
-			num_of_displ = trptuqce(Eall,num_of_displ1,Etu)
-			tot_energy_products = trptuqce(Eall,tot_energy_products1,Etu)
-			tot_energy_n_photons = trptuqce(Eall,tot_energy_n_photons1,Etu)
+			sdpat = interpolateXSToUniqueEnergyArray(Eall,sdall,Etu)
+			snhtt = interpolateXSToUniqueEnergyArray(Eall,shall,Etu)
+			snhtt_EB = interpolateXSToUniqueEnergyArray(Eall,shall_EB,Etu)
+			siget = interpolateXSToUniqueEnergyArray(Eall,sall,Etu)
+			num_of_displ = interpolateXSToUniqueEnergyArray(Eall,num_of_displ1,Etu)
+			tot_energy_products = interpolateXSToUniqueEnergyArray(Eall,tot_energy_products1,Etu)
+			tot_energy_n_photons = interpolateXSToUniqueEnergyArray(Eall,tot_energy_n_photons1,Etu)
 
 		if (ifllargeNP == 1):
 			sdpat = sdall
