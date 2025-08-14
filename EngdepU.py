@@ -1570,7 +1570,7 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 					if (sall[i] != 0):
 						dn1 = dn1*0.8/(2*Ed)
 						num_of_displ[i] = dn1
-						tot_energy_products[i] = dn2 + dn3
+						tot_energy_products[i] = dn2 #+ dn3
 						sdall[i] = sall[i]*dn1
 						shall[i] = sall[i]*(dn2+dn3)
 					if (sdall[i] < 1e-12):
@@ -1695,7 +1695,7 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 						if (sall[i] != 0):
 							dn1 = dn1*0.8/(2*Ed)
 							num_of_displ[i] = dn1
-							tot_energy_products[i] = dn2 + dn3
+							tot_energy_products[i] = dn2 #+ dn3
 							sdall[i] = sall[i]*dn1
 							shall[i] = sall[i]*(dn2+dn3)
 						if (sdall[i]<1e-12):
@@ -1831,7 +1831,7 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 						if (sall[i] == 0):
 							shall[i] = 0
 						if (sall[i] != 0):
-							tot_energy_products[i] = tot_energy_products[i] + dn3
+							tot_energy_products[i] = tot_energy_products[i] #+ dn3
 							shall[i] = shall[i] + sall[i]*dn3
 						if (shall[i] < 1e-12):
 							shall[i] = 0
@@ -1887,7 +1887,7 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 						num_of_displ[i] = dn1
 						sdall[i] = sall[i]*dn1
 						if ((dn2+dn3)<availE):
-							tot_energy_products[i] = dn2 + dn3
+							tot_energy_products[i] = dn2 #+ dn3
 							shall[i] = sall[i]*(dn2+dn3)
 						if ((dn2+dn3)>availE):
 							tot_energy_products[i] = availE
@@ -1948,7 +1948,7 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 							if (sall[i] == 0):
 								shall[i] = 0
 							if (sall[i] != 0):
-								tot_energy_products[i] = tot_energy_products[i] + dn3
+								tot_energy_products[i] = tot_energy_products[i] #+ dn3
 								shall[i] = shall[i] + sall[i]*dn3
 							if (shall[i] <1e-12):
 								shall[i] = 0
@@ -2029,9 +2029,9 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 				availE = QI + (n2*Eall[i])	# if (QI<0)
     			#if (QI>0) availE = n2*Eall(i)
 				if (availE < cbe[lpr]):
-					Ea = availE
+					Ea = abs(availE)
 				if (cbe[lpr] < availE):
-					Ea  = cbe[lpr]
+					Ea  = abs(cbe[lpr])
 				f1 = Estar
 				f2 = 2*math.sqrt(beta[lpr]*Estar*Ea)
 				f3 = beta[lpr]*Ea
@@ -2050,7 +2050,7 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 					num_of_displ[i] = dn1
 					sdall[i] = sall[i]*dn1
 					if ((dn2+dn3) < availE):
-						tot_energy_products[i] = dn2+dn3
+						tot_energy_products[i] = dn2#+dn3
 						shall[i] = sall[i]*(dn2+dn3)
 					if ((dn2+dn3) > availE):
 						tot_energy_products[i] = availE
@@ -4064,7 +4064,7 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 
 	sdpa = [0]*NPt; sdpatemp = [0]*NPt; snhttemp = [0]*NPt
 	snht = [0]*NPt; alc = [0]*65; alfull = numpy.zeros((NPt,65))
-	num_of_displ = numpy.zeros(NPt); tot_energy_products = numpy.zeros(NPt)
+	num_of_displ4 = numpy.zeros(NPt); tot_energy_products4 = numpy.zeros(NPt)
 	siginel_temp = [0]*NPt; tot_siginel4 = numpy.zeros(NPt)
 	# for file4
 	En4 = [0]*2000; al4 = numpy.zeros((2000,65))
@@ -4122,6 +4122,7 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 							QM = float(data[0]); QI =  float(data[1])
 							LR = int(data[3]); NR = int(data[4]); NP = int(data[5])
 							E = [0]*NP; sig = [0]*NP; sdpal = [0]*NP; snhtl = [0]*NP
+							num_of_displ = numpy.zeros(NP); tot_energy_products = numpy.zeros(NP)
 							ifile.readline()
 							(E, sig) = line_type3_info(ifile,NP,2)
 				else:
@@ -4625,21 +4626,26 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 	# into the sdpa array from sdpal at each l
 
 				sdpatemp = interpolateXSToUniqueEnergyArray (E,sdpal,Etu)
+				snhttemp = interpolateXSToUniqueEnergyArray (E,snhtl,Etu)
+				siginel_temp = interpolateXSToUniqueEnergyArray (E,sig,Etu)
+				num_of_displ_temp = interpolateXSToUniqueEnergyArray (E,num_of_displ,Etu)
+				tot_energy_products_temp = interpolateXSToUniqueEnergyArray (E,tot_energy_products,Etu)
 				for i in range (NPt):
 					sdpa[i] = sdpa[i] + sdpatemp[i]
-				snhttemp = interpolateXSToUniqueEnergyArray (E,snhtl,Etu)
-				for i in range (NPt):
 					snht[i] = snht[i] + snhttemp[i]
-				siginel_temp = interpolateXSToUniqueEnergyArray (E,sig,Etu)
-				for i in range (NPt):
 					tot_siginel4[i] = tot_siginel4[i] + siginel_temp[i]
+					num_of_displ4[i] = num_of_displ4[i] + num_of_displ_temp[i]
+					tot_energy_products4[i] = tot_energy_products4[i] + tot_energy_products_temp[i]
+
+			printtofile (NPt, Etu, siginel_temp, num_of_displ_temp, sdpatemp, mta, 0, 1)
+			printtofile (NPt, Etu, siginel_temp, tot_energy_products_temp, snhttemp, mta, 0, 2)
 #--------------------------------------------------------------------	
 
 		if (mta == 91):
 			break
 
-	printtofile (NPt,Etu,tot_siginel4,num_of_displ,sdpa,4,0,1)
-	printtofile (NPt,Etu,tot_siginel4,tot_energy_products,snht,4,0,2)
+	printtofile (NPt,Etu,tot_siginel4,num_of_displ4,sdpa,4,0,1)
+	printtofile (NPt,Etu,tot_siginel4,tot_energy_products4,snht,4,0,2)
 
 #=============================================
 
@@ -5334,7 +5340,7 @@ def anytnMF6MT5 (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 						if (sall[i] != 0):
 							shthis = sall[i]*dn3
 						shall[i] = shall[i] + shthis
-						tot_energy_products1[i] = tot_energy_products1[i] + dn3
+						tot_energy_products1[i] = tot_energy_products1[i] #+ dn3
 
 		# THE ENERGY CARRIED AWAY BY NEUTRONS AND PHOTONS. 
 		# IT CORRESPONDS TO ONLY HEATING CALCULATIONS BY ENERGY BALANCE METHOD.
