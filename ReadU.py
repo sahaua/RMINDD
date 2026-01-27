@@ -262,73 +262,11 @@ def readFile3 (processed_ENDF6_file, num_reac_array):
 				if (MT == 1):
 					line = ifile.readline() 
 					data = eachLineInfo(line)
-					QM = float(data[0]); QI =  float(data[1]); NR = int(data[4]); NPt = int(data[5])
-					Et = [0]*NPt
-					LR = int(ifile.readline().split()[1])
-					temporary1 = [0]*NPt
-					temporary2 = [0]*NPt
-					(temporary1,temporary2) = lineType3Info(ifile,NPt,2)
-					for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
-						Et[N] = value1
-						s = value2
-				#for i in num_reac_array:
-				# (n, anything) reactions
-				for l in MT_values6:
-					if (MT == l):
-					iflpresent = 1
-					line = ifile.readline()
-					data = eachLineInfo(line)
 					QM = float(data[0]); QI =  float(data[1])
-					LR = int(data[3]); NR = int(data[4]); globals()[f'NP{l}'] = int(data[5])
-					E_MT5 = [0]*globals()[f'NP{l}']; sig_MT5 = [0]*globals()[f'NP{l}']
-					ifile.readline()
-					(E_MT5, sig_MT5) = lineType3Info(ifile,NP,2)
-
-				# (n, xn) reactions
-				for l in MT_values4:
-					if (MT == l):
-						line = ifile.readline()
-						data = eachLineInfo(line)
-						QM = float(data[0]); QI =  float(data[1])
-						NR = int(data[4]); globals()[f'NP{l}'] = int(data[5])
-						globals()[f'E_MT{l}'] = [0]*globals()[f'NP{l}']; globals()[f'sig_MT{l}'] = [0]*globals()[f'NP{l}']
-						LR = int(ifile.readline().split()[1])
-						(globals()[f'E_MT{l}'], globals()[f'sig_MT{l}']) = lineType3Info(ifile,globals()[f'NP{l}'],2)
-
-				
-				# all inelastic levels (discrete and continuum)
-				for l in MT_values2:
-					if (MT == l):
-						line = ifile.readline()
-						data = eachLineInfo(line)
-						QM = float(data[0]); QI =  float(data[1])
-						NR = int(data[4]); NP = int(data[5])
-						globals()[f'E_MT{l}'] = [0]*NP; globals()[f'sig_MT{l}'] = [0]*NP
-						LR = int(ifile.readline().split()[1])
-						(globals()[f'E_MT{l}'], globals()[f'sig_MT{l}']) = lineType3Info(ifile,NP,2)
-
-				# (n, g) reaction
-				for l in MT_values5:
-					if (MT == l):
-						line = ifile.readline()
-						data = eachLineInfo(line)
-						QM = float(data[0]); QI =  float(data[1])
-						NR = int(data[4]); NP = int(data[5])
-						globals()[f'E_MT{l}'] = [0]*NP; globals()[f'sig_MT{l}'] = [0]*NP
-						LR = int(ifile.readline().split()[1])
-						(globals()[f'E_MT{l}'], globals()[f'sig_MT{l}']) = lineType3Info(ifile,NP,2)
-
-
-				# (n, CPO) reactions
-				for l in MT_values3:
-					if (MT == l):
-						line = ifile.readline()
-						data = eachLineInfo(line)
-						QM = float(data[0]); QI =  float(data[1])
-						NR = int(data[4]); NP = int(data[5])
-						globals()[f'E_MT{l}'] = [0]*NP; globals()[f'sig_MT{l}'] = [0]*NP
-						LR = int(ifile.readline().split()[1])
-						(globals()[f'E_MT{l}'], globals()[f'sig_MT{l}']) = lineType3Info(ifile,NP,2)
+					NR = int(data[4]); globals()[f'NP_MT{MT}'] = int(data[5])
+					globals()[f'E_MT{MT}'] = [0]*globals()[f'NP_MT{MT}']; globals()[f'sig_MT{MT}'] = [0]*globals()[f'NP_MT{MT}']
+					LR = int(ifile.readline().split()[1])
+					(globals()[f'E_MT{MT}'], globals()[f'sig_MT{MT}']) = lineType3Info(ifile,globals()[f'NP_MT{MT}'],2)
 				
 				# store energy and cross sections of all reactions needed
 				for l in sorted(MT_values7):
@@ -336,21 +274,19 @@ def readFile3 (processed_ENDF6_file, num_reac_array):
 						line = ifile.readline()
 						data = eachLineInfo(line)
 						QM = float(data[0]); QI =  float(data[1])
-						NR = int(data[4]); NP = int(data[5])
-						globals()[f'E_MT{l}'] = [0]*NP; globals()[f'sig_MT{l}'] = [0]*NP
+						NR = int(data[4]); globals()[f'NP_MT{l}'] = int(data[5])
+						globals()[f'E_MT{l}'] = [0]*globals()[f'NP_MT{l}']; globals()[f'sig_MT{l}'] = [0]*globals()[f'NP_MT{l}']
 						LR = int(ifile.readline().split()[1])
-						(globals()[f'E_MT{l}'], globals()[f'sig_MT{l}']) = lineType3Info(ifile,NP,2)				
+						(globals()[f'E_MT{l}'], globals()[f'sig_MT{l}']) = lineType3Info(ifile,globals()[f'NP_MT{l}'],2)
 		else:
 			break
 	ifile.close()
 
 	# make unique common energy
 
-	Etu = numpy.array(Et)
+	global Etu = numpy.array(E_MT1)
 	Etu = numpy.unique(Etu)
-	NPt = len(Etu)
-
-	return(Etu, NPt)
+	global NPt = len(Etu)
 
 # File 4 contains secondary energy angle data, required to be read using
 # the raw ENDF-6 file for elastic scattering, inelastic scattering and
