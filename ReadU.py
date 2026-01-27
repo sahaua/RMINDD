@@ -1,4 +1,4 @@
-#000000#	>> Code: RMINDD (Radiation Matter Interaction from Nuclear Data and Damage)
+#	>> Code: RMINDD (Radiation Matter Interaction from Nuclear Data and Damage)
 #	>> Perform: Calcuation of Effects of Radiation in Matter from ENDF-6 files
 #	>> Author: Dr. Uttiyoarnab Saha
 #	>> Version and Date: 1.0 and 01/07/2022
@@ -133,7 +133,7 @@ print(num_MT_group_array)
 
 
 # The data in one line are explicitly extracted
-def eachlineinfo(line):	
+def eachLineInfo(line):	
 	data = [0]*9
 	for i in range(6):
 		s = ''						# 6 data each of 11 places
@@ -167,8 +167,8 @@ def eachlineinfo(line):
 # The data in lines of different types of ENDF-6 file formats 
 # are explicitly extracted.
 
-def line_type1_info(line):
-	data = eachlineinfo(line)
+def lineType1Info(line):
+	data = eachLineInfo(line)
 	dataV1 = 0; dataV2 = 0; dataV3 = 0; dataV4 = 0; dataV5 = 0; dataV6 = 0
 	dataV7 = 0; dataV8 = 0; dataV9 = 0
 	iflspace = 0
@@ -182,14 +182,14 @@ def line_type1_info(line):
 		dataV7 = int(data[6]); dataV8 = int(data[7]); dataV9 = int(data[8])
 	return(dataV1,dataV2,dataV3,dataV4,dataV5,dataV6,dataV7,dataV8,dataV9)
 
-def line_type2_info(line):
-	data = eachlineinfo(line)
+def lineType2Info(line):
+	data = eachLineInfo(line)
 	dataV1 = float(data[0]); dataV2 = float(data[1]); dataV3 = int(data[2])
 	dataV4 = int(data[3]); dataV5 = int(data[4]); dataV6 = int(data[5])
 	dataV7 = int(data[6]); dataV8 = int(data[7]); dataV9 = int(data[8])
 	return(dataV1,dataV2,dataV3,dataV4,dataV5,dataV6,dataV7,dataV8,dataV9)
 
-def line_type3_info (filehandle,numdata,numvariables):
+def lineType3Info (filehandle,numdata,numvariables):
 	# numvariables (1 / 2) denotes no. of variables the given data has to be read into
 	if (numvariables == 2):
 		xdata = [0]*numdata
@@ -201,7 +201,7 @@ def line_type3_info (filehandle,numdata,numvariables):
 	if (numvariables == 2):
 		while (i < numdata):
 			line = filehandle.readline()
-			data = eachlineinfo(line)
+			data = eachLineInfo(line)
 			for j in range(0,6,2):
 				if (data[j] != ''):
 					xdata[i] = float(data[j])
@@ -213,7 +213,7 @@ def line_type3_info (filehandle,numdata,numvariables):
 	if (numvariables == 1):
 		while (i < numdata):
 			line = filehandle.readline()
-			data = eachlineinfo(line)
+			data = eachLineInfo(line)
 			for j in range(6):
 				if (data[j] != ''):
 					xdata[i] = float(data[j])
@@ -255,76 +255,91 @@ def readFile3 (processed_ENDF6_file, num_reac_array):
 	ifile = open (processed_ENDF6_file, 'r')
 	while True:
 		line = ifile.readline()
-		data = eachlineinfo(line)
+		data = eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if (MAT != -1):
 			if (MF == 3):
 				if (MT == 1):
 					line = ifile.readline() 
-					data = eachlineinfo(line)
+					data = eachLineInfo(line)
 					QM = float(data[0]); QI =  float(data[1]); NR = int(data[4]); NPt = int(data[5])
 					Et = [0]*NPt
 					LR = int(ifile.readline().split()[1])
 					temporary1 = [0]*NPt
 					temporary2 = [0]*NPt
-					(temporary1,temporary2) = line_type3_info(ifile,NPt,2)
+					(temporary1,temporary2) = lineType3Info(ifile,NPt,2)
 					for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 						Et[N] = value1
 						s = value2
 				#for i in num_reac_array:
-				if (MT == 5):
+				# (n, anything) reactions
+				for l in MT_values6:
+					if (MT == l):
 					iflpresent = 1
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = eachLineInfo(line)
 					QM = float(data[0]); QI =  float(data[1])
 					LR = int(data[3]); NR = int(data[4]); globals()[f'NP{l}'] = int(data[5])
 					E_MT5 = [0]*globals()[f'NP{l}']; sig_MT5 = [0]*globals()[f'NP{l}']
 					ifile.readline()
-					(E_MT5, sig_MT5) = line_type3_info(ifile,NP,2)
+					(E_MT5, sig_MT5) = lineType3Info(ifile,NP,2)
 
 				# (n, xn) reactions
 				for l in MT_values4:
 					if (MT == l):
 						line = ifile.readline()
-						data = eachlineinfo(line)
+						data = eachLineInfo(line)
 						QM = float(data[0]); QI =  float(data[1])
 						NR = int(data[4]); globals()[f'NP{l}'] = int(data[5])
 						globals()[f'E_MT{l}'] = [0]*globals()[f'NP{l}']; globals()[f'sig_MT{l}'] = [0]*globals()[f'NP{l}']
 						LR = int(ifile.readline().split()[1])
-						(globals()[f'E_MT{l}'], globals()[f'sig_MT{l}']) = line_type3_info(ifile,globals()[f'NP{l}'],2)
+						(globals()[f'E_MT{l}'], globals()[f'sig_MT{l}']) = lineType3Info(ifile,globals()[f'NP{l}'],2)
+
+				
+				# all inelastic levels (discrete and continuum)
+				for l in MT_values2:
+					if (MT == l):
+						line = ifile.readline()
+						data = eachLineInfo(line)
+						QM = float(data[0]); QI =  float(data[1])
+						NR = int(data[4]); NP = int(data[5])
+						globals()[f'E_MT{l}'] = [0]*NP; globals()[f'sig_MT{l}'] = [0]*NP
+						LR = int(ifile.readline().split()[1])
+						(globals()[f'E_MT{l}'], globals()[f'sig_MT{l}']) = lineType3Info(ifile,NP,2)
 
 				# (n, g) reaction
 				for l in MT_values5:
 					if (MT == l):
 						line = ifile.readline()
-						data = eachlineinfo(line)
+						data = eachLineInfo(line)
 						QM = float(data[0]); QI =  float(data[1])
 						NR = int(data[4]); NP = int(data[5])
 						globals()[f'E_MT{l}'] = [0]*NP; globals()[f'sig_MT{l}'] = [0]*NP
 						LR = int(ifile.readline().split()[1])
-						(globals()[f'E_MT{l}'], globals()[f'sig_MT{l}']) = line_type3_info(ifile,NP,2)
+						(globals()[f'E_MT{l}'], globals()[f'sig_MT{l}']) = lineType3Info(ifile,NP,2)
 
-				# all inelastic levels (discrete and continuum)
-				for l in MT_values2:
-					if (MT == l):
-						line = ifile.readline()
-						data = eachlineinfo(line)
-						QM = float(data[0]); QI =  float(data[1])
-						NR = int(data[4]); NP = int(data[5])
-						globals()[f'E_MT{l}'] = [0]*NP; globals()[f'sig_MT{l}'] = [0]*NP
-						LR = int(ifile.readline().split()[1])
-						(globals()[f'E_MT{l}'], globals()[f'sig_MT{l}']) = line_type3_info(ifile,NP,2)
 
 				# (n, CPO) reactions
 				for l in MT_values3:
 					if (MT == l):
 						line = ifile.readline()
-						data = eachlineinfo(line)
+						data = eachLineInfo(line)
 						QM = float(data[0]); QI =  float(data[1])
 						NR = int(data[4]); NP = int(data[5])
 						globals()[f'E_MT{l}'] = [0]*NP; globals()[f'sig_MT{l}'] = [0]*NP
 						LR = int(ifile.readline().split()[1])
-						(globals()[f'E_MT{l}'], globals()[f'sig_MT{l}']) = line_type3_info(ifile,NP,2)				
+						(globals()[f'E_MT{l}'], globals()[f'sig_MT{l}']) = lineType3Info(ifile,NP,2)
+				
+				# store energy and cross sections of all reactions needed
+				for l in sorted(MT_values7):
+					if (MT == l):
+						line = ifile.readline()
+						data = eachLineInfo(line)
+						QM = float(data[0]); QI =  float(data[1])
+						NR = int(data[4]); NP = int(data[5])
+						globals()[f'E_MT{l}'] = [0]*NP; globals()[f'sig_MT{l}'] = [0]*NP
+						LR = int(ifile.readline().split()[1])
+						(globals()[f'E_MT{l}'], globals()[f'sig_MT{l}']) = lineType3Info(ifile,NP,2)				
 		else:
 			break
 	ifile.close()
@@ -345,12 +360,12 @@ def readFile4(raw_ENDF6_file, num_reac_array):
 	ifile = open (processed_ENDF6_file, 'r')
 	while True:
 		line = ifile.readline()
-		data = eachlineinfo(line)
+		data = eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if (MF == 3 and MT == 0):
 			ifile.readline()
 			line = ifile.readline()
-			data = eachlineinfo(line)
+			data = eachLineInfo(line)
 			iflspace = 0
 			for element in data:
 				if (element == ''):
@@ -370,24 +385,24 @@ def readFile4(raw_ENDF6_file, num_reac_array):
 							alc = [0]*65
 						if (LTT == 3 or LTT == 1):
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = eachLineInfo(line)
 							NE1 = int(data[5])
 							# Legendre polynomial coefficients
 							ifile.readline()
 							al = numpy.zeros((NE1,65)); EL = [0]*NE1; alc = [0]*65
 							for i in range(NE1):
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = eachLineInfo(line)
 								T = float(data[0]); EL[i] = float(data[1]); NL = int(data[4])
 								NL = NL+1
 								al[i][0] = 1
 								temporary = [0]*NL
-								temporary = line_type3_info(ifile,NL,1)
+								temporary = lineType3Info(ifile,NL,1)
 								for j, value in enumerate(temporary, 1):
 									al[i][j] = value
 						if (LTT == 3 or LTT == 2):
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = eachLineInfo(line)
 							NE2 = int(data[5])
 							# Tabulated Probability
 							ifile.readline()
@@ -395,14 +410,14 @@ def readFile4(raw_ENDF6_file, num_reac_array):
 							fdata = numpy.zeros((NE2,201)); ftotal = numpy.zeros((NE2,64))
 							for i in range(NE2):
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = eachLineInfo(line)
 								T = float(data[0]); Enf[i] = float(data[1])
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = eachLineInfo(line)
 								NPr[i] = int(data[0])
 								temporary1 = [0]*201
 								temporary2 = [0]*201
-								(temporary1, temporary2) = line_type3_info(ifile,NPr[i],2)
+								(temporary1, temporary2) = lineType3Info(ifile,NPr[i],2)
 								for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 									cdata[i][j] = value1
 									fdata[i][j] = value2
@@ -417,19 +432,19 @@ def readFile4(raw_ENDF6_file, num_reac_array):
 							LTT = LTTv
 							ifile.readline()
 							line = ifile.readline()
-							(ZA,AWR,LI,LCT,L2,L3,MAT,MF,MT) = line_type1_info(line)
+							(ZA,AWR,LI,LCT,L2,L3,MAT,MF,MT) = lineType1Info(line)
 							if (LTT == 1  and  LI == 0):
 								line = ifile.readline()
-								(C1,C2,L1,L2,NR,NE4,MAT,MF,MT) = line_type2_info(line)
-								(NBT, INTr) = line_type3_info(ifile,NR,2)
+								(C1,C2,L1,L2,NR,NE4,MAT,MF,MT) = lineType2Info(line)
+								(NBT, INTr) = lineType3Info(ifile,NR,2)
 								for i in range(NE4):
 									line = ifile.readline()
-									data = eachlineinfo(line)
+									data = eachLineInfo(line)
 									c1 = float(data[0]); En4[i] = float(data[1]); NL4 = int(data[4])
 									NL4 = NL4 + 1
 									al4[i][0] = 1
 									temporary = [0]*NL4
-									temporary = line_type3_info (ifile,NL4,1)
+									temporary = lineType3Info (ifile,NL4,1)
 									for j, value in enumerate(temporary, 1):
 										al4[i][j] = value
 				
@@ -447,19 +462,19 @@ def readFile4(raw_ENDF6_file, num_reac_array):
 							if (LTT == 3 or LTT == 1):
 								n_cpo_ifspad4al = 1
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = eachLineInfo(line)
 								n_cpo_NE1 = int(data[5])
 								## Legendre polynomial coefficients
 								ifile.readline()
 								n_cpo_al4 = [[0]*65]*n_cpo_NE1; n_cpo_EL = [0]*n_cpo_NE1
 								for i in range (n_cpo_NE1):
 									line = ifile.readline()
-									data = eachlineinfo(line)
+									data = eachLineInfo(line)
 									T = float(data[0]); n_cpo_EL[i] = float(data[1]); n_cpo_NL4 = int(data[4])
 									n_cpo_NL4 = n_cpo_NL4 + 1
 									n_cpo_al4[i][0] = 1
 									temporary = [0]*NL4
-									temporary = line_type3_info (ifile,NL4,1)
+									temporary = lineType3Info (ifile,NL4,1)
 									for j, value in enumerate (temporary, 1):
 										n_cpo_al4[i][j] = value
 
@@ -473,12 +488,12 @@ def readFile4(raw_ENDF6_file, num_reac_array):
 								n_cpo_fmuE = numpy.zeros((NP,64)); fpr = [0]*64
 								for i in range (NE2):
 									line = ifile.readline()
-									data = eachlineinfo(line)
+									data = eachLineInfo(line)
 									T = float(data[0]); Enf[i] = float(data[1]) 
 									NPr[i] = int(ifile.readline().split()[0])
 									temporary1 = [0]*NPr[i]
 									temporary2 = [0]*NPr[i]
-									(temporary1,temporary2) = line_type3_info(ifile,NPr[i],2)
+									(temporary1,temporary2) = lineType3Info(ifile,NPr[i],2)
 									for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 										cdata4[i][j] = value1
 										fdata4[i][j] = value2
