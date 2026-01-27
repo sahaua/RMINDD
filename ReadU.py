@@ -436,7 +436,9 @@ def readFile4(raw_ENDF6_file, num_reac_array):
 		else:
 			break
 	ifile102.close()
-	
+
+# File 5 contains secondary energy data, required to be read using
+# the raw ENDF-6 file for (n, xn) reactions
 def readFile5():
 
 def readFile6():
