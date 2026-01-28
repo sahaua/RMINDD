@@ -438,7 +438,8 @@ def readFile4(raw_ENDF6_file, num_reac_array):
 	ifile102.close()
 
 # File 5 contains secondary energy data, required to be read using
-# the raw ENDF-6 file for (n, xn) reactions
+# the raw ENDF-6 file for inelastic scattering, (n, xn) reactions
+
 def readFile5(raw_ENDF6_file, num_reac_array):
 	ifile = open (processed_ENDF6_file, 'r')
 		while True:
@@ -446,50 +447,59 @@ def readFile5(raw_ENDF6_file, num_reac_array):
 			if (line == ''):
 				break
 			data = eachlineinfo(line)
-			MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
+			MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])	
 			if (MT == 0):
-				line = ifile.readline()
-				(ZA,AWR,L1,L2,NKv,L3,MAT,MF,MT) = line_type1_info(line)
+				if (MF == 5):
+					line = ifile.readline()
+					(ZAv,AWRv,L1,L2,NK5,L3,MAT,MF,MT) = line_type1_info(line)
+				if (MF < 5):
+					ifile.readline()
+					line = ifile.readline()
+					(ZAv,AWRv,L1,L2,NK5,L3,MAT,MF,MT) = line_type1_info(line)
 				if (MAT != -1):
 					if (MF == 5):
-						if (MT == 91):
-							if5c = 1
-							NK5 = NKv
-							for NSS in range(NK5):
-								ifile.readline()
-								line = ifile.readline()
-								(C1,C2,L1,LF[NSS],NR,NP5[NSS],MAT,MF,MT) = line_type2_info(line)
-								(NBT, INTr) = line_type3_info(ifile,NR,2)
-								line_type3_info(ifile,NP5[NSS],2)
-								if (LF[NSS] == 1):
-									ift5c = 1
-									ifile.readline()
-									line = ifile.readline()
-									(C1,C2,L1,L2,NR,NE5[NSS],MAT,MF,MT) = line_type2_info(line)
-									(NBT, INTr) = line_type3_info(ifile,NR,2)
-									for i in range (NE5[NSS]):
+						# for inelastic scattering reaction ....
+						if 2 or 7 in num_reac_array:
+							ift5c = 0
+							if5c = 0
+							if (MT == 91):
+									if5c = 1
+									NK5 = NKv
+									for NSS in range(NK5):
 										ifile.readline()
 										line = ifile.readline()
-										(C1,En5[NSS][i],L1,L2,NR,NF5[NSS][i],MAT,MF,MT) = line_type2_info(line)
+										(C1,C2,L1,LF[NSS],NR,NP5[NSS],MAT,MF,MT) = line_type2_info(line)
 										(NBT, INTr) = line_type3_info(ifile,NR,2)
-										temporary1 = [0]*NF5[NSS][i]
-										temporary2 = [0]*NF5[NSS][i]
-										(temporary1,temporary2) = line_type3_info(ifile,NF5[NSS][i],2)
-										for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
-											Enp5[NSS][i][j] = value1
-											f5[NSS][i][j] = value2
+										line_type3_info(ifile,NP5[NSS],2)
+										if (LF[NSS] == 1):
+											ift5c = 1
+											ifile.readline()
+											line = ifile.readline()
+											(C1,C2,L1,L2,NR,NE5[NSS],MAT,MF,MT) = line_type2_info(line)
+											(NBT, INTr) = line_type3_info(ifile,NR,2)
+											for i in range (NE5[NSS]):
+												ifile.readline()
+												line = ifile.readline()
+												(C1,En5[NSS][i],L1,L2,NR,NF5[NSS][i],MAT,MF,MT) = line_type2_info(line)
+												(NBT, INTr) = line_type3_info(ifile,NR,2)
+												temporary1 = [0]*NF5[NSS][i]
+												temporary2 = [0]*NF5[NSS][i]
+												(temporary1,temporary2) = line_type3_info(ifile,NF5[NSS][i],2)
+												for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
+													Enp5[NSS][i][j] = value1
+													f5[NSS][i][j] = value2
 
-								if (LF[NSS] == 9):
-									ifile.readline()
-									line = ifile.readline()
-									(C1,C2,L1,L2,NR,NE5[NSS],MAT,MF,MT) = line_type2_info(line)
-									(NBT, INTr) = line_type3_info(ifile,NR,2)
-									temporary1 = [0]*NE5[NSS]
-									temporary2 = [0]*NE5[NSS]
-									(temporary1,temporary2) = line_type3_info(ifile,NE5[NSS],2)
-									for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
-										En5[NSS][N] = value1
-										tht[NSS][N] = value2
+										if (LF[NSS] == 9):
+											ifile.readline()
+											line = ifile.readline()
+											(C1,C2,L1,L2,NR,NE5[NSS],MAT,MF,MT) = line_type2_info(line)
+											(NBT, INTr) = line_type3_info(ifile,NR,2)
+											temporary1 = [0]*NE5[NSS]
+											temporary2 = [0]*NE5[NSS]
+											(temporary1,temporary2) = line_type3_info(ifile,NE5[NSS],2)
+											for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
+												En5[NSS][N] = value1
+												tht[NSS][N] = value2
 						else:
 							break
 					ifile.close()
