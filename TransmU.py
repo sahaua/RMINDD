@@ -18,74 +18,48 @@ def TransmCal (eliso,igtyp,insp,iconcyn):
 	!! Calculation of gas production and total activation cross section
 	!! due to charged particle production reactions and (n,xn) and (n,g)
 	!! reactions of neutron.
-	
-character(8)  :: eliso
-real,allocatable,dimension(:):: E,Et,E1,Eg,E1p,sig,sig1,gsig, &
-				gsigt,gsp,gsd,gstr,gs3He,gsa,gsig5, &
-				sppoint,sdpoint,strpoint,s3Hepoint,sapoint,sigtpoint
-integer,allocatable,dimension(:):: MTnum,iflag
-		
-real,dimension(200,200):: tnEyld, tnYld
-integer,dimension(200,20):: tnNBTp, tnINTrp
-integer,dimension(200):: tnNyld, tnZp
 
-real,dimension(5,200):: Eyld,Yld
-integer,dimension(5):: Nyld, iflMTtppr
-integer,dimension(5,20):: NBTp,INTrp
-integer,dimension(20)::NBTpp,NBTpd,NBTpt,NBTp3He,NBTpal, &
-	INTrpp,INTrpd,INTrpt,INTrp3He,INTrpal
-real,allocatable,dimension(:):: Eyldp,Eyldd,Eyldtr,Eyld3He, &
-	EyldHe,Yldp,Yldd,Yldtr,Yld3He,YldHe, &
-	Yldpg,Ylddg,Yldtrg,Yld3Heg,YldHeg,tnYldg
-		
-real,allocatable,dimension(:)::sig5,sig11,sig16,sig17,sig22, &
-	sig23,sig24,sig25,sig28,sig29,sig30,sig32,sig33,sig34,sig35, &
-	sig36,sig37,sig41,sig42,sig44,sig45,sig102,sig103,sig104, &
-	sig105,sig106,sig107,sig108,sig109,sig110,sig111,sig112,sig113, &
-	sig114,sig115,sig116,sig117,sig203,sig204,sig205,sig206,sig207, &
-	E5,E11,E16,E17,E22,E23, &
-	E24,E25,E28,E29,E30,E32,E33,E34,E35,E36,E37, &
-	E41,E42,E44,E45,E102,E103,E104,E105,E106, &
-	E107,E108,E109,E110,E111,E112,E113,E114,E115, &
-	E116,E117,E203,E204,E205,E206,E207, &
-	sig5tot,sigparttot
+tnEyld = numpy.zeros((200,200)); tnYld = numpy.zeros((200,200))
+tnNBTp = numpy.zeros((200,20)); tnINTrp = numpy.zeros((200,20))
+tnNyld = [0]*200; tnZp = [0]*200
 
-integer Ztarget, Atarget, Zval, Aval
+Eyld = numpy.zeros((5,200)); Yld = numpy.zeros((5,200))
+Nyld = [0]*5; iflMTtppr = [0]*5
+NBTp = numpy.zeros((5,20)); INTrp = numpy.zeros((5,20))
+NBTpp = [0]*20; NBTpd = [0]*20; NBTpt = [0]*20; NBTp3He = [0]*20; NBTpal = [0]*20
+INTrpp = [0]*20; INTrpd = [0]*20; INTrpt = [0]*20; INTrp3He = [0]*20; INTrpal = [0]*20
+
 !! Assuming maximum 200 transmuted isotopes from MF6 MT5 and 
 !! remaining are explicit transmutation reactions
-integer,dimension(230):: Zvaltrack, Avaltrack, cntrack
-real,allocatable,dimension(:,:) :: sigtrack
-Zvaltrack = 0
-Avaltrack = 0
-cntrack = 0
+Zvaltrack = [0]*230; Avaltrack = [0]*230; cntrack = [0]*230
 	
-open(unit=400,file="TransmGas-group.txt", position='append')
-open(unit=401,file="TransmNucl-group.txt", position='append')
-open(unit=402,file="TransmGas-point.txt")
-open(unit=403,file="TransmNucl-MF5-point.txt")
-open(unit=404,file="Output_RadEMC-TransmU.txt",position='append')
-open(unit=405,file="TransmNucl-Net-group.txt", position='append')
+ofile400 = open("TransmGas-group.txt", "a")
+ofile401 = open("TransmNucl-group.txt", "a")
+ofile402 = open("TransmGas-point.txt", "w")
+ofile403 = open("TransmNucl-MF5-point.txt", "w")
+ofile_outRMINDD = open("Output_RadEMC-TransmU.txt", "a")
+ofile405 = open("TransmNucl-Net-group.txt", "a")
 
 		
-write(400,*) 'E/(n,xp)/(n,xd)/(n,xt)/(n,x3He)/(n,xa)/(n,act.)'
-write(401,*) 'Energy(eV) - Cross section(barns)'
-write(402,*) 'E/(n,xp)/(n,xd)/(n,xt)/(n,x3He)/(n,xa)/(n,act.)'
-write(403,*) 'Energy(eV) - Cross section(barns)'
-write(405,*) 'Energy (eV) / Cross-section (barns)'
+print('E/(n,xp)/(n,xd)/(n,xt)/(n,x3He)/(n,xa)/(n,act.)', file = ofile400)
+print('Energy(eV) - Cross section(barns)', file = ofile401)
+print('E/(n,xp)/(n,xd)/(n,xt)/(n,x3He)/(n,xa)/(n,act.)', file = ofile402)
+print('Energy(eV) - Cross section(barns)', file = ofile403)
+print('Energy (eV) / Cross-section (barns)', file = ofile405)
 
 nrab = 37
-allocate(MTnum(42),iflag(42))
+MTnum = [0]*42; iflag = [0]*42
 
-MTnum=(/5,11,16,17,22,23,24,25,28,29,30,32,33,34,35,36,37,41, &
-	42,44,45,102,103,104,105,106,107,108,109,110,111,112,113,114, &
-	115,116,117,203,204,205,206,207/)
+MTnum = [5,11,16,17,22,23,24,25,28,29,30,32,33,34,35,36,37,41, \
+	42,44,45,102,103,104,105,106,107,108,109,110,111,112,113,114, \
+	115,116,117,203,204,205,206,207]
 
 
 	!! Read and Store the Values of Z and A of the target nucleus
-	
-open (unit = 500, file = "tape02")
-do 
- 	read(500,1) MAT, MF, MT, NS
+
+ifile = open ('tape02', 'r')
+while True:
+	read(500,1) MAT, MF, MT, NS
  	if (MT==0 .and. MF==0) then
 		read(500,11)ZAv,AWRv,L0,L1,NKv,L2,MAT,MF,MT,NS
 		Ztarget = int(ZAv)/1000
@@ -94,8 +68,8 @@ do
  	end if
 end do
 close(unit=500)
- 		
- 				
+
+
 open (unit = 500, file = "tape02")
 
 do 
