@@ -1,13 +1,10 @@
-!	>> Code: RMINDD.py, module file: TransmU.py
-!	>> Perform: Activation, Gas production and Transmutation calculations 
-!	>> 			from basic ENDF-6 files
-!	>> Author: Dr. Uttiyoarnab Saha
-!	>> Version and Date: 1.0 and 14/03/2021
-!	>> Last modified: 16/03/2021, Kolkata
-!	>> Update: 16/03/2021
-!	>> Major changes:
-!
-!======================================================================================================
+#	>> Code: RMINDD.py, module file: TransmU.py
+#	>> Perform: Activation, Gas production and Transmutation calculations 
+#	>> 			from basic ENDF-6 files
+#	>> Author: Dr. Uttiyoarnab Saha
+#	>> Major changes: undergoing ....
+#
+#======================================================================================================
 
 import numpy
 import math
@@ -15,9 +12,9 @@ import os
 
 def TransmCal (eliso,igtyp,insp,iconcyn):
 	
-	!! Calculation of gas production and total activation cross section
-	!! due to charged particle production reactions and (n,xn) and (n,g)
-	!! reactions of neutron.
+## Calculation of gas production and total activation cross section
+## due to charged particle production reactions and (n,xn) and (n,g)
+## reactions of neutron.
 
 tnEyld = numpy.zeros((200,200)); tnYld = numpy.zeros((200,200))
 tnNBTp = numpy.zeros((200,20)); tnINTrp = numpy.zeros((200,20))
@@ -29,8 +26,9 @@ NBTp = numpy.zeros((5,20)); INTrp = numpy.zeros((5,20))
 NBTpp = [0]*20; NBTpd = [0]*20; NBTpt = [0]*20; NBTp3He = [0]*20; NBTpal = [0]*20
 INTrpp = [0]*20; INTrpd = [0]*20; INTrpt = [0]*20; INTrp3He = [0]*20; INTrpal = [0]*20
 
-!! Assuming maximum 200 transmuted isotopes from MF6 MT5 and 
-!! remaining are explicit transmutation reactions
+## Assuming maximum 200 transmuted isotopes from MF6 MT5 and 
+## remaining are explicit transmutation reactions
+
 Zvaltrack = [0]*230; Avaltrack = [0]*230; cntrack = [0]*230
 	
 ofile400 = open("TransmGas-group.txt", "a")
@@ -55,84 +53,56 @@ MTnum = [5,11,16,17,22,23,24,25,28,29,30,32,33,34,35,36,37,41, \
 	115,116,117,203,204,205,206,207]
 
 
-	!! Read and Store the Values of Z and A of the target nucleus
+## Read and Store the Values of Z and A of the target nucleus
 
 ifile = open ('tape02', 'r')
 while True:
-	read(500,1) MAT, MF, MT, NS
- 	if (MT==0 .and. MF==0) then
-		read(500,11)ZAv,AWRv,L0,L1,NKv,L2,MAT,MF,MT,NS
-		Ztarget = int(ZAv)/1000
-		Atarget =  mod(int(ZAv),1000)
-		exit
- 	end if
-end do
-close(unit=500)
+	line = ifile.readline()
+	if (line == ''):
+		break
+	data = eachlineinfo(line)
+	MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
+	if ( MT == 0 and MF == 0 ):
+		line = ifile.readline()
+		data = eachlineinfo(line)
+		iflspace = 0
+		for element in data:
+			if (element == ''):
+				iflspace = 1
+				break
+		if (iflspace == 0):
+			ZAv = float(data[0]); AWRv = float(data[1]); L0 = int(data[2]);\
+			L1 = int(data[3]); NKv = int(data[4]); L2 = int(data[5]);\
+			MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
+
+			Ztarget = int(ZAv)/1000
+			Atarget =  mod(int(ZAv),1000)
+	else:
+		break
+ifile.close()
 
 
-open (unit = 500, file = "tape02")
+## REMEMBER to SEND to this program the unique ENERGY ARRAY and total number of points
+## extracted from FILE 1 ........<<<<  
 
-do 
-	read (500,5)  MAT, MF, MT
- 	if (MAT.ne.-1) then
- 		if (MF.eq.3) then
-			if (MT.eq.1) then
-				read(500,6) QM, QI, NR, NP
-				allocate (Et(NP), E(NP))
-				read(500,7) LR
-				read(500,8) (Et(i), s, i = 1,NP)
-			end if
- 		end if
-	else
- 		exit
- 	end if
-end do
-		
-close(unit=500)
-		
-write(404,*) NP, ' Total cross section energy points'
-		
-write(*,*) 'Unique total energy array .....'
-k = 1
-k1 = 1
-do i = 1, NP
- 	if (k1 <= NP) then
- 		E(k) = Et(k1)
- 		k = k+1
- 	end if
-	cnt = 1
-  	do j = k1+1, NP
- 		if (Et(k1) == Et(j)) then
- 			cnt = cnt+1
- 		end if
- 	end do
- 	k1 = k1+cnt
-end do
-		
-NP = k-1
-		
-write(404,*) NP, ' Unique energy points'
-		
-do i = 1, NP
-	if (E(i)>=20.0e+06) then
+print ( NP, ' Total cross section energy points', file = ofile_outRMINDD)
+
+for i in range (NP):
+	if (Etu[i] >= 20.0E+06):
 		ifull = i
-		exit
-	end if
-end do
+		break
 NP = ifull
-		
-write(404,*) NP, ' Energy points up to 20 MeV'
+print ( NP, ' Energy points up to 20 MeV', file = ofile_outRMINDD)
 				
-write(*,*) 'Reading Data .....'
-	
-	!! Gas producion cross sections MT = 203, ...., 207	
-	!! may be given sometimes; nreac = 38 to 42 => these MTs
-	
-NPt = size(E)
+print ( 'Reading Data .....' )
 
-allocate(sig5tot(NPt),sigparttot(NPt),sppoint(NPt),sdpoint(NPt), &
-		strpoint(NPt),s3Hepoint(NPt),sapoint(NPt),sigtpoint(NPt))
-		
+## Gas producion cross sections MT = 203, ...., 207	
+## may be given sometimes; nreac = 38 to 42 => these MTs
+
+
+sig5tot = [0]*NPt; sigparttot = [0]*NPt; sppoint = [0]*NPt; sdpoint = [0]*NPt
+strpoint = [0]*NPt; s3Hepoint = [0]*NPt; sapoint = [0]*NPt; sigtpoint = [0]*NPt
+
 do nreac = 38, 42
 	open (unit = 500, file = "tape02")
 
