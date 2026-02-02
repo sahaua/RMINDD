@@ -13,15 +13,7 @@
 
 import sys
 
-def readInputFile(input_file_name):
-	
-	# variable declaration and definition
-	
-	global module_name, raw_ENDF6_file, processed_ENDF6_file, MAT_num, num_reac, num_reac_array, \
-	atom_displ_model, threshold_latt_disp_en, b_arcdpa, c_arcdpa, multigroup, en_group_type, input_n_spec, input_en_group, \
-	num_MT_multigroup, num_MT_group_array, num_group_limitsnum_fine_en_points, num_partial_reac_tosum, partial_reac_tosum
-	
-	
+def readInputFile(input_file_name):	
 	ifile = open(input_file_name, 'r')
 	ifile.seek(0, 2)			# go to the end of file
 	eof = ifile.tell()			# get the end-of-file position
@@ -41,6 +33,9 @@ def readInputFile(input_file_name):
 		# comment line
 		if (data[0] == '#'):
 			continue
+
+		if (data[0] == 'Num_modules'):
+			num_modules = int(data[2])
 
 		if (data[0] == 'Module_name'):
 			module_name = data[2]
@@ -78,59 +73,55 @@ def readInputFile(input_file_name):
 
 		if (data[0] == 'b_arcdpa'):
 			b_arcdpa = float(data[2])
-		
+
 		if (data[0] == 'c_arcdpa'):
 			c_arcdpa = float(data[2])
-		
+
 		if (data[0] == 'Multigroup'):
 			multigroup = data[2]
-		
+
 		if (data[0] == 'Energy_group_type_index'):
 			en_group_type = int(data[2])
-		
+
 		if (data[0] == 'Input_n_spectrum'):
 			input_n_spec = int(data[2])
-		
+
 		if (data[0] == 'Input_en_group'):
 			input_en_group = int(data[2])
-		
+
 		if (data[0] == 'Num_MT_to_multigroup'):
 			num_MT_multigroup = int(data[2])
 			if (num_MT_multigroup > 0):
 				num_MT_group_array = [0]*num_MT_multigroup
-		
+
 		if (data[0] == 'MTs_to_multigroup' and num_MT_multigroup > 0):
 			if (len(data) != num_MT_multigroup + 2):
 				print('Number of MTs given for multigrouping is not equal to what is mentioned.')
 				sys.exit()
 			for i in range(2, num_MT_multigroup+2):
 				num_MT_group_array[i-2] = int(data[i])
-		
+
 		if (data[0] == 'Num_group_limits'):
 			num_group_limits = int(data[2])
-		
+
 		if (data[0] == 'Num_fine_en_points'):
 			num_fine_en_points = int(data[2])
-		
+
 		if (data[0] == 'Num_partial_reac_to_sum'):
 			num_partial_reac_tosum = int(data[2])
 			if (num_partial_reac_tosum > 0):
 				partial_reac_tosum = [0]*num_partial_reac_tosum
-		
+
 		if (data[0] == 'Partial_reac_to_sum' and num_partial_reac_tosum > 0):
 			if (len(data) != num_partial_reac_tosum + 2):
 				print('Number of partial reactions given to sum is not equal to what is mentioned.')
 				sys.exit()
 			for i in range(2, num_partial_reac_tosum + 2):
 				partial_reac_tosum[i-2] = int(data[i])
-		
+
 	ifile.close()
 
 readInputFile('inputfile.txt')
-print(atom_displ_model)
-print(num_MT_multigroup)
-print(num_MT_group_array)
-
 
 # The data in one line are explicitly extracted
 def eachLineInfo(line):	
