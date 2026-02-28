@@ -44,6 +44,9 @@ def eachlineinfo(line):
 	for char in range(66,70):			# MAT data of 4 places
 		s = s + line[char]
 	data[6] = s.lstrip(' ')
+	# this is done because some ENDF-6 files only give a blank space here in the first line (creates problem)
+	if ((data[6]) == ''):
+		data[6] = 1
 
 	s = ''
 	for char in range(70,72):			# MF data of 2 places
@@ -105,7 +108,15 @@ def line_type3_info(filehandle,numdata,numvariables):
 		while (i < numdata):
 			line = filehandle.readline()
 			data = eachlineinfo(line)
-			for j in range(0,6,2):
+			# run_limit variable is introduced because in some files 
+			#(e.g. ENDF/B-VIII.0, Si28
+			#  1.000000+0 1.000000+0          0          2          1          21425 6 51
+			#	2          2          0          0          0          01425 6 51)
+			# extra data (more than 2) are given in the interpolation ranges specification line!
+			run_limit = 6
+			if (2*numdata <= run_limit):
+				run_limit = 2*numdata
+			for j in range(0,run_limit,2):
 				if (data[j] != ''):
 					xdata[i] = float(data[j])
 					ydata[i] = float(data[j+1])
@@ -1703,14 +1714,18 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 						if (shall[i]<1e-12):
 							shall[i] = 0
 
-	# When the energy distribution of the recoil nucleus is present
+## kdim will be required in many cases to put the dimensions of arrays 
+## for secondary or recoil particle energy distributions  
+
+			kdim = int(numpy.amax(NEP))
+
+## When the energy distribution of the recoil nucleus is present
 
 			if (iflr==1 and ifspad6==0):
 				print('', file = ofile_outRMINDD)
 				print('Recoil nucleus and charged particle energy', file = ofile_outRMINDD)
 				print('distribution data are given in File 6', file = ofile_outRMINDD)
 
-				kdim = int(numpy.amax(NEP))
 				ter6 = [0]*kdim; tf6 = [0]*kdim; ntm = [0]*NP
 
 				for i in range (NP):
@@ -1901,8 +1916,6 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 					print('', file = ofile_outRMINDD)
 					print('Energy distribution data is given for emitted', file = ofile_outRMINDD)
 					print('charged particle, but not for recoil nucleus', file = ofile_outRMINDD)
-
-					kdim = int(numpy.amax(NEP))
 
 					for iparticle in range (ipstart, NKprtl+1):
 						ntm = [0]*NP
@@ -2782,13 +2795,13 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 			print('', file = ofile_outRMINDD)
 			print(':: MESSAGE :: CPO reaction cross section', file = ofile_outRMINDD)
 			print('-------------------------------------------------', file = ofile_outRMINDD)
-			print('Contributions are taken from MT = 5, since any of', file = ofile_outRMINDD)
+			print('Contributions will be taken from MT = 5 (if present), since any of', file = ofile_outRMINDD)
 			print('the following reactions: (n,p), (n,d), (n,t), ', file = ofile_outRMINDD)
 			print('(n,3He), (n,a) cross section(s) is/are incomplete', file = ofile_outRMINDD)
 
-			dpaMT5 = 0
-			snhtMT5 = 0
-			print( 'MT = 5')
+			iflmt5absreac = 0
+			dpaMT5 = [0]*NPt
+			snhtMT5 = [0]*NPt
 
 			ifile = open ("tape02", 'r')
 
@@ -2814,6 +2827,7 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 				if (MAT != -1):
 					if (MF == 3):
 						if (MT == 5):
+							iflmt5absreac = 1
 							ZA = ZAv
 							AWR = AWRv
 							line = ifile.readline()
@@ -2844,154 +2858,156 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 
 			ifile.close()
 
-			Z = ZA//1000
-			A = AWR
-			# get energy-yield data by calling file6 MT5
-			(NBTp,INTrp,Nyld,Eyld,Yld) = gtYMf6Mt5()
+			if (iflmt5absreac == 1):
+				Z = ZA//1000
+				A = AWR
+				# get energy-yield data by calling file6 MT5
+				(NBTp,INTrp,Nyld,Eyld,Yld) = gtYMf6Mt5()
+	
+				if (ifdisdata103 == 1 and iffldd103 == 0 and ifl103pr == 0):
+					Eyldp = [0]*int(Nyld[0]); Yldp = [0]*int(Nyld[0])
+					Eyldp = Eyld[0][0:Nyld[0]]
+					Yldp = Yld[0][0:Nyld[0]]
+					NBTpp = NBTp[0][:]
+					INTrpp = INTrp[0][:]
+					(E5,Yldp5) = yldterpolin(NBTpp,INTrpp,int(Nyld[0]),Eyldp,Yldp,NP1)
+					ze[0] = 1; beta[0] = 1
+					ifltfr5[0] = 1
+					print( '.....for incomplete MT = 103')
+					print( '.....contributions taken from MT = 5')
+					print('', file = ofile_outRMINDD)
+					print('.....for incomplete MT = 103', file = ofile_outRMINDD) 
+	
+				if (ifdisdata104 == 1 and iffldd104 == 0 and ifl104pr == 0):
+					Eyldd = [0]*int(Nyld[1]); Yldd = [0]*int(Nyld[1])
+					Eyldd = Eyld[1][0:Nyld[1]]
+					Yldd = Yld[1][0:Nyld[1]]
+					NBTpd = NBTp[1][:]
+					INTrpd = INTrp[1][:]
+					(E5,Yldd5) = yldterpolin(NBTpd,INTrpd,int(Nyld[1]),Eyldd,Yldd,NP1)
+					ze[1] = 1; beta[1] = 2
+					ifltfr5[1] = 1
+					print( '.....for incomplete MT = 104')
+					print( '.....contributions taken from MT = 5')
+					print('', file = ofile_outRMINDD)
+					print('.....for incomplete MT = 104', file = ofile_outRMINDD)
+	
+				if (ifdisdata105 == 1 and iffldd105 == 0 and ifl105pr == 0):
+					Eyldtr = [0]*int(Nyld[2]); Yldtr = [0]*int(Nyld[2])
+					Eyldtr = Eyld[2][0:Nyld[2]]
+					Yldtr = Yld[2][0:Nyld[2]]
+					NBTpt = NBTp[2][:]
+					INTrpt = INTrp[2][:]
+					(E5,Yldtr5) = yldterpolin(NBTpt,INTrpt,int(Nyld[2]),Eyldtr,Yldtr,NP1)
+					ze[2] = 1; beta[2] = 3
+					ifltfr5[2] = 1
+					print( '.....for incomplete MT = 105')
+					print( '.....contributions taken from MT = 5')
+					print('', file = ofile_outRMINDD)
+					print('.....for incomplete MT = 105', file = ofile_outRMINDD)
+	
+				if (ifdisdata106 == 1 and iffldd106 == 0 and ifl106pr == 0):
+					Eyld3He = [0]*int(Nyld[3]); Yld3He = [0]*int(Nyld[3])
+					Eyld3He = Eyld[3][0:Nyld[3]]
+					Yld3He = Yld[3][0:Nyld[3]]
+					NBTp3He = NBTp[3][:]
+					INTrp3He = INTrp[3][:]
+					(E5,Yld3He5) = yldterpolin(NBTp3He,INTrp3He,int(Nyld[3]),Eyld3He,Yld3He,NP1)
+					ze[3] = 2; beta[3] = 3
+					ifltfr5[3] = 1
+					print( '.....for incomplete MT = 106')
+					print( '.....contributions taken from MT = 5')
+					print('', file = ofile_outRMINDD)
+					print('.....for incomplete MT = 106', file = ofile_outRMINDD)
+	
+				if (ifdisdata107 == 1 and iffldd107 == 0 and ifl107pr == 0):
+					EyldHe = [0]*int(Nyld[4]); YldHe = [0]*int(Nyld[4])
+					EyldHe = Eyld[4][0:Nyld[4]]
+					YldHe = Yld[4][0:Nyld[4]]
+					NBTpal = NBTp[4][:]
+					INTrpal = INTrp[4][:]
+					(E5,YldHe5) = yldterpolin(NBTpal,INTrpal,int(Nyld[4]),EyldHe,YldHe,NP1)
+					ze[4] = 2; beta[4] = 4
+					ifltfr5[4] = 1
+					print( '.....for incomplete MT = 107')
+					print( '.....contributions taken from MT = 5')
+					print('', file = ofile_outRMINDD)
+					print('.....for incomplete MT = 107', file = ofile_outRMINDD)
+	
+				n2 = A/(A+1)
+				n3 = 1.0/(A+1)
+	
+				if (LR == 0 or QI == 0):
+					QI = QM
+					U = abs(QI/n2)
+	
+				for  i in range(NP1):
+					for inp in range(5):
+						if (ifltfr5[inp] == 1):
+							if (inp == 1):
+								Yldarr = Yldp5
+							if (inp == 2):
+								Yldarr = Yldd5
+							if (inp == 3):
+								Yldarr = Yldtr5
+							if (inp == 4):
+								Yldarr = Yld3He5
+							if (inp == 5):
+								Yldarr = YldHe5
+							n1[inp] = (A+1-beta[inp])/(A+1)
+							cbe[inp] = (1.029e+6*ze[inp]*Z)/(beta[inp]**(1/3)+A**(1/3))
+							Estar = n1[inp]*E5[i]
+							availE = QI + (n2*E5[i])	# if (QI<0)
+							#if (QI>0) availE = n2*E5(i)
+							if (availE < cbe[inp]):
+								Ea = availE
+							if (cbe[inp] < availE):
+								Ea = cbe[inp]
+							f1 = Estar
+							f2 = 2*math.sqrt(beta[inp]*Estar*Ea)
+							f3 = beta[inp]*Ea 
+							dn1 = 0
+							dn2 = 0
+							dn3 = 0
+							if (sig5[i] != 0): # .and. E5(i)>=abs(QI)
+								dn1 = abs(Tinteg(Z-ze[inp],A+1-beta[inp],Z,A,Ed,E5[i],QI,\
+												beta[inp],mdisp,bad,cad,n3,f1,f2,f3))	
+								dn2 = abs(Tintegheat1(A,E5[i],QI,beta[inp],n3,f1,f2,f3))
+								dn3 = abs(Ea)
+							if (sig5[i] == 0):
+								sdMT5[i] = 0
+								shMT5[i] = 0
+							if (sig5[i] != 0):
+								dn1 = dn1*0.8/(2*Ed)
+								num_of_displMT5[i] = num_of_displMT5[i] + dn1
+								sdMT5[i] = sdMT5[i] + Yldarr[i]*sig5[i]*dn1
+								if((dn2+dn3)<availE):
+									tot_energy_productsMT5[i] = tot_energy_productsMT5[i] + (dn2+dn3)
+									shMT5[i] = shMT5[i] + Yldarr[i]*sig5[i]*(dn2 + dn3)
+								if ((dn2+dn3)>availE):
+									tot_energy_productsMT5[i] = tot_energy_productsMT5[i] + availE
+									shMT5[i] = shMT5[i] + Yldarr[i]*sig5[i]*availE
+	
+							if (sdMT5[i]<1e-12):
+								sdMT5[i] = 0
+							if (shMT5[i]<1e-12):
+								shMT5[i] = 0
+	
+				sig5 = numpy.asarray(sig5)
+				sdMT5 = numpy.asarray(sdMT5)
+				shMT5 = numpy.asarray(shMT5)
+				num_of_displMT5 = numpy.asarray(num_of_displMT5)
+				tot_energy_productsMT5 = numpy.asarray(tot_energy_productsMT5)
+				sigetMT5 = interpolateXSToUniqueEnergyArray(E5, sig5, Etu)
+				dpaMT5 = interpolateXSToUniqueEnergyArray(E5, sdMT5, Etu)
+				snhtMT5 = interpolateXSToUniqueEnergyArray(E5, shMT5, Etu)
+				num_of_displ3 = interpolateXSToUniqueEnergyArray(E5, num_of_displMT5, Etu)
+				tot_energy_products3 = interpolateXSToUniqueEnergyArray(E5, tot_energy_productsMT5, Etu)
+	
+				printtofile(NPt,Etu,sigetMT5,num_of_displ3,dpaMT5,5,0,1)
+				printtofile(NPt,Etu,sigetMT5,tot_energy_products3,snhtMT5,5,0,2)
 
-			if (ifdisdata103 == 1 and iffldd103 == 0 and ifl103pr == 0):
-				Eyldp = [0]*int(Nyld[0]); Yldp = [0]*int(Nyld[0])
-				Eyldp = Eyld[0][0:Nyld[0]]
-				Yldp = Yld[0][0:Nyld[0]]
-				NBTpp = NBTp[0][:]
-				INTrpp = INTrp[0][:]
-				(E5,Yldp5) = yldterpolin(NBTpp,INTrpp,int(Nyld[0]),Eyldp,Yldp,NP1)
-				ze[0] = 1; beta[0] = 1
-				ifltfr5[0] = 1
-				print( '.....for incomplete MT = 103')
-				print( '.....contributions taken from MT = 5')
-				print('', file = ofile_outRMINDD)
-				print('.....for incomplete MT = 103', file = ofile_outRMINDD) 
-
-			if (ifdisdata104 == 1 and iffldd104 == 0 and ifl104pr == 0):
-				Eyldd = [0]*int(Nyld[1]); Yldd = [0]*int(Nyld[1])
-				Eyldd = Eyld[1][0:Nyld[1]]
-				Yldd = Yld[1][0:Nyld[1]]
-				NBTpd = NBTp[1][:]
-				INTrpd = INTrp[1][:]
-				(E5,Yldd5) = yldterpolin(NBTpd,INTrpd,int(Nyld[1]),Eyldd,Yldd,NP1)
-				ze[1] = 1; beta[1] = 2
-				ifltfr5[1] = 1
-				print( '.....for incomplete MT = 104')
-				print( '.....contributions taken from MT = 5')
-				print('', file = ofile_outRMINDD)
-				print('.....for incomplete MT = 104', file = ofile_outRMINDD)
-
-			if (ifdisdata105 == 1 and iffldd105 == 0 and ifl105pr == 0):
-				Eyldtr = [0]*int(Nyld[2]); Yldtr = [0]*int(Nyld[2])
-				Eyldtr = Eyld[2][0:Nyld[2]]
-				Yldtr = Yld[2][0:Nyld[2]]
-				NBTpt = NBTp[2][:]
-				INTrpt = INTrp[2][:]
-				(E5,Yldtr5) = yldterpolin(NBTpt,INTrpt,int(Nyld[2]),Eyldtr,Yldtr,NP1)
-				ze[2] = 1; beta[2] = 3
-				ifltfr5[2] = 1
-				print( '.....for incomplete MT = 105')
-				print( '.....contributions taken from MT = 5')
-				print('', file = ofile_outRMINDD)
-				print('.....for incomplete MT = 105', file = ofile_outRMINDD)
-
-			if (ifdisdata106 == 1 and iffldd106 == 0 and ifl106pr == 0):
-				Eyld3He = [0]*int(Nyld[3]); Yld3He = [0]*int(Nyld[3])
-				Eyld3He = Eyld[3][0:Nyld[3]]
-				Yld3He = Yld[3][0:Nyld[3]]
-				NBTp3He = NBTp[3][:]
-				INTrp3He = INTrp[3][:]
-				(E5,Yld3He5) = yldterpolin(NBTp3He,INTrp3He,int(Nyld[3]),Eyld3He,Yld3He,NP1)
-				ze[3] = 2; beta[3] = 3
-				ifltfr5[3] = 1
-				print( '.....for incomplete MT = 106')
-				print( '.....contributions taken from MT = 5')
-				print('', file = ofile_outRMINDD)
-				print('.....for incomplete MT = 106', file = ofile_outRMINDD)
-
-			if (ifdisdata107 == 1 and iffldd107 == 0 and ifl107pr == 0):
-				EyldHe = [0]*int(Nyld[4]); YldHe = [0]*int(Nyld[4])
-				EyldHe = Eyld[4][0:Nyld[4]]
-				YldHe = Yld[4][0:Nyld[4]]
-				NBTpal = NBTp[4][:]
-				INTrpal = INTrp[4][:]
-				(E5,YldHe5) = yldterpolin(NBTpal,INTrpal,int(Nyld[4]),EyldHe,YldHe,NP1)
-				ze[4] = 2; beta[4] = 4
-				ifltfr5[4] = 1
-				print( '.....for incomplete MT = 107')
-				print( '.....contributions taken from MT = 5')
-				print('', file = ofile_outRMINDD)
-				print('.....for incomplete MT = 107', file = ofile_outRMINDD)
-
-			n2 = A/(A+1)
-			n3 = 1.0/(A+1)
-
-			if (LR == 0 or QI == 0):
-				QI = QM
-				U = abs(QI/n2)
-
-			for  i in range(NP1):
-				for inp in range(5):
-					if (ifltfr5[inp] == 1):
-						if (inp == 1):
-							Yldarr = Yldp5
-						if (inp == 2):
-							Yldarr = Yldd5
-						if (inp == 3):
-							Yldarr = Yldtr5
-						if (inp == 4):
-							Yldarr = Yld3He5
-						if (inp == 5):
-							Yldarr = YldHe5
-						n1[inp] = (A+1-beta[inp])/(A+1)
-						cbe[inp] = (1.029e+6*ze[inp]*Z)/(beta[inp]**(1/3)+A**(1/3))
-						Estar = n1[inp]*E5[i]
-						availE = QI + (n2*E5[i])	# if (QI<0)
-						#if (QI>0) availE = n2*E5(i)
-						if (availE < cbe[inp]):
-							Ea = availE
-						if (cbe[inp] < availE):
-							Ea = cbe[inp]
-						f1 = Estar
-						f2 = 2*math.sqrt(beta[inp]*Estar*Ea)
-						f3 = beta[inp]*Ea 
-						dn1 = 0
-						dn2 = 0
-						dn3 = 0
-						if (sig5[i] != 0): # .and. E5(i)>=abs(QI)
-							dn1 = abs(Tinteg(Z-ze[inp],A+1-beta[inp],Z,A,Ed,E5[i],QI,\
-											beta[inp],mdisp,bad,cad,n3,f1,f2,f3))	
-							dn2 = abs(Tintegheat1(A,E5[i],QI,beta[inp],n3,f1,f2,f3))
-							dn3 = abs(Ea)
-						if (sig5[i] == 0):
-							sdMT5[i] = 0
-							shMT5[i] = 0
-						if (sig5[i] != 0):
-							dn1 = dn1*0.8/(2*Ed)
-							num_of_displMT5[i] = num_of_displMT5[i] + dn1
-							sdMT5[i] = sdMT5[i] + Yldarr[i]*sig5[i]*dn1
-							if((dn2+dn3)<availE):
-								tot_energy_productsMT5[i] = tot_energy_productsMT5[i] + (dn2+dn3)
-								shMT5[i] = shMT5[i] + Yldarr[i]*sig5[i]*(dn2 + dn3)
-							if ((dn2+dn3)>availE):
-								tot_energy_productsMT5[i] = tot_energy_productsMT5[i] + availE
-								shMT5[i] = shMT5[i] + Yldarr[i]*sig5[i]*availE
-
-						if (sdMT5[i]<1e-12):
-							sdMT5[i] = 0
-						if (shMT5[i]<1e-12):
-							shMT5[i] = 0
-
-			sig5 = numpy.asarray(sig5)
-			sdMT5 = numpy.asarray(sdMT5)
-			shMT5 = numpy.asarray(shMT5)
-			num_of_displMT5 = numpy.asarray(num_of_displMT5)
-			tot_energy_productsMT5 = numpy.asarray(tot_energy_productsMT5)
-			sigetMT5 = interpolateXSToUniqueEnergyArray(E5, sig5, Etu)
-			dpaMT5 = interpolateXSToUniqueEnergyArray(E5, sdMT5, Etu)
-			snhtMT5 = interpolateXSToUniqueEnergyArray(E5, shMT5, Etu)
-			num_of_displ3 = interpolateXSToUniqueEnergyArray(E5, num_of_displMT5, Etu)
-			tot_energy_products3 = interpolateXSToUniqueEnergyArray(E5, tot_energy_productsMT5, Etu)
-
-			printtofile(NPt,Etu,sigetMT5,num_of_displ3,dpaMT5,5,0,1)
-			printtofile(NPt,Etu,sigetMT5,tot_energy_products3,snhtMT5,5,0,2)
-
+			# if for iflmt5absreac == 1
 		# if required, then take contributions from MT = 5
 
 		# -------------------
@@ -3131,12 +3147,13 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 
 	ifl6 = 0
 	ifile = open ("tape01", 'r')
+	ifile.readline()
 	while True:
 		line = ifile.readline()
 		if (line == ''):
 			break
 		data = eachlineinfo(line)
-		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
+		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8]) 
 		if (MT == 0):
 			line = ifile.readline()
 			data = eachlineinfo(line)
@@ -3278,6 +3295,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 			if (MF == 12):
 				if (MT == 102):
 					ifl12 = 1
+					print("File 12, Section 102, NK = ", NKv)
 					NK = NKv
 					AWR = AWRv
 					ZA = ZAv
@@ -3372,6 +3390,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 	# (unique energy array) by interpolation
 
 					if (ifl12 == 1):
+						print('doing this ....')
 						Yk12tot = numpy.zeros((NK,NPt))
 						if (NK == 1):
 							for j in range(NPt):
@@ -3582,6 +3601,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 	# when NK > 1
 
 	if (ifl12 == 1 and NK > 1):
+		print('Doing this ....')
 		for j in range(NPt):
 			sY12 = 0
 			for i in range(NK):
@@ -3708,6 +3728,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 
 	if ((ifl12 == 1 and NK > 1) or (ifl12 == 1 and NK == 1 and ifl15 == 0)):
 		NKd = NK
+		print('doing this also ...., NKd = ', NKd)
 		if (ifl15 == 1):
 			NKd = NK-1
 		for i in range(NPt):
@@ -3717,6 +3738,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 		
 	# Total Egamma square from discrete and continuum
 	
+	print(sum(s1), sum(s2), s2[0], s2[int(NPt/10)], s2[int(NPt/8)], s2[int(NPt/5)], s2[int(NPt/2)], s2[NPt-1])
 	for i in range(NPt):
 		Eg2Av[i] = s1[i] + s2[i]
  
@@ -3731,6 +3753,8 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 	emc2 = 939.512e6 
 	tm = emc2*A1
 	rtm = 1/tm
+	
+	print(rtm/2)
 
 	for i in range(NPt):
 		Er = Eg2Av[i]*rtm/2
@@ -3912,46 +3936,49 @@ def ELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 					k = j
 				break
 
-	# LOG- LINEAR INTERPOLATION BETWEEN MU AND F(MU,E) 
+## LOG- LINEAR INTERPOLATION BETWEEN MU AND F(MU,E) 
 
-	for i in range(NE2):
-		for j in range(64):
-			for k in range(NPr[i]):
-				if (xabc[j] == cdata[i][k]):
-					ftotal[i][j] = fdata[i][k]
-					break
-				if(xabc[j]>cdata[i][k] and xabc[j]<cdata[i][k+1]):
-					x = xabc[j]
-					x1 = cdata[i][k]
-					x2 = cdata[i][k+1]
-					y1 = fdata[i][k]  
-					y2 = fdata[i][k+1]        
-					ftotal[i][j] = y1*math.exp((x-x1)*math.log(y2/y1)/(x2-x1))
-					break
- 		
-	# TO GET THE F(MU,E) FOR THE FULL ENERGY RANGE
-		
-	for i in range(NPt):
-		for j in range(64):
-			fmuE[i][j] = 0.5
-		
-	for i in range(NPt):
-		for j in range(NE2):
-			if (Etu[i] == Enf[j]):
-				for k in range(64):
-					fmuE[i][k] = ftotal[j][k]
-				exit
-			if (Etu[i] > Enf[j] and Etu[i] < Enf[j+1]):
-				x = Etu[i]
-				x1 = Enf[j]
-				x2 = Enf[j+1]
-				for k in range(64):
-					y1 = ftotal[j][k]
-					y2 = ftotal[j+1][k]
-					fmuE[i][k] = (y1 + ((y2-y1)*(x-x1)/(x2-x1)))
-				exit
+	if (LTT == 3 or LTT == 2):
+		for i in range(NE2):
+			for j in range(64):
+				for k in range(NPr[i]):
+					if (xabc[j] == cdata[i][k]):
+						ftotal[i][j] = fdata[i][k]
+						break
+					if(xabc[j]>cdata[i][k] and xabc[j]<cdata[i][k+1]):
+						x = xabc[j]
+						x1 = cdata[i][k]
+						x2 = cdata[i][k+1]
+						y1 = fdata[i][k]  
+						y2 = fdata[i][k+1]        
+						ftotal[i][j] = y1*math.exp((x-x1)*math.log(y2/y1)/(x2-x1))
+						break
 
-	# TO GET THE AL(E) FOR THE FULL ENERGY RANGE
+## TO GET THE F(MU,E) FOR THE FULL ENERGY RANGE
+		
+		for i in range(NPt):
+			for j in range(64):
+				fmuE[i][j] = 0.5
+			
+		for i in range(NPt):
+			for j in range(NE2):
+				if (Etu[i] == Enf[j]):
+					for k in range(64):
+						fmuE[i][k] = ftotal[j][k]
+					exit
+				if (Etu[i] > Enf[j] and Etu[i] < Enf[j+1]):
+					x = Etu[i]
+					x1 = Enf[j]
+					x2 = Enf[j+1]
+					for k in range(64):
+						y1 = ftotal[j][k]
+						y2 = ftotal[j+1][k]
+						fmuE[i][k] = (y1 + ((y2-y1)*(x-x1)/(x2-x1)))
+					exit
+	## finishing if (LTT == 3 or LTT == 2):
+
+
+## TO GET THE AL(E) FOR THE FULL ENERGY RANGE
 
 	if (LTT == 0):		# isotropic angular distribution
 		for i in range(NPt):
@@ -5086,12 +5113,12 @@ def anytnMF6MT5 (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 			break
 	ifile.close()
 
-	print('', file = ofile_outRMINDD)
-	print('Number of energy points given is ', NP, file = ofile_outRMINDD)
-
 ## only if MF3 cross sections are available then do the following
 
 	if (iflpresent == 1):
+
+		print('', file = ofile_outRMINDD)
+		print('Number of energy points given is ', NP, file = ofile_outRMINDD)
 
 		ifllab = 0 	# secondary energy and angle in lab. system
 		iflcom = 0 # secondary energy and angle in c.o.m. system

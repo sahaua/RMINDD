@@ -51,13 +51,13 @@ if (1 <= ntasks and ntasks <= 3):
 		
 			ifile52.readline()
 			data = ifile52.readline().split()
-			mat = data[6]
-			#if (len(data) == 7):
-			#	mat = data[5][-4:]				# read mat number in ENDF = 52
+			#mat = data[6]
+			if (len(data) == 7):
+				mat = data[5][-4:]				# read mat number in ENDF = 52
 			#if (len(data) == 8):
 			#	mat = data[5][-4:]				# read mat number in ENDF = 52
-			#if (len(data) == 8):
-			#	mat = data[6]				# read mat number in ENDF = 52
+			if (len(data) == 8):
+				mat = data[6]				# read mat number in ENDF = 52
 
 			for i in range(3):
 				ifile52.readline()
