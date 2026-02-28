@@ -1,0 +1,38 @@
+## Input and data for module CombinU.py of RMINDD
+
+Module_name = "CombinU"
+
+Num_elements_target = 2
+
+Elements_target = Si, C
+
+## give in the same order as given elements
+Element_stoichiometries = 0.5, 0.5	
+
+Num_isotopes_total = 5
+
+## directories with these names will be searched for required files
+Isotopes_evaluated = Si28, Si29, Si30, C12, C13
+
+## to be given in the same order as the isotopes are given
+Percent_abundances_all = 92.2, 4.7, 3.1, 98.9, 1.1
+
+## better to arrange data files according to the order of name of elements in the target 
+Recoil_damage_energy_file = Si "Si-PKA-on-SiC-recoil-to-damage-energies.txt"
+
+Recoil_damage_energy_file = C "C-PKA-on-SiC-recoil-to-damage-energies.txt"
+
+Element_Ed_target = Si 35.0
+
+Element_Ed_target = C 20.0
+
+Ed_below_no_displacement = Si 20.0
+
+Ed_below_no_displacement = C 27.0
+
+Atom_dpaXS_type = "Both"	## "MD-based", "NRT-based", "Both"
+
+## there should be as many damage efficiency file as the number of target elements
+Damage_efficiency_file = Si "Si-PKA-on-SiC-Devanathan-et-al.txt"
+
+Damage_efficiency_file = C "C-PKA-on-SiC-Devanathan-et-al.txt"
