@@ -11,30 +11,47 @@
 import numpy, datetime, sys
 from time import process_time
 ## import calculation modules
-import RecedU, EngdepU #use TransmU
+import RecedU, EngdepU, ReadU
 
 day_execution = datetime.date.today()
 time_execution = datetime.datetime.now().strftime('%H:%M:%S')
 
-outRMINDD = "Output_RMINDD.txt"
-ofile_outRMINDD = open (outRMINDD, 'a')
+## Default Input and Output filenames
 
+inpRMINDD = "Input_RMINDD.txt"
+outRMINDD = "Output_RMINDD.txt"
+sys.argv[1] = inpRMINDD
+sys.argv[2] = outRMINDD
+
+## command line input for input and output file names
+
+inpRMINDD = sys.argv[1]
+outRMINDD = sys.argv[2]
+
+ofile_outRMINDD = open (outRMINDD, 'a')
 print('~~~~ RMINDD ~~~~', file = ofile_outRMINDD)
 print(day_execution, ' ', time_execution, '\n', file = ofile_outRMINDD)
 
-## command line input for input file name
-inpRMINDD = sys.argv[1]
-
 ifile_inpRMINDD = open (inpRMINDD, 'r')
 
-ntasks = int(ifile_inpRMINDD.readline().split()[0])
+## global variable declaration (implicit definition in names) ....
 
-if (ntasks < 1 or ntasks > 3):
+global num_modules, module_name, raw_ENDF6_file, processed_ENDF6_file, MAT_num, num_reac, num_reac_array, \
+atom_displ_model, threshold_latt_disp_en, b_arcdpa, c_arcdpa, multigroup, en_group_type, input_n_spec, input_en_group, \
+num_MT_multigroup, num_MT_group_array, num_group_limitsnum_fine_en_points, num_partial_reac_tosum, partial_reac_tosum
+
+ReadU.readInputFile(input_file_name)
+
+
+
+num_modules = int(ifile_inpRMINDD.readline().split()[0])
+
+if (num_modules < 1 or num_modules > 3):
 	print('**** Give Valid Value for Number of Tasks ****')
 
-if (1 <= ntasks and ntasks <= 3):
+if (1 <= num_modules and num_modules <= 3):
 	start_time = process_time()
-	for itasks in range (ntasks):
+	for itasks in range (num_modules):
 		cmetric = ifile_inpRMINDD.readline().split()[0]
 
 	# Perform tasks based on the results required from the relevant module
