@@ -453,9 +453,12 @@ globals()[f'NRTdpa{all_elements}'] = numpy.zeros(num_data)
 
 
 # print data to output files
+
+## dpa cross sections
 ofile = open('CombinU-XS.out', 'w')
 print(num_data, file = ofile)
 
+## PKA formation probabilities
 for element in elements_target:
 	globals()[f'ofile1{element}'] = open('CombinU-Probabilities-'+element+'.out', 'w')
 	print(num_data, '(n,g) / (n, other)', file = globals()[f'ofile1{element}'])
@@ -479,10 +482,12 @@ for i in range(num_data):
 		#globals()[f'simple_dpa{all_elements}'][i] = globals()[f'simple_dpa{all_elements}'][i] + element_stoich[elements_target.index(element)] * globals()[f'dpa{element}_unique'][i]
 		#globals()[f'simple_NRTdpa{all_elements}'][i] = globals()[f'simple_NRTdpa{all_elements}'][i] + element_stoich[elements_target.index(element)] * globals()[f'NRTdpa{element}_unique'][i]
 
+	## dpa cross sections
 	print(globals()[f'En{all_elements}_unique'][i], globals()[f'NRTdpa{all_elements}'][i], globals()[f'dpa{all_elements}'][i], file = ofile)
 
+	## PKA formation probabilities
 	for element in elements_target:
-		print(globals()[f'En{all_elements}_unique'][i], globals()[f'f{element}102']/elements_stoich[elements_target.index(element)], globals()[f'f{element}1not102']/elements_stoich[elements_target.index(element)], file = globals()[f'ofile1{element}'])
+		print(globals()[f'En{all_elements}_unique'][i], globals()[f'f{element}102']/element_stoich[elements_target.index(element)], globals()[f'f{element}1not102']/element_stoich[elements_target.index(element)], file = globals()[f'ofile1{element}'])
 
 for element in elements_target:
 	globals()[f'ofile1{element}'].close()
@@ -495,5 +500,31 @@ for element in elements_target:
 print(Ngl, file = ofile)
 for i in range(Ngl):
 	print(Eg[i], globals()[f'grouped_NRTdpa{all_elements}'][i], globals()[f'grouped_dpa{all_elements}'][i], file = ofile)
+
+ofile.close()
+
+## damage efficiency versus damage energy data
+
+for element in elements_target:
+	for isotope in isotopes_evaluated:
+		try:
+			(element_iso, mass_num) = separateSymbolMassNumber(isotope)
+		except ValueError as e:
+			print(f"Error: {e}")
+
+		if (element == element_iso):
+			globals()[f'Tdam{isotope}'] = numpy.concatenate([globals()[f'Tdam{isotope}_MT{mts}'] for mts in globals()[f'MTreac{isotope}']])
+	globals()[f'Tdam{element}_isotopes'] = numpy.concatenate([globals()[f'Tdam{isotope}'], globals()[f'Tdam{isotope}'], globals()[f'Tdam{isotope}']])
+	globals()[f'Tdam{element}'] = numpy.unique(globals()[f'Tdam{element}_isotopes'])
+	globals()[f'DamEff{element}_{all_elements}'] = numpy.interp(globals()[f'Tdam{element}'], globals()[f'T_dam_{element}_ref'], globals()[f'Dam_eff_{element}_ref'])
+
+## print the damage efficiencies to file
+
+ofile = open('CombinU-DamageEfficiencyData.txt', 'w')
+for element in elements_target:
+	print(f'{element} in {all_elements}', file = ofile)
+	print(len(globals()[f'Tdam{element}']), file = ofile)
+	for i in range(len(globals()[f'Tdam{element}'])):
+		print(globals()[f'Tdam{element}'][i], globals()[f'DamEff{element}_{all_elements}'][i], file = ofile)
 
 ofile.close()
