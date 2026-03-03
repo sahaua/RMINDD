@@ -236,6 +236,8 @@ ifilename = sys.argv[2]
 (elements_target, isotopes_evaluated, element_recdamen, element_dameff, \
 percent_abundances_all, element_stoich) = readInputFile(ifilename)
 
+know_work_direc = os.getcwd()
+
 ## have to test for some universal value for threshold lattice displacement energy in the target
 ## testing for target SiC -- according to the results of tests, may have to change in inputs that are taken! 
 checkvalue_Ed = 2.0/(1/35 + 1/20)
@@ -448,11 +450,14 @@ for i in range (num_data):
 
 globals()[f'dpa{all_elements}'] = numpy.zeros(num_data)
 globals()[f'NRTdpa{all_elements}'] = numpy.zeros(num_data)
+
 #globals()[f'simple_dpa{all_elements}'] = numpy.zeros(num_data)
 #globals()[f'simple_NRTdpa{all_elements}'] = numpy.zeros(num_data)
 
 
 # print data to output files
+
+os.chdir(know_work_direc)
 
 ## dpa cross sections
 ofile = open('CombinU-XS.out', 'w')
@@ -506,6 +511,7 @@ ofile.close()
 ## damage efficiency versus damage energy data
 
 for element in elements_target:
+	## doing from all mts for an isotope
 	for isotope in isotopes_evaluated:
 		try:
 			(element_iso, mass_num) = separateSymbolMassNumber(isotope)
@@ -514,13 +520,24 @@ for element in elements_target:
 
 		if (element == element_iso):
 			globals()[f'Tdam{isotope}'] = numpy.concatenate([globals()[f'Tdam{isotope}_MT{mts}'] for mts in globals()[f'MTreac{isotope}']])
-	globals()[f'Tdam{element}_isotopes'] = numpy.concatenate([globals()[f'Tdam{isotope}'], globals()[f'Tdam{isotope}'], globals()[f'Tdam{isotope}']])
+
+	## doing for the isotope
+	globals()[f'Tdam{element}_isotopes'] = []
+	for isotope in isotopes_evaluated:
+		try:
+			(element_iso, mass_num) = separateSymbolMassNumber(isotope)
+		except ValueError as e:
+			print(f"Error: {e}")
+
+		if (element == element_iso):
+			globals()[f'Tdam{element}_isotopes'] = numpy.append(globals()[f'Tdam{element}_isotopes'], globals()[f'Tdam{isotope}'])
+
 	globals()[f'Tdam{element}'] = numpy.unique(globals()[f'Tdam{element}_isotopes'])
 	globals()[f'DamEff{element}_{all_elements}'] = numpy.interp(globals()[f'Tdam{element}'], globals()[f'T_dam_{element}_ref'], globals()[f'Dam_eff_{element}_ref'])
 
 ## print the damage efficiencies to file
 
-ofile = open('CombinU-DamageEfficiencyData.txt', 'w')
+ofile = open('CombinU-DamageEfficiencyData.out', 'w')
 for element in elements_target:
 	print(f'{element} in {all_elements}', file = ofile)
 	print(len(globals()[f'Tdam{element}']), file = ofile)
