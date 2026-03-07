@@ -254,16 +254,16 @@ def GQ():
 	
 # Finds the sum of the PKA spectra from partial reactions.
 	
-def ALLSUM (nrg,nrcta):
+def ALLSUM (num_group_limits,partial_reac_tosum):
 
-	nre = nrg - 1
+	nre = num_group_limits - 1
 	numdata = nre*nre
 	dsdt = numpy.zeros((nre,nre)); pkaind = numpy.zeros((nre,nre))
 	ifile = open('ToAddAll.txt', 'r')
 
 	# maximum number of pka spectra matrices (nsp) to add
 	nsp = 6
-	if (len(nrcta) == 1):	# total has been sought
+	if (len(partial_reac_tosum) == 1):	# total has been sought
 		print("n,all .....")
 		for i in range(nsp):
 			ifile.readline()
@@ -278,12 +278,12 @@ def ALLSUM (nrg,nrcta):
 				for k in range (nre):
 					dsdt[j][k] = dsdt[j][k] + pkaind[j][k]
 
-	if (len(nrcta) > 1): 	# sum of some partials has been sought
+	if (len(partial_reac_tosum) > 1): 	# sum of some partials has been sought
 		print("Sum of sought partial reactions .....")
 		for i in range(nsp):
 			flag = 0
-			for j in range(len(nrcta)):
-				if (i+1 == nrcta[j]):
+			for j in range(len(partial_reac_tosum)):
+				if (i+1 == partial_reac_tosum[j]):
 					flag = 1
 					break
 			if (flag == 0):
@@ -316,15 +316,15 @@ def ALLSUM (nrg,nrcta):
 	# After creating this finer array it also calls the reaction specific
 	# subroutines according to the input.
 
-def FINE_ENERGY_CALL_REAC (insp,eliso,igtype,nrg,nbpoints,irct,nrcta):
+def FINE_ENERGY_CALL_REAC (insp,eliso,igtype,num_group_limits,nbpoints,num_reac_array):
 
-	nre = nrg - 1
-	nbge = nrg + (nbpoints*nre)
+	nre = num_group_limits - 1
+	nbge = num_group_limits + (nbpoints*nre)
 	fct = 1.0/(nbpoints+1)
-	ret = [0]*nbge; erg = [0]*nrg
+	ret = [0]*nbge; erg = [0]*num_group_limits
 	if (igtype == 0):
 		ifile = open('Energy-GroupLimits.txt', 'r')
-		nrg = int(ifile.readline().split()[0])
+		num_group_limits = int(ifile.readline().split()[0])
 		for i in range (nre,-1,1):
 			erg[i] = float(ifile.readline().split()[0])
 		ifile.close()
@@ -360,38 +360,39 @@ def FINE_ENERGY_CALL_REAC (insp,eliso,igtype,nrg,nbpoints,irct,nrcta):
 		for k in range (nbpoints+1):
 			ret[j] = k*x + erg[i]
 			j = j + 1
-	ret[nbge-1] = erg[nrg-1]
+	ret[nbge-1] = erg[num_group_limits-1]
 
-	if (irct == 1):
-		PKAS_ELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype)
-	if (irct == 2):
-		PKAS_INELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype)
-	if (irct == 3):
-		CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype)
-	if (irct == 4):
-		CONTROL_nxn (insp,eliso,ret,nbge,nbpoints,nre,igtype)
-	if (irct == 5):
-		PKAS_ng (insp,eliso,ret,nbge,nbpoints,nre,igtype)
-	if (irct == 6):
-		PKAS_redtnMF6MT5 (insp,eliso,ret,nbge,nbpoints,nre,igtype)
-	if (irct == 7):
-		ofile1001 = open('n-allPKAspectra.txt', 'a')
-		print(eliso, file = ofile1001)
-		PKAS_ELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype)
-		PKAS_INELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype)
-		CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype)
-		CONTROL_nxn (insp,eliso,ret,nbge,nbpoints,nre,igtype)
-		PKAS_ng (insp,eliso,ret,nbge,nbpoints,nre,igtype)
-		PKAS_redtnMF6MT5 (insp,eliso,ret,nbge,nbpoints,nre,igtype)
-		# for the total of contributions from all reactions
-		dsdt = numpy.zeros((nre,nre))
-		dsdt = ALLSUM (nrg,nrcta)
-		print('calculated total PKA spectra .....')
-		print('writing .....')
-		print('The total recoil nuclei energy spectra', file = ofile1001)
-		for it in range (nre):
-			print (['{:.6E}'.format(dsdt[it][jt]) for jt in range (nre)], file = ofile1001)
-		ofile1001.close()
+	for irct in num_reac_array:
+		if (irct == 1):
+			PKAS_ELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype)
+		if (irct == 2):
+			PKAS_INELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype)
+		if (irct == 3):
+			CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype)
+		if (irct == 4):
+			CONTROL_nxn (insp,eliso,ret,nbge,nbpoints,nre,igtype)
+		if (irct == 5):
+			PKAS_ng (insp,eliso,ret,nbge,nbpoints,nre,igtype)
+		if (irct == 6):
+			PKAS_redtnMF6MT5 (insp,eliso,ret,nbge,nbpoints,nre,igtype)
+		if (irct == 7):
+			ofile1001 = open('n-allPKAspectra.txt', 'a')
+			print(eliso, file = ofile1001)
+			PKAS_ELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype)
+			PKAS_INELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype)
+			CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype)
+			CONTROL_nxn (insp,eliso,ret,nbge,nbpoints,nre,igtype)
+			PKAS_ng (insp,eliso,ret,nbge,nbpoints,nre,igtype)
+			PKAS_redtnMF6MT5 (insp,eliso,ret,nbge,nbpoints,nre,igtype)
+			# for the total of contributions from all reactions
+			dsdt = numpy.zeros((nre,nre))
+			dsdt = ALLSUM (num_group_limits,num_reac_array)
+			print('calculated total PKA spectra .....')
+			print('writing .....')
+			print('The total recoil nuclei energy spectra', file = ofile1001)
+			for it in range (nre):
+				print (['{:.6E}'.format(dsdt[it][jt]) for jt in range (nre)], file = ofile1001)
+			ofile1001.close()
 
 #=======Integrate in the mesh within groups=======*
 
@@ -439,17 +440,17 @@ def GROUP_INTEG (ret,nbge,nbpoints,nre,dsgmdT):
 	# basic neutron cross section for a particular incident neutron energy
 	# group.
 	
-def PKAS_NORM_CROSSSEC (insp,MTtg,igtype,nrg,dsgmdT):
+def PKAS_NORM_CROSSSEC (insp,MTtg,igtype,num_group_limits,dsgmdT):
 	
-	nre = nrg - 1
-	erg = [0]*nrg
+	nre = num_group_limits - 1
+	erg = [0]*num_group_limits
 	gsig = [0]*nre
 	
 	print('normalize .....')
 				
 	if (igtype == 0):
 		ifile = open('Energy-GroupLimits.txt', 'r')
-		nrg = int(ifile.readline().split()[0])
+		num_group_limits = int(ifile.readline().split()[0])
 		for i in range (nre,-1,1):
 			erg[i] = float(ifile.readline().split()[0])
 		ifile.close()
@@ -479,7 +480,7 @@ def PKAS_NORM_CROSSSEC (insp,MTtg,igtype,nrg,dsgmdT):
 	if (igtype==12):
 		erg = engrp12()
 
-	gsig = GROUPMULTI (insp,igtype,MTtg,nrg)
+	gsig = GROUPMULTI (insp,igtype,MTtg,num_group_limits)
 
 	for i in range (nre):
 		if (gsig[i] != 0):
@@ -537,7 +538,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 	pkaMT107 = numpy.zeros((nre,nre)); pkamatr = numpy.zeros((nre,nre))
 
 	MTnum = [0]*281   		# 31 + 250
-	nrg = nre + 1
+	num_group_limits = nre + 1
 	
 	MTnum[0]=11; MTnum[1]=22;MTnum[2]=23;MTnum[3]=24
 	MTnum[4]=25; MTnum[5]=28;MTnum[6]=29;MTnum[7]=30
@@ -577,7 +578,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 				if (MTc != 103 and MTc != 104 and MTc != 105 and MTc != 106 and MTc != 107):
 					if (MTc < 600):
 						pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,pka3l)
-						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,nrg,pkamatr)
+						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,num_group_limits,pkamatr)
 						PRINTPKAS (eliso,MTc,nre,pkamatr)
 						for isum in range (nre):
 							for jsum in range (nre):
@@ -589,7 +590,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 					if (ifdpd == 1):
 						ifdisc103 = 1
 						pkamatr = GROUP_INTEG (ret,nbge,nbpoints,nre,pka3l)
-						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,nrg,pkamatr)
+						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,num_group_limits,pkamatr)
 						PRINTPKAS (eliso,MTc,nre,pkamatr)
 						for isum in range (nre):
 							for jsum in range (nre):
@@ -597,7 +598,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 					
 					if (ifdpd == 0 and ifdisc103 == 1):
 						pkamatr = GROUP_INTEG (ret,nbge,nbpoints,nre,pka3l)
-						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,nrg,pkamatr)
+						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,num_group_limits,pkamatr)
 						PRINTPKAS (eliso,MTc,nre,pkamatr)		
 						for isum in range (nre):
 							for jsum in range (nre):
@@ -605,7 +606,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 					
 					if (ifdpd == 0 and ifdisc103 == 0):
 						pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,tmpkaMT103)
-						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,nrg,pkamatr)
+						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,num_group_limits,pkamatr)
 						pkaMT103 = pkamatr 
 	
 					if (MTc == 649):
@@ -618,7 +619,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 					if (ifdpd == 1):
 						ifdisc104 = 1
 						pkamatr = GROUP_INTEG (ret,nbge,nbpoints,nre,pka3l)
-						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,nrg,pkamatr)        
+						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,num_group_limits,pkamatr)        
 						PRINTPKAS (eliso,MTc,nre,pkamatr)
 						for isum in range (nre):
 							for jsum in range (nre):
@@ -626,7 +627,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 	
 					if (ifdpd == 0 and ifdisc104 == 1):
 						pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,pka3l)
-						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,nrg,pkamatr)        
+						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,num_group_limits,pkamatr)        
 						PRINTPKAS (eliso,MTc,nre,pkamatr)		
 						for isum in range (nre):
 							for jsum in range (nre):
@@ -634,7 +635,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 	
 					if (ifdpd == 0 and ifdisc104 == 0):
 						pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,tmpkaMT104)
-						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,nrg,pkamatr)
+						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,num_group_limits,pkamatr)
 						pkaMT104 = pkamatr
 	
 					if (MTc == 699):
@@ -647,7 +648,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 					if (ifdpd == 1):
 						ifdisc105 = 1
 						pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,pka3l)
-						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,nrg,pkamatr)
+						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,num_group_limits,pkamatr)
 						PRINTPKAS (eliso,MTc,nre,pkamatr)
 						for isum in range (nre):
 							for jsum in range (nre):
@@ -655,7 +656,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 					
 					if (ifdpd == 0 and ifdisc105 == 1):
 						pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,pka3l)
-						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,nrg,pkamatr)
+						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,num_group_limits,pkamatr)
 						PRINTPKAS (eliso,MTc,nre,pkamatr)
 						for isum in range (nre):
 							for jsum in range (nre):
@@ -663,7 +664,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 		
 					if (ifdpd == 0 and ifdisc105 == 0):
 						pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,tmpkaMT105)	
-						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,nrg,pkamatr)
+						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,num_group_limits,pkamatr)
 						pkaMT105 = pkamatr 
 					
 					if (MTc==749):
@@ -676,7 +677,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 					if (ifdpd == 1):
 						ifdisc106 = 1
 						pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,pka3l)
-						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,nrg,pkamatr)
+						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,num_group_limits,pkamatr)
 						PRINTPKAS (eliso,MTc,nre,pkamatr)
 						for isum in range (nre):
 							for jsum in range (nre):
@@ -684,7 +685,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 					
 					if (ifdpd == 0 and ifdisc106 == 1):
 						pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,pka3l)
-						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,nrg,pkamatr)
+						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,num_group_limits,pkamatr)
 						PRINTPKAS (eliso,MTc,nre,pkamatr)
 						for isum in range (nre):
 							for jsum in range (nre):
@@ -692,7 +693,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 					
 					if (ifdpd == 0 and ifdisc106 == 0):
 						pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,tmpkaMT106)
-						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,nrg,pkamatr)		
+						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,num_group_limits,pkamatr)		
 						pkaMT106 = pkamatr
 					
 					if (MTc == 799):
@@ -705,7 +706,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 					if (ifdpd == 1):
 						ifdisc107 = 1
 						pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,pka3l)
-						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,nrg,pkamatr)
+						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,num_group_limits,pkamatr)
 						PRINTPKAS (eliso,MTc,nre,pkamatr)
 						for isum in range (nre):
 							for jsum in range (nre):
@@ -713,7 +714,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 	
 					if (ifdpd == 0 and ifdisc107 == 1):
 						pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,pka3l)
-						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,nrg,pkamatr)
+						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,num_group_limits,pkamatr)
 						PRINTPKAS (eliso,MTc,nre,pkamatr)
 						for isum in range (nre):
 							for jsum in range (nre):
@@ -721,7 +722,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 	
 					if (ifdpd == 0 and ifdisc107 == 0):
 						pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,tmpkaMT107)
-						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,nrg,pkamatr)		
+						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,num_group_limits,pkamatr)		
 						pkaMT107 = pkamatr
 					
 					if (MTc==849):
@@ -733,7 +734,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 		iflpr = prflag(nbge,tmpkaMT103)
 		if (iflpr == 1):
 			pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,tmpkaMT103)
-			pkamatr = PKAS_NORM_CROSSSEC (insp,103,igtype,nrg,pkamatr)
+			pkamatr = PKAS_NORM_CROSSSEC (insp,103,igtype,num_group_limits,pkamatr)
 			pkaMT103 = pkamatr
 			PRINTPKAS (eliso,103,nre,pkaMT103)
 
@@ -741,7 +742,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 		iflpr = prflag(nbge,tmpkaMT104)
 		if (iflpr == 1):
 			pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,tmpkaMT104)
-			pkamatr = PKAS_NORM_CROSSSEC (insp,104,igtype,nrg,pkamatr)
+			pkamatr = PKAS_NORM_CROSSSEC (insp,104,igtype,num_group_limits,pkamatr)
 			pkaMT104 = pkamatr
 			PRINTPKAS (eliso,104,nre,pkaMT104)
 
@@ -749,7 +750,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 		iflpr = prflag(nbge,tmpkaMT105)
 		if (iflpr == 1):
 			pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,tmpkaMT105)
-			pkamatr = PKAS_NORM_CROSSSEC (insp,105,igtype,nrg,pkamatr)
+			pkamatr = PKAS_NORM_CROSSSEC (insp,105,igtype,num_group_limits,pkamatr)
 			pkaMT105 = pkamatr
 			PRINTPKAS (eliso,105,nre,pkaMT105)
 		
@@ -757,7 +758,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 		iflpr = prflag(nbge,tmpkaMT106)
 		if (iflpr == 1):
 			pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,tmpkaMT106)
-			pkamatr = PKAS_NORM_CROSSSEC (insp,106,igtype,nrg,pkamatr)
+			pkamatr = PKAS_NORM_CROSSSEC (insp,106,igtype,num_group_limits,pkamatr)
 			pkaMT106 = pkamatr
 			PRINTPKAS (eliso,106,nre,pkaMT106)
 
@@ -765,7 +766,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 		iflpr = prflag(nbge,tmpkaMT107)
 		if (iflpr == 1):
 			pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,tmpkaMT107)
-			pkamatr = PKAS_NORM_CROSSSEC (insp,107,igtype,nrg,pkamatr)
+			pkamatr = PKAS_NORM_CROSSSEC (insp,107,igtype,num_group_limits,pkamatr)
 			pkaMT107 = pkamatr
 			PRINTPKAS (eliso,107,nre,pkaMT107)
 	
@@ -797,7 +798,7 @@ def CONTROL_nxn (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 	pkaxn1l = numpy.zeros((nbge,nbge))
 	pkaxn1 = numpy.zeros((nre,nre)); pkamatr = numpy.zeros((nre,nre))
 	MTnum = [0]*3
-	nrg = nre + 1
+	num_group_limits = nre + 1
 	MTnum[0] = 16; MTnum[1] = 17; MTnum[2] = 37
 	
 	for i in range (3):
@@ -810,7 +811,7 @@ def CONTROL_nxn (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 				MTc = MTnum[i]
 				print ('n, xn:: MT = ', MTc)
 				pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,pkaxn1l)
-				pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,nrg,pkamatr)
+				pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,num_group_limits,pkamatr)
 				PRINTPKAS (eliso,MTc,nre,pkamatr)
 				for isum in range (nre):
 					for jsum in range (nre):
@@ -964,7 +965,7 @@ def PKAS_ELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 	xgaussq = [0]*nquad
 	wgaussq = [0]*nquad
 	pkamatr = numpy.zeros((nre,nre))
-	nrg = nre + 1
+	num_group_limits = nre + 1
 	ofile101 = open("Output_RadEMC-RecedU.txt", 'a')
 
 	print(' Elastic scattering (MT = 2) PKA spectra', file = ofile101)
@@ -1226,7 +1227,7 @@ def PKAS_ELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 				dsgmdT[i][ia] = abs(sret[i]*val2[ia])
 	
 	pkamatr = GROUP_INTEG (ret,nbge,nbpoints,nre,dsgmdT)	
-	pkamatr = PKAS_NORM_CROSSSEC (insp,2,igtype,nrg,pkamatr)
+	pkamatr = PKAS_NORM_CROSSSEC (insp,2,igtype,num_group_limits,pkamatr)
 	PRINTPKAS (eliso,2,nre,pkamatr)
 
 	ofile1000 = open ('ToAddAll.txt', 'a')
@@ -1307,7 +1308,7 @@ def PKAS_INELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 	Enp = numpy.zeros((3,100,1000)); f = numpy.zeros((3,100,1000))
 	al6 = numpy.zeros((41,3,100,65))
 	
-	nrg = nre + 1
+	num_group_limits = nre + 1
 	
 	ofile101 = open("Output_RadEMC-RecedU.txt", 'a')
 	print('', file = ofile101)
@@ -1825,7 +1826,7 @@ def PKAS_INELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 		iflnz = prflag(nbge,dsgmdT)
 		if (iflnz == 1):
 			pkamatr = GROUP_INTEG (ret,nbge,nbpoints,nre,dsgmdT)
-			pkamatr = PKAS_NORM_CROSSSEC (insp,MTtg,igtype,nrg,pkamatr)
+			pkamatr = PKAS_NORM_CROSSSEC (insp,MTtg,igtype,num_group_limits,pkamatr)
 			PRINTPKAS (eliso,MTtg,nre,pkamatr)
 			for i in range (nre):
 				for j in range (nre):
@@ -2697,8 +2698,8 @@ def PKAS_redtnMF6MT5 (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 				if (igtype==12):
 					erg = engrp12()
 
-				nrg = nre + 1
-				gsig = TERPOLAPR (2,nbge,ret,sret,nrg,erg)
+				num_group_limits = nre + 1
+				gsig = TERPOLAPR (2,nbge,ret,sret,num_group_limits,erg)
 				for i in range (nre):
 					if (gsig[i] != 0):
 						sumnorm = 0
@@ -2756,7 +2757,7 @@ def PKAS_nxn (MTi,ret,nbge,nbpoints,nre,igtype):
 	al6 = numpy.zeros((4,100,65))
 	Ball = [0]*1000; fr6 = numpy.zeros((1000,5000))
 
-	nrg = nre + 1
+	num_group_limits = nre + 1
 
 	ofile101 = open("Output_RadEMC-RecedU.txt", 'a')
 	print('', file = ofile101)
@@ -3100,7 +3101,7 @@ def PKAS_ng (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 	NBT15a = [0]*20; INTr15a = [0]*20; NPg15 = [0]*200
 	Eg15 = numpy.zeros((200,200)); g15 = numpy.zeros((200,200)); E15 = [0]*100; Y15 = [0]*100; En15 = [0]*200
 #------------------------------------------------------------
-	nrg = nre + 1
+	num_group_limits = nre + 1
 	
 	ofile101 = open("Output_RadEMC-RecedU.txt", 'a')
 	print('', file = ofile101)
@@ -3659,7 +3660,7 @@ def PKAS_ng (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 			dsgmdT[i][j] = sret[i]*dsgmdT[i][j]
 
 	pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,dsgmdT)
-	pkamatr = PKAS_NORM_CROSSSEC (insp,102,igtype,nrg,pkamatr)
+	pkamatr = PKAS_NORM_CROSSSEC (insp,102,igtype,num_group_limits,pkamatr)
 	PRINTPKAS (eliso,102,nre,pkamatr)
 
 	ofile101.close()
@@ -3726,14 +3727,14 @@ def spectrum(En,L):
 
 #=======Energy multigrouping=======*		
 		
-def GROUPMULTI (insp,igtype,mttg,nrg):
-	gsdpa = [0]*nrg; Eg = [0]*nrg
-	Ngl = nrg
+def GROUPMULTI (insp,igtype,mttg,num_group_limits):
+	gsdpa = [0]*num_group_limits; Eg = [0]*num_group_limits
+	Ngl = num_group_limits
 	
 	if (insp == 1):
 		ifile407 = open('NeutronSpectrum.txt', 'r')
 		nre = int(ifile407.readline().split()[-1])
-		fi = numpy.zeros(nrg)
+		fi = numpy.zeros(num_group_limits)
 		for i in reversed(range(nre)):
 			fi[i] = float(ifile407.readline().split()[0])
 		fi[-1] = fi[-2]
