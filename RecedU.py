@@ -912,7 +912,7 @@ def UQCE():
 	# Et=Energy array in MT=1, Etu=unique of Et
 	# extraction of total energy points
 	
-	ifile104 = open ('tape02', 'r')
+	ifile104 = open (preprocessed_ENDF6_file, 'r')
 	while True:
 		line = ifile104.readline()  
 		data = eachlineinfo(line)
@@ -3668,7 +3668,7 @@ def FILE1 ():
 	MFs = [0]*1000; MTs = [0]*1000 
 		# maximum of NXC = 350 (ENDF-102), 
 		# but deviates for Mn55 ENDF/B-VII.1, so changed to 1000 
-	ifile = open('tape01','r')
+	ifile = open(raw_ENDF6_file,'r')
 	ifile.readline()
 	line = ifile.readline()
 	(ZA,AWR,LRP,LFI,NLIB,NMOD,MAT,MF,MT) = line_type1_info(line)
