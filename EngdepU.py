@@ -909,7 +909,7 @@ def gtYMf6Mt5():
 	iAp[3] = 3
 	iAp[4] = 4
 		
-	ifile = open('tape01', 'r')
+	ifile = open(raw_ENDF6_file, 'r')
 	
 	while (True):
 		line = ifile.readline()
@@ -1041,7 +1041,7 @@ def gtYMf6Mt5():
 	## Calculation of neutron dpa and heating cross sections due to
 	## charged particle out reactions of neutrons.
 	
-def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
+def n_CPO (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 	sdpat = numpy.zeros(NPt); snhtt = numpy.zeros(NPt)
 	signcpol = numpy.zeros(NPt); tot_energy_products1 = numpy.zeros(NPt); num_of_displ1 = numpy.zeros(NPt)
 	# for energy-balance heating
@@ -1127,7 +1127,7 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 
 	iflpresent = 0 		# flag for the presence of cross sections MF=3. 
 
-	ifile = open ('tape02', 'r')
+	ifile = open (preprocessed_ENDF6_file, 'r')
 
 	## extraction of cross sections
 	while True:
@@ -1206,7 +1206,7 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 		ifspad4muf = 0 # flag for secondary particle angular data in 'mu,f' form
 
 		if (MTi >= int(MTdthl[0])):
-			ifile = open ('tape01', 'r')
+			ifile = open (raw_ENDF6_file, 'r')
 			while True:
 				line = ifile.readline()
 				if (line == ''):
@@ -1277,7 +1277,7 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 		iflcom = 0 # secondary energy and angle in c.o.m. system
 		iflcomlab = 0 # secondary energy and angle in c.o.m (A<=4), lab. (A>4)
 
-		ifile = open ('tape01', 'r')
+		ifile = open (raw_ENDF6_file, 'r')
 
 		while True:
 			line = ifile.readline()
@@ -2119,7 +2119,7 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 	# number 1601. This number is also used in the file name giving the
 	# total from (n,xn) reactions.
 
-def CONTROL_nxn (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
+def CONTROL_nxn (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,NPt,Etu,mdisp,Ed,bad,cad):
 	dpaxn1 = [0]*NPt; snhtxn1 = [0]*NPt; signxntot = [0]*NPt
 	num_of_displnxntot = [0]*NPt; tot_energy_productsnxntot = [0]*NPt
 		# snhtt = Heating cross section from (n,(i)n)				
@@ -2136,7 +2136,7 @@ def CONTROL_nxn (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 		MTfind = MTnum[i]
 		iflMTpr = FindMT (MTfind)
 		if (iflMTpr == 1):
-			(signxnl, num_disp, tot_en_products, sdpat, snhtt, iflpresent) = n_xn (ofile_outRMINDD,MTnum[i],NPt,Etu,mdisp,Ed,bad,cad)
+			(signxnl, num_disp, tot_en_products, sdpat, snhtt, iflpresent) = n_xn (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,MTnum[i],NPt,Etu,mdisp,Ed,bad,cad)
 			if (iflpresent == 1):
 				MTc = MTnum[i]
 				print ( 'MT = ', MTc)
@@ -2160,7 +2160,7 @@ def CONTROL_nxn (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 	# and kept in an arbitrarily assigned MT number 3001. This number is 
 	# also used in the file name giving the total from (n,CPO) reactions.
 
-def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
+def CONTROL_nCPO (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,NPt,Etu,mdisp,Ed,bad,cad):
 
 	tmdpaMT103 = [0]*NPt; tmdpaMT104 = [0]*NPt
 	tmdpaMT105 = [0]*NPt; tmdpaMT106 = [0]*NPt; tmdpaMT107 = [0]*NPt
@@ -2299,7 +2299,7 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 			if (iflMTpr == 1):
 				(signcpol,num_of_displ1,tot_energy_products1, \
 				tot_energy_n_photons1,dpanth, snhtt, snhtt_EB, ifdpd, iflpresent) = \
-											n_CPO (ofile_outRMINDD,MTtpnum[j],lpr,mdisp,Ed,bad,cad,NPt,Etu)
+											n_CPO (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,MTtpnum[j],lpr,mdisp,Ed,bad,cad,NPt,Etu)
 				if (iflpresent == 1):
 					MTc = MTtpnum[j]
 					print('MT = ', MTc)
@@ -2387,7 +2387,7 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 
 				(signcpol,num_of_displ1,tot_energy_products1, \
 				tot_energy_n_photons1,dpanth, snhtt, snhtt_EB, ifdpd, iflpresent) = \
-											n_CPO (ofile_outRMINDD,int(MTnum[j]),j,mdisp,Ed,bad,cad,NPt,Etu)
+											n_CPO (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,int(MTnum[j]),j,mdisp,Ed,bad,cad,NPt,Etu)
 				if (iflpresent == 1):
 					MTc = int(MTnum[j])
 					print('MT = ', MTc)
@@ -2803,7 +2803,7 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 			dpaMT5 = [0]*NPt
 			snhtMT5 = [0]*NPt
 
-			ifile = open ("tape02", 'r')
+			ifile = open (preprocessed_ENDF6_file, 'r')
 
 			# extraction of cross sections
 			NP1 = 0
@@ -3116,7 +3116,7 @@ def avegsqc(Ep1,fEEp,nfe,iplaw,ndisc,Yd,iFile):
 	## Calculation of neutron dpa and heating cross sections due to
 	## radiative capture of neutron reaction.
 
-def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
+def RADIATIVE_CAPTURE (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,NPt,Etu,mdisp,Ed,bad,cad):
 	siget = numpy.zeros(NPt); sdpa = numpy.zeros(NPt); snht = numpy.zeros(NPt)
 	s1 = numpy.zeros(NPt); s2 = numpy.zeros(NPt)
 	num_of_displ = numpy.zeros(NPt); tot_energy_products = numpy.zeros(NPt)
@@ -3146,7 +3146,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 #------------------------------------------------------------
 
 	ifl6 = 0
-	ifile = open ("tape01", 'r')
+	ifile = open (raw_ENDF6_file, 'r')
 	ifile.readline()
 	while True:
 		line = ifile.readline()
@@ -3256,7 +3256,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 	ifile.close()
 
 	ifl12 = 0
-	ifile = open("tape01", 'r')
+	ifile = open(raw_ENDF6_file, 'r')
 	while True:
 		line = ifile.readline()
 		if (line == ''):
@@ -3414,7 +3414,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 	ifile.close()
 
 	ifl15 = 0
-	ifile = open ("tape01", 'r')
+	ifile = open (raw_ENDF6_file, 'r')
 	if (ifl6 == 0):
 		while True:
 			line = ifile.readline()
@@ -3504,7 +3504,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 
 # ---- Reading the (n,g) cross sections ----
 
-	ifile = open ("tape02", 'r')
+	ifile = open (preprocessed_ENDF6_file, 'r')
 	ifile.readline()
 	line = ifile.readline()
 	(ZA,AWR,L0,L1,L2,L3,MAT,MF,MT) = line_type1_info(line)
@@ -3787,7 +3787,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
     # Calculation of neutron dpa and heating cross sections due to the elastic
 	# scattering interactions.
 	
-def ELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
+def ELASTIC_SCATTERING(ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,NPt,Etu,mdisp,Ed,bad,cad):
 
 	siget = [0]*NPt; sdpat = [0]*NPt; snht = [0]*NPt
 	alfull = numpy.zeros((NPt,65)); fmuE = numpy.zeros((NPt,64))
@@ -3803,7 +3803,7 @@ def ELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 # ------------------------------------------------------------------
 
 	# Extraction of Elastic Cross Sections
-	ifile = open("tape02", 'r')
+	ifile = open(preprocessed_ENDF6_file, 'r')
 	while True:
 		line = ifile.readline()
 		if (line == ''):
@@ -3830,7 +3830,7 @@ def ELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
  	# Extraction of Legendre Polynomial Coefficients and 
 	# Tabulated Probability
 
-	ifile = open("tape01", 'r')
+	ifile = open(raw_ENDF6_file, 'r')
 	while True:
 		line = ifile.readline()
 		if (line == ''):
@@ -4087,7 +4087,7 @@ def AKPel(A,Z,En,Ed):
 	# Calculation of neutron dpa and heating cross sections due to the inelastic
 	# scattering interactions.
 	
-def INELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
+def INELASTIC_SCATTERING(ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,NPt,Etu,mdisp,Ed,bad,cad):
 
 	sdpa = [0]*NPt; sdpatemp = [0]*NPt; snhttemp = [0]*NPt
 	snht = [0]*NPt; alc = [0]*65; alfull = numpy.zeros((NPt,65))
@@ -4113,7 +4113,7 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 	print(' Inelastic scattering dpa/heating cross section', file = ofile_outRMINDD)
 	print('------------------------------------------------', file = ofile_outRMINDD)
 
-	ifile = open("tape01", 'r')
+	ifile = open(raw_ENDF6_file, 'r')
 	ifile.readline()
 	line = ifile.readline()
 	(ZA,AWR,L0,L1,L2,L3,MAT,MF,MT) = line_type1_info(line)
@@ -4133,7 +4133,7 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 		iflMTpr = FindMT(MTfind)
 		if (iflMTpr == 1):
 			iflpr = 0
-			ifile = open("tape02", 'r')
+			ifile = open(preprocessed_ENDF6_file, 'r')
 			while True:
 				line = ifile.readline()
 				if (line == ''):
@@ -4162,7 +4162,7 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 			if (iflpr == 1):	# do the following only if MT is present in MF=3
 				if4d = 0
 				if4c = 0
-				ifile = open ("tape01", 'r')
+				ifile = open (raw_ENDF6_file, 'r')
 				while True:
 					line = ifile.readline()
 					if (line == ''):
@@ -4204,7 +4204,7 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 				ift5c = 0
 				if5c = 0
 				if (mta == 91 and if4c == 0):
-					ifile = open ("tape01", 'r')
+					ifile = open (raw_ENDF6_file, 'r')
 					while True:
 						line = ifile.readline()
 						if (line == ''):
@@ -4265,7 +4265,7 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 				if6c = 0
 
 				if (if4d == 0 or if4c == 0 or if5c == 0):
-					ifile = open ("tape01", 'r')
+					ifile = open (raw_ENDF6_file, 'r')
 					while True:
 						line = ifile.readline()
 						if (line == ''):
@@ -4681,7 +4681,7 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 	# Calculation of neutron dpa and heating cross sections due to
 	# (n, 2n), (n, 3n) and (n, 4n) reactions.
 
-def n_xn (ofile_outRMINDD,MTi,NPt,Etu,mdisp,Ed,bad,cad):
+def n_xn (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,MTi,NPt,Etu,mdisp,Ed,bad,cad):
 
 	sdpat = [0]*NPt; snhtt = [0]*NPt; signxnl = [0]*NPt; alc = [0]*65
 	num_of_displ = [0]*NPt; tot_energy_products = [0]*NPt
@@ -4705,7 +4705,7 @@ def n_xn (ofile_outRMINDD,MTi,NPt,Etu,mdisp,Ed,bad,cad):
 	print ('  (n, xn) MT=',MTi,' dpa/heating cross section', file = ofile_outRMINDD)
 	print ('------------------------------------------------', file = ofile_outRMINDD)
 
-	ifile = open ("tape01", 'r')
+	ifile = open (raw_ENDF6_file, 'r')
 	ifile.readline() 
 	line = ifile.readline()
 	(ZA,AWR,L0,L1,L2,L3,MAT,MF,MT) = line_type1_info(line)
@@ -4714,7 +4714,7 @@ def n_xn (ofile_outRMINDD,MTi,NPt,Etu,mdisp,Ed,bad,cad):
 	Z = int(ZA/1000)
 	A = AWR
 
-	ifile = open ("tape02", 'r')
+	ifile = open (preprocessed_ENDF6_file, 'r')
 	while True:
 		line = ifile.readline()
 		if (line == ''):
@@ -4742,7 +4742,7 @@ def n_xn (ofile_outRMINDD,MTi,NPt,Etu,mdisp,Ed,bad,cad):
 	if (iflpresent == 1):
 		ift5 = 0
 		if5 = 0
-		ifile = open ("tape01", 'r')
+		ifile = open (raw_ENDF6_file, 'r')
 		while True:
 			line = ifile.readline()
 			if (line == ''):
@@ -4805,7 +4805,7 @@ def n_xn (ofile_outRMINDD,MTi,NPt,Etu,mdisp,Ed,bad,cad):
 
 		if6 = 0
 		if (if5 == 0):
-			ifile = open ("tape01", 'r')
+			ifile = open (raw_ENDF6_file, 'r')
 			while True:
 				line = ifile.readline()
 				if (line == ''):
@@ -5070,7 +5070,7 @@ def n_xn (ofile_outRMINDD,MTi,NPt,Etu,mdisp,Ed,bad,cad):
 	# Calculation of neutron dpa and heating cross sections due to
 	# all inexplicitly given neutron reactions.
 
-def anytnMF6MT5 (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
+def anytnMF6MT5 (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,NPt,Etu,mdisp,Ed,bad,cad):
 	sdpat = [0]*NPt; snhtt = [0]*NPt; snhtt_EB = [0]*NPt
 	num_of_displ = [0]*NPt; tot_energy_products = [0]*NPt; tot_energy_n_photons = [0]*NPt
 	siget = [0]*NPt
@@ -5081,7 +5081,7 @@ def anytnMF6MT5 (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 	print('-------------------------------------------------', file = ofile_outRMINDD)
 
 	iflpresent = 0 		# flag for the presence of cross sections MF=3. 
-	ifile = open ("tape02", 'r')
+	ifile = open (preprocessed_ENDF6_file, 'r')
 
 	# extraction of cross sections
 	while True:
@@ -5124,7 +5124,7 @@ def anytnMF6MT5 (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 		iflcom = 0 # secondary energy and angle in c.o.m. system
 		iflcomlab = 0 # secondary energy and angle in c.o.m (A<=4), lab. (A>4)
 
-		ifile = open ("tape01", 'r')
+		ifile = open (raw_ENDF6_file, 'r')
 		while True:
 			line = ifile.readline()
 			if (line == ''):
@@ -5154,7 +5154,7 @@ def anytnMF6MT5 (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 						break
 		ifile.close()
 
-		ifile = open ("tape01", 'r')
+		ifile = open (raw_ENDF6_file, 'r')
 		while True:
 			line = ifile.readline()
 			if (line == ''):
@@ -5514,12 +5514,12 @@ def anytnMF6MT5 (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 	# only once. It calls other reaction-specific subroutines and their required
 	# multigrouping according to the inputs given.
 	
-def uqce (ofile_outRMINDD,insp,nra,nreac,mdisp,Ed,bad,cad,mgyn,igtype):
+def uqce (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,nra,nreac,mdisp,Ed,bad,cad,mgyn,igtype):
 
 	# Et=Energy array in MT=1, Etu=unique of Et
 	# extraction of total energy points
 
-	ifile = open ('tape02', 'r') # tape02=output of (reconr + broadr) PENDF
+	ifile = open (preprocessed_ENDF6_file, 'r')
 
 	while True:
 		line = ifile.readline()
@@ -5564,45 +5564,44 @@ def uqce (ofile_outRMINDD,insp,nra,nreac,mdisp,Ed,bad,cad,mgyn,igtype):
 
 	# call reactions
 	
-	# binary variables required in case  nra(i)=6
-		
+	# binary variables required in case  nra[i]=7
 	irct1y=0; irct2y=0; irct3y=0; irct4y=0; irct5y=0; irct6y=0
 
 	for i in range(nreac):
 
 		irct = nra[i]
 		if (irct == 1):
-			RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad) # MT=102
+			RADIATIVE_CAPTURE (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,NPt,Etu,mdisp,Ed,bad,cad) # MT=102
 			if (mgyn==1):
 				groupmulti(insp,102,igtype,1) 	# 102=id for output file, 1=DPA
 				groupmulti(insp,102,igtype,2) 	# 102=id for output file, 2=Heating
 			irct1y=1
 		if (irct==2):
-			ELASTIC_SCATTERING (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad) 	# MT=2
+			ELASTIC_SCATTERING (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,NPt,Etu,mdisp,Ed,bad,cad) 	# MT=2
 			if (mgyn==1): 
 				groupmulti(insp,2,igtype,1)
 				groupmulti(insp,2,igtype,2)
 			irct2y=1
 		if (irct==3):
-			INELASTIC_SCATTERING (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad) 		# MT=51 to 91
+			INELASTIC_SCATTERING (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,NPt,Etu,mdisp,Ed,bad,cad) 		# MT=51 to 91
 			if (mgyn==1):
 				groupmulti(insp,4,igtype,1)
 				groupmulti(insp,4,igtype,2)
 			irct3y=1
 		if (irct==4):							 # (n,2n), (n,3n) and (n,4n)
-			CONTROL_nxn (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad) 
+			CONTROL_nxn (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,NPt,Etu,mdisp,Ed,bad,cad) 
 			if (mgyn==1):
 				groupmulti(insp,1601,igtype,1)
 				groupmulti(insp,1601,igtype,2)
 			irct4y=1
 		if (irct==5):
-			CONTROL_nCPO(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad) 		# (n,CPO)
+			CONTROL_nCPO(ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,NPt,Etu,mdisp,Ed,bad,cad) 		# (n,CPO)
 			if (mgyn==1):
 				groupmulti(insp,3001,igtype,1)
 				groupmulti(insp,3001,igtype,2)
 			irct5y=1
 		if (irct==6):
-			anytnMF6MT5(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad)		# (n, anything)
+			anytnMF6MT5(ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,NPt,Etu,mdisp,Ed,bad,cad)		# (n, anything)
 			if (mgyn==1):
 				groupmulti(insp,5001,igtype,1)
 				groupmulti(insp,5001,igtype,2)
@@ -5610,17 +5609,17 @@ def uqce (ofile_outRMINDD,insp,nra,nreac,mdisp,Ed,bad,cad,mgyn,igtype):
 			irct6y=1
 		if (irct==7): 				# Total DPA and Heating due to incident neutron
 			if(irct1y==0):
-				RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad)
+				RADIATIVE_CAPTURE (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,NPt,Etu,mdisp,Ed,bad,cad)
 			if(irct2y==0):
-				ELASTIC_SCATTERING (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad)
+				ELASTIC_SCATTERING (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,NPt,Etu,mdisp,Ed,bad,cad)
 			if(irct3y==0):
-				INELASTIC_SCATTERING (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad)
+				INELASTIC_SCATTERING (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,NPt,Etu,mdisp,Ed,bad,cad)
 			if(irct4y==0):
-				CONTROL_nxn(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad)
+				CONTROL_nxn(ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,NPt,Etu,mdisp,Ed,bad,cad)
 			if(irct5y==0):
-				CONTROL_nCPO(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad)
+				CONTROL_nCPO(ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,NPt,Etu,mdisp,Ed,bad,cad)
 			if(irct6y==0):
-				anytnMF6MT5(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad)
+				anytnMF6MT5(ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,NPt,Etu,mdisp,Ed,bad,cad)
 			total(NPt,Etu)				# Add contributions to DPA,Heating from all partial reactions
 			if (mgyn==1):
 				groupmulti(insp,1,igtype,1) 		# 1= id for output file, 1 = DPA
@@ -5757,7 +5756,7 @@ def printtofile (NPt,Etu,siget,disp_heat_value,sdpat,MTtp,iflgrouped,ifldh):
 def file1(): 
 		# maximum of NXC = 350 (ENDF-102), 
 		# but deviates for Mn55 ENDF/B-VII.1, so changed to 1000 
-	ifile = open('tape01', 'r')
+	ifile = open(raw_ENDF6_file, 'r')
 	ifile.readline()
 	line = ifile.readline()
 	data = eachlineinfo(line)
