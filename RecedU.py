@@ -971,7 +971,7 @@ def PKAS_ELASTIC (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,el
 	print('-------------------------------------------', file = ofile_outRMINDD)
 # --------------------------------------------------------------------------
 	# extraction of total energy grid
-	ifile = open (preprocessed_ENDF6_file, 'r')
+	ifile_preprocessedENDF6.seek(0, 0)
 	while True:
 		line = ifile.readline()
 		if (line == ''):
@@ -991,14 +991,13 @@ def PKAS_ELASTIC (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,el
 					(Et, sigt) = line_type3_info(ifile,NPt,2)
 		else:
 			break
-	ifile.close()
 
 	print('', file = ofile_outRMINDD)
 	print(NPt, ' Energy points in total cross section', file = ofile_outRMINDD)
 
 	# extraction of cross sections
 		
-	ifile = open (preprocessed_ENDF6_file, 'r')
+	ifile_preprocessedENDF6.seek(0, 0)
 	while True:
 		line = ifile.readline()
 		if (line == ''):
@@ -1018,14 +1017,13 @@ def PKAS_ELASTIC (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,el
 					(E, sig) = line_type3_info(ifile,NP,2)
 		else:
 			break
-	ifile.close()
 
 	print ('', file = ofile_outRMINDD)
 	print (NP, 'Energy points in elastic scattering', file = ofile_outRMINDD)
 		
  	# extraction of Legendre polynomial coefficients and Probability
 	
-	ifile = open (raw_ENDF6_file, 'r')
+	ifile_rawENDF6.seek(0, 0)
 	while True:
 		line = ifile.readline()
 		if (line == ''):
@@ -1086,8 +1084,6 @@ def PKAS_ELASTIC (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,el
 								fdata[j][i] = value2
 		else:
 			break
-
-	ifile.close()
 
 # --------------------------------------------------------------------------
 	A = AWR
@@ -1312,11 +1308,10 @@ def PKAS_INELASTIC (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,
 	print(' Inelastic scattering (MT = 4) PKA spectra', file = ofile_outRMINDD)
 	print('-------------------------------------------', file = ofile_outRMINDD)
 
-	ifile = open (raw_ENDF6_file, 'r')
+	ifile_rawENDF6.seek(0, 0)
 	ifile.readline()
 	line = ifile201.readline()
 	(ZA,AWR,L0,L1,L2,L3,MAT,MF,MT) = line_type1_info(line)
-	ifile.close()
 
 	Z = int(ZA/1000)
 	A = AWR
@@ -1332,7 +1327,7 @@ def PKAS_INELASTIC (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,
 		mta[i] = m
 		m = m + 1
 
-	ifile = open (preprocessed_ENDF6_file, 'r')
+	ifile_preprocessedENDF6.seek(0, 0)
 	l = 0
 	while True:
 		line = ifile.readline()
@@ -1370,11 +1365,10 @@ def PKAS_INELASTIC (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,
 						l = l + 1
 		else:
 			break
-	ifile.close()
 
 	if4d = 0
 	if4c = 0
-	ifile = open (raw_ENDF6_file, 'r')
+	ifile_rawENDF6.seek(0, 0)
 	l = 0
 	while True:
 		line = ifile.readline()
@@ -1413,10 +1407,9 @@ def PKAS_INELASTIC (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,
 						l = l+1
 		else:
 			break
-	ifile.close()
 
 	if5c = 0
-	ifile = open (raw_ENDF6_file, 'r')
+	ifile_rawENDF6.seek(0, 0)
 	while True:
 		line = ifile.readline()
 		if (line == ''):
@@ -1468,12 +1461,11 @@ def PKAS_INELASTIC (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,
 								tht[l][NSS][j] = value2
 		else:
 			break
-	ifile.close()
 
 	if6d = 0
 	if6c = 0
 	if (if4d == 0 or if4c == 0 or if5c == 0):
-		ifile = open (raw_ENDF6_file, 'r')
+		ifile_rawENDF6.seek(0, 0)
 		l = 0
 		while True:
 			line = ifile.readline()
@@ -1553,7 +1545,6 @@ def PKAS_INELASTIC (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,
 							l = l+1
 			else:
 				break
-	ifile.close()
 
 	(xabc, wg) = GQ()
 
@@ -1961,7 +1952,7 @@ def PKAS_nCPO (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,MTi,lpr,re
 	
 	iflpresent = 0
 	NP = 0
-	ifile = open (preprocessed_ENDF6_file, 'r')
+	ifile_preprocessedENDF6.seek(0, 0)
 
 	# extraction of cross sections
 	while True:
@@ -1999,7 +1990,6 @@ def PKAS_nCPO (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,MTi,lpr,re
 					(Eall, sall) = line_type3_info(ifile,NP,2)
 		else:
 			break
-	ifile.close()
 
 #only if MF3 cross sections are available then do the following
 
@@ -2011,7 +2001,7 @@ def PKAS_nCPO (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,MTi,lpr,re
 		ifspad4al = 0 	# flag for secondary particle angular data in 'al' coefficients
 		ifspad4muf = 0 	# flag for secondary particle angular data in 'mu,f' form
 
-		ifile = open (raw_ENDF6_file, 'r')
+		ifile_rawENDF6.seek(0, 0)
 
 		while True:
 			line = ifile.readline()
@@ -2078,14 +2068,13 @@ def PKAS_nCPO (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,MTi,lpr,re
 									fdata4[i][j] = value2
 			else:
 				break
-		ifile.close()
 
 		iflr = 0  		#flag to know presence of recoil data in MF = 6
 		ifspad6 = 0		#flag for secondary particle angular data
 		iffdlcd = 0 	#flag for fdata linear with cdata (LAW=2)
 		iflgfdlcd = 0 	#flag for log(fdata) linear with cdata (LAW=2)
 
-		ifile = open (raw_ENDF6_file, 'r')
+		ifile_rawENDF6.seek(0, 0)
 		while True:
 			line = ifile.readline()
 			if (line == ''):
@@ -2173,7 +2162,6 @@ def PKAS_nCPO (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,MTi,lpr,re
 											f[NSS][i][j] = value2
 			else:
 				break
-		ifile.close()
 
 		n1[lpr] = (A+1-beta[lpr])/(A+1)
 		cbe[lpr] = (1.029e+6*ze[lpr]*Z)/(beta[lpr]**(1/3)+A**(1/3))
@@ -2443,7 +2431,7 @@ def PKAS_redtnMF6MT5 (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,ins
 # --------------------------------------------------------------------------
 	iflpresent = 0
 	NP = 0
-	ifile = open (preprocessed_ENDF6_file, 'r')
+	ifile_preprocessedENDF6.seek(0, 0)
 
 	# extraction of cross sections
 	while True:
@@ -2468,7 +2456,6 @@ def PKAS_redtnMF6MT5 (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,ins
 					(Eall, sall) = line_type3_info(ifile,NP,2)
 		else:
 			break
-	ifile.close()
 
 # only if MF3 cross sections are available then do the following
 
@@ -2476,7 +2463,7 @@ def PKAS_redtnMF6MT5 (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,ins
 		Z = int(ZA/1000)
 		A = AWR
 
-		ifile = open (raw_ENDF6_file, 'r')
+		ifile_rawENDF6.seek(0, 0)
 		while True:
 			line = ifile.readline()
 			if (line == ''):
@@ -2503,9 +2490,8 @@ def PKAS_redtnMF6MT5 (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,ins
 						ZAP = [0]*NK; AWP = [0]*NK; Nyld = [0]*NK; NEP = numpy.zeros((NK,400))
 						NL = numpy.zeros((NK,400)); NE6 = [0]*NK; En = numpy.zeros((NK,400))
 						break
-		ifile.close() 
 
-		ifile = open (raw_ENDF6_file, 'r')
+		ifile_rawENDF6.seek(0, 0)
 		while True:
 			line = ifile.readline()
 			if (line == ''):
@@ -2570,7 +2556,6 @@ def PKAS_redtnMF6MT5 (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,ins
 											f[NSS][i][j] = value2
 			else:
 				break
-		ifile.close()
 
 		for i in range (nbge):
 			if (ret[i] >= Eall[0]):
@@ -2753,15 +2738,14 @@ def PKAS_nxn (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,MTi,ret,nbg
 	print( ' (n, xn) reaction (MT = ',MTi,') PKA spectra', file = ofile_outRMINDD)
 	print('-----------------------------------------------', file = ofile_outRMINDD)
 
-	ifile = open (raw_ENDF6_file, 'r')
+	ifile_rawENDF6.seek(0, 0)
 	iflpresent = 0
 
 	ifile.readline()
 	line = ifile.readline()
 	(ZA,AWR,l1,LTT,NK,l2, MAT, MF, MT) = line_type1_info(line)
-	ifile.close()
 
-	ifile = open (preprocessed_ENDF6_file, 'r')
+	ifile_preprocessedENDF6.seek(0, 0)
 	while True:
 		line = ifile.readline()
 		if (line == ''):
@@ -2781,11 +2765,10 @@ def PKAS_nxn (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,MTi,ret,nbg
 					(E, sig) = line_type3_info(ifile,NP,2)
 		else:
 			break
-	ifile.close()
 
 	if (iflpresent == 1):
 		if6 = 0
-		ifile = open (raw_ENDF6_file, 'r')
+		ifile_rawENDF6.seek(0, 0)
 
 		while True:
 			line = ifile.readline()
@@ -2878,7 +2861,6 @@ def PKAS_nxn (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,MTi,ret,nbg
 											f[NSS][i][j] = value2
 			else:
 				break
-		ifile.close()
 
 		for i in range (nbge):
 			for j in range (NP-1):
@@ -3097,7 +3079,7 @@ def PKAS_ng (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,eliso,r
 #------------------------------------------------------------
 		
 	ifl6 = 0
-	ifile = open (raw_ENDF6_file, 'r')
+	ifile_rawENDF6.seek(0, 0)
 	while True:
 		line = ifile.readline()
 		if (line == ''):
@@ -3159,10 +3141,9 @@ def PKAS_ng (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,eliso,r
 							g6[i][N] = value2
 		else:
 			break
-	ifile.close()
 
 	ifl12 = 0
-	ifile = open (raw_ENDF6_file, 'r')
+	ifile_rawENDF6.seek(0, 0)
 	while True:
 		line = ifile.readline()
 		if (line == ''):
@@ -3266,7 +3247,6 @@ def PKAS_ng (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,eliso,r
 											break
 		else:
 			break
-	ifile.close()
 
 	ifl15 = 0
 	ifile = open (raw_ENDF6_file,'r')
@@ -3324,10 +3304,9 @@ def PKAS_ng (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,eliso,r
 								g15[N] = value2
 			else:
 				break
-	ifile.close()
 
 #-----------------------------------------------------------------------------
-	ifile = open (preprocessed_ENDF6_file, 'r')
+	ifile_preprocessedENDF6.seek(0, 0)
 	ifile.readline()
 	line = ifile.readline()
 	(ZA,AWR,L0,L1,L2,L3,MAT,MF,MT) = line_type1_info(line)
@@ -3354,7 +3333,6 @@ def PKAS_ng (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,eliso,r
 						sig[i] = value2
 		else:
 			break
-	ifile.close()
 
 	print('', file = ofile_outRMINDD)
 	print('Number of data given for (n, g) cross section is ',NP, file = ofile_outRMINDD)
@@ -3689,7 +3667,6 @@ def FILE1 ():
 		MF = int(data[7]); MT = int(data[8])
 
 	nfiles = NXC
-	ifile.close()
 
 	return (nfiles,MFs,MTs)
 

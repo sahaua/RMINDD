@@ -68,7 +68,13 @@ if (module_name == "EngdepU"):
 	print('Total from (n, xn) reactions is in: ....1601.txt', file = ofile_outRMINDD)
 	print('Total from (n, anything) inexplicit reaction data is in: ....5001.txt', file = ofile_outRMINDD)
 
-	EngdepU.uqce (ofile_outRMINDD, raw_ENDF6_file, preprocessed_ENDF6_file, input_n_spec, num_reac_array, num_reac, atom_displ_model, threshold_Ed, b_arcdpa, c_arcdpa, \multigroup, en_group_type)
+	ifile_rawENDF6 = open(raw_ENDF6_file, 'r')
+	ifile_preprocessedENDF6 = open(preprocessed_ENDF6_file, 'r')
+
+	EngdepU.uqce (ofile_outRMINDD, ifile_rawENDF6, ifile_preprocessedENDF6, input_n_spec, num_reac_array, num_reac, atom_displ_model, threshold_Ed, b_arcdpa, c_arcdpa, \multigroup, en_group_type)
+
+	ifile_preprocessedENDF6.close()
+	ifile_rawENDF6.close()
 
 	if (num_MT_multigroup > 0):
 		print( 'Multigroup partial reactions .....')
@@ -100,7 +106,13 @@ if (module_name == "RecedU"):
 	print('PKA-MATRICES.txt -- each reaction', file = ofile_outRMINDD)
 	print('n-allPKAspectra.txt -- sum total', file = ofile_outRMINDD)
 
-	RecedU.FINE_ENERGY_CALL_REAC (ofile_outRMINDD, raw_ENDF6_file, preprocessed_ENDF6_file, input_n_spec, element_isotope_name, en_group_type, num_group_limits, num_fine_en_points, num_reac_array)
+	ifile_rawENDF6 = open(raw_ENDF6_file, 'r')
+	ifile_preprocessedENDF6 = open(preprocessed_ENDF6_file, 'r')
+
+	RecedU.FINE_ENERGY_CALL_REAC (ofile_outRMINDD, ifile_rawENDF6, ifile_preprocessedENDF6, input_n_spec, element_isotope_name, en_group_type, num_group_limits, num_fine_en_points, num_reac_array)
+
+	ifile_preprocessedENDF6.close()
+	ifile_rawENDF6.close()
 
 	if (num_partial_reac_tosum > 0):
 		ofile1001 = open('n-sum-partialsPKAspectra.txt', 'a')
