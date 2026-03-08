@@ -190,7 +190,7 @@ def readCheckInputFile(inpRMINDD, ofile_outRMINDD):
 			c_arcdpa = float(words[2])
 
 		if (words[0] == 'Multigroup'):
-			multigroup = words[2]
+			multigroup = int(words[2])
 
 		if (words[0] == 'Energy_group_type_index'):
 			en_group_type = int(words[2])
