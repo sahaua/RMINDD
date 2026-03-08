@@ -21,8 +21,6 @@ Energy_group_type_index =
 Input_n_spectrum =  
 Num_MT_to_multigroup = 
 MTs_to_multigroup = 
-Num_group_limits = 
-Num_fine_en_points = 
 
 ## Input and data for module EngdepU of RMINDD
 

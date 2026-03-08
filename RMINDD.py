@@ -28,6 +28,7 @@ def printIndexesforReactions (ofile_outRMINDD):
 	print('------------------------------------------------', file = ofile_outRMINDD)
 	print('', file = ofile_outRMINDD)
 
+start_time = process_time()
 
 day_execution = datetime.date.today()
 time_execution = datetime.datetime.now().strftime('%H:%M:%S')
@@ -49,7 +50,7 @@ interactions by neutrons in the isotope of a material. It also produces basic
 cross sections and recoil energies. Both point and multigrouped dpa and heating
 can be obtained.
 '''
-if (module_name == "EngdepU"):
+if (ReadU.module_name == "EngdepU"):
 	print( '~~ RMINDD-EngdepU ~~')
 	print( '~~ RMINDD-EngdepU ~~', file = ofile_outRMINDD)
 	print( ':Messages for you:', file = ofile_outRMINDD)
@@ -68,18 +69,20 @@ if (module_name == "EngdepU"):
 	print('Total from (n, xn) reactions is in: ....1601.txt', file = ofile_outRMINDD)
 	print('Total from (n, anything) inexplicit reaction data is in: ....5001.txt', file = ofile_outRMINDD)
 
-	ifile_rawENDF6 = open(raw_ENDF6_file, 'r')
-	ifile_preprocessedENDF6 = open(preprocessed_ENDF6_file, 'r')
+	ifile_rawENDF6 = open(ReadU.raw_ENDF6_file, 'r')
+	ifile_preprocessedENDF6 = open(ReadU.preprocessed_ENDF6_file, 'r')
 
-	EngdepU.uqce (ofile_outRMINDD, ifile_rawENDF6, ifile_preprocessedENDF6, input_n_spec, num_reac_array, num_reac, atom_displ_model, threshold_Ed, b_arcdpa, c_arcdpa, \multigroup, en_group_type)
+	EngdepU.uqce (ofile_outRMINDD, ifile_rawENDF6, ifile_preprocessedENDF6, ReadU.input_n_spec, 
+	ReadU.num_reac_array, ReadU.num_reac, ReadU.atom_displ_model, ReadU.threshold_Ed, ReadU.b_arcdpa, ReadU.c_arcdpa, 
+	ReadU.multigroup, ReadU.en_group_type)
 
 	ifile_preprocessedENDF6.close()
 	ifile_rawENDF6.close()
 
-	if (num_MT_multigroup > 0):
+	if (ReadU.num_MT_multigroup > 0):
 		print( 'Multigroup partial reactions .....')
-		for i in range (num_MT_multigroup):
-			print( 'MT = ',num_MT_group_array[i])
+		for i in range (ReadU.num_MT_multigroup):
+			print( 'MT = ',ReadU.num_MT_group_array[i])
 
 	stop_time = process_time()
 	total_time = stop_time - start_time
@@ -93,7 +96,7 @@ neutrons with the isotopes of material. The PKA spectra are produced in a energy
 group-to-group matrix format. Reaction-wise data, partial sums as well as total PKA
 spectra can be produced.
 '''
-if (module_name == "RecedU"):
+if (ReadU.module_name == "RecedU"):
 	print( '~~ RMINDD-RecedU ~~')
 	print( '~~ RMINDD-RecedU ~~', file = ofile_outRMINDD)
 	print( ':Messages for you:', file = ofile_outRMINDD)
@@ -106,22 +109,23 @@ if (module_name == "RecedU"):
 	print('PKA-MATRICES.txt -- each reaction', file = ofile_outRMINDD)
 	print('n-allPKAspectra.txt -- sum total', file = ofile_outRMINDD)
 
-	ifile_rawENDF6 = open(raw_ENDF6_file, 'r')
-	ifile_preprocessedENDF6 = open(preprocessed_ENDF6_file, 'r')
+	ifile_rawENDF6 = open(ReadU.raw_ENDF6_file, 'r')
+	ifile_preprocessedENDF6 = open(ReadU.preprocessed_ENDF6_file, 'r')
 
-	RecedU.FINE_ENERGY_CALL_REAC (ofile_outRMINDD, ifile_rawENDF6, ifile_preprocessedENDF6, input_n_spec, element_isotope_name, en_group_type, num_group_limits, num_fine_en_points, num_reac_array)
+	RecedU.FINE_ENERGY_CALL_REAC (ofile_outRMINDD, ifile_rawENDF6, ifile_preprocessedENDF6, ReadU.input_n_spec, 
+	ReadU.element_isotope_name, ReadU.en_group_type, ReadU.num_group_limits, ReadU.num_fine_en_points, ReadU.num_reac_array)
 
 	ifile_preprocessedENDF6.close()
 	ifile_rawENDF6.close()
 
-	if (num_partial_reac_tosum > 0):
+	if (ReadU.num_partial_reac_tosum > 0):
 		ofile1001 = open('n-sum-partialsPKAspectra.txt', 'a')
-		print(eliso, file = ofile1001)
-		dsdt = numpy.zeros((num_group_limits-1,num_group_limits-1))
-		dsdt = RecedU.ALLSUM (num_group_limits,partial_reac_tosum)
+		print(ReadU.element_isotope_name, file = ofile1001)
+		dsdt = numpy.zeros((ReadU.num_group_limits-1, ReadU.num_group_limits-1))
+		dsdt = RecedU.ALLSUM (ReadU.num_group_limits, ReadU.partial_reac_tosum)
 		print('The sum of recoil nuclei energy spectra for given partial reactions', file = ofile1001)
-		for it in range (num_group_limits-1):
-			print (['{:.6E}'.format(dsdt[it][jt]) for jt in range (num_group_limits-1)], file = ofile1001)
+		for it in range (ReadU.num_group_limits-1):
+			print (['{:.6E}'.format(dsdt[it][jt]) for jt in range (ReadU.num_group_limits-1)], file = ofile1001)
 		ofile1001.close()
 
 	stop_time = process_time()
@@ -137,15 +141,15 @@ multi-element target material. It should be run only after having the required q
 for each isotope in the target material calculated using the EngdepU module.
 '''
 
-if (module_name == "CombinU"):
+if (ReadU.module_name == "CombinU"):
 	print( '~~ RMINDD-CombinU ~~')
 	print( '~~ RMINDD-CombinU ~~', file = ofile_outRMINDD)
 	print( ':Messages for you:', file = ofile_outRMINDD)
 	print('--------------------', file = ofile_outRMINDD)
 	print('', file = ofile_outRMINDD)
 
-	CombinU.combineXSMultiElementTarget (elements_target, isotopes_evaluated, element_recdamen, element_dameff, \
-		percent_abundances_all, element_stoich, files_dir)
+	CombinU.combineXSMultiElementTarget (ReadU.elements_target, ReadU.isotopes_evaluated, ReadU.element_recdamen,
+	ReadU.element_dameff, ReadU.percent_abundances_all, ReadU.element_stoich, ReadU.files_dir)
 
 
 ofile_outRMINDD.close()

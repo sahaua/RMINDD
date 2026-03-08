@@ -1,12 +1,15 @@
-## >> Code: RMINDD.py, module file: RecedU.py
-## >> Perform: Recoil energy distributions of nuclei from basic ENDF-6 files
-## >> Author: Uttiyoarnab Saha
-## >> Version and Date: 1.0 and 25/03/2021
-## >> Last modified: 25/03/2021, Kolkata
-## >> Update: 25/03/2021
-## >> Major changes:
-##
-## ======================================================================================================
+''' 
+Code: RMINDD - (Radiation Matter Interaction and Damage calculation using Nuclear Data)
+Perform: Calcuation of metrics of neutron radiation damage in a material using ENDF-6 files
+Module: RecedU.py -- finds recoil energy spectra
+Author: Uttiyoarnab Saha
+Version and Date: 1.0 and 01/07/2022
+Last modified: 01/07/2022, Kolkata
+Update: 01/07/2022
+Major changes: 
+
+=========================================================================================
+'''
 
 import numpy
 import math
@@ -316,7 +319,7 @@ def ALLSUM (num_group_limits,partial_reac_tosum):
 	# After creating this finer array it also calls the reaction specific
 	# subroutines according to the input.
 
-def FINE_ENERGY_CALL_REAC (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,eliso,igtype,num_group_limits,nbpoints,num_reac_array):
+def FINE_ENERGY_CALL_REAC (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,igtype,num_group_limits,nbpoints,num_reac_array):
 
 	nre = num_group_limits - 1
 	nbge = num_group_limits + (nbpoints*nre)
@@ -364,26 +367,26 @@ def FINE_ENERGY_CALL_REAC (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_fil
 
 	for irct in num_reac_array:
 		if (irct == 1):
-			PKAS_ELASTIC (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,eliso,ret,nbge,nbpoints,nre,igtype)
+			PKAS_ELASTIC (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype)
 		if (irct == 2):
-			PKAS_INELASTIC (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,eliso,ret,nbge,nbpoints,nre,igtype)
+			PKAS_INELASTIC (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype)
 		if (irct == 3):
-			CONTROL_nCPO (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,eliso,ret,nbge,nbpoints,nre,igtype)
+			CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype)
 		if (irct == 4):
-			CONTROL_nxn (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,eliso,ret,nbge,nbpoints,nre,igtype)
+			CONTROL_nxn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype)
 		if (irct == 5):
-			PKAS_ng (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,eliso,ret,nbge,nbpoints,nre,igtype)
+			PKAS_ng (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype)
 		if (irct == 6):
-			PKAS_redtnMF6MT5 (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,eliso,ret,nbge,nbpoints,nre,igtype)
+			PKAS_redtnMF6MT5 (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype)
 		if (irct == 7):
 			ofile1001 = open('n-allPKAspectra.txt', 'a')
 			print(eliso, file = ofile1001)
-			PKAS_ELASTIC (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,eliso,ret,nbge,nbpoints,nre,igtype)
-			PKAS_INELASTIC (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,eliso,ret,nbge,nbpoints,nre,igtype)
-			CONTROL_nCPO (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,eliso,ret,nbge,nbpoints,nre,igtype)
-			CONTROL_nxn (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,eliso,ret,nbge,nbpoints,nre,igtype)
-			PKAS_ng (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,eliso,ret,nbge,nbpoints,nre,igtype)
-			PKAS_redtnMF6MT5 (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,eliso,ret,nbge,nbpoints,nre,igtype)
+			PKAS_ELASTIC (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype)
+			PKAS_INELASTIC (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype)
+			CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype)
+			CONTROL_nxn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype)
+			PKAS_ng (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype)
+			PKAS_redtnMF6MT5 (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype)
 			# for the total of contributions from all reactions
 			dsdt = numpy.zeros((nre,nre))
 			dsdt = ALLSUM (num_group_limits,num_reac_array)
@@ -527,7 +530,7 @@ def PRINTPKAS (eliso,MTtg,nre,pkamatr):
 	# reactions is performed here. Corresponding to each of this type 
 	# of reaction the subroutine PKAS_nCPO is called for the calculation.
 			
-def CONTROL_nCPO (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,eliso,ret,nbge,nbpoints,nre,igtype):
+def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype):
 
 	print("n,CPO .....")
 	pka3l = numpy.zeros((nbge,nbge)); tmpkaMT103 = numpy.zeros((nbge,nbge))
@@ -559,9 +562,9 @@ def CONTROL_nCPO (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,el
 	for j in range (281):
 		iflMTpr = 0
 		MTfind = MTnum[j]	
-		iflMTpr = FindMT(MTfind)
+		iflMTpr = FindMT(MTfind, ifile_rawENDF6)
 		if (iflMTpr == 1):
-			(pka3l,ifdpd,iflpresent) = PKAS_nCPO (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,MTnum[j],j,ret,nbge)
+			(pka3l,ifdpd,iflpresent) = PKAS_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTnum[j],j,ret,nbge)
 			if (iflpresent == 1):
 				print ('n-threshold: MT = ', MTnum[j])
 				MTc = MTnum[j]			
@@ -792,7 +795,7 @@ def CONTROL_nCPO (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,el
 	# of reaction the subroutine PKAS_nxn is called for the calculation.
 	# (n,2n), (n,3n) and (n,4n) only.
 	
-def CONTROL_nxn (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,eliso,ret,nbge,nbpoints,nre,igtype):
+def CONTROL_nxn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype):
 
 	print("n,xn .....")
 	pkaxn1l = numpy.zeros((nbge,nbge))
@@ -804,9 +807,9 @@ def CONTROL_nxn (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,eli
 	for i in range (3):
 		iflMTpr = 0
 		MTfind = MTnum[i]
-		iflMTpr = FindMT(MTfind)
+		iflMTpr = FindMT(MTfind, ifile_rawENDF6)
 		if (iflMTpr == 1):
-			(pkaxn1l, iflpresent) = PKAS_nxn (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,MTnum[i],ret,nbge,nbpoints,nre,igtype)
+			(pkaxn1l, iflpresent) = PKAS_nxn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTnum[i],ret,nbge,nbpoints,nre,igtype)
 			if (iflpresent == 1):
 				MTc = MTnum[i]
 				print ('n, xn:: MT = ', MTc)
@@ -832,9 +835,9 @@ def CONTROL_nxn (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,eli
 	# Finds if a particular reaction is given in the present evaluation
 	# from the directory available in File 1.
 	
-def FindMT (MTfind):
+def FindMT (MTfind, ifile_rawENDF6):
 	MFs = [0]*1000; MTs = [0]*1000
-	(nfiles,MFs,MTs) = FILE1()
+	(nfiles,MFs,MTs) = FILE1(ifile_rawENDF6)
 	iflMTpr = 0
 	for i in range (nfiles):
 		if (MFs[i] == 3 and MTs[i] == MTfind):
@@ -956,7 +959,7 @@ def crstd(x,x1,x2,y1,y2):
 	# Calculation of PKA spectra due to the elastic scattering 
 	# interaction of neutron.
 		
-def PKAS_ELASTIC (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,eliso,ret,nbge,nbpoints,nre,igtype):
+def PKAS_ELASTIC (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype):
 
 	print ("n,n .....")
 	sret = [0]*nbge
@@ -972,6 +975,7 @@ def PKAS_ELASTIC (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,el
 # --------------------------------------------------------------------------
 	# extraction of total energy grid
 	ifile_preprocessedENDF6.seek(0, 0)
+	ifile = ifile_preprocessedENDF6
 	while True:
 		line = ifile.readline()
 		if (line == ''):
@@ -998,6 +1002,7 @@ def PKAS_ELASTIC (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,el
 	# extraction of cross sections
 		
 	ifile_preprocessedENDF6.seek(0, 0)
+	ifile = ifile_preprocessedENDF6
 	while True:
 		line = ifile.readline()
 		if (line == ''):
@@ -1024,6 +1029,7 @@ def PKAS_ELASTIC (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,el
  	# extraction of Legendre polynomial coefficients and Probability
 	
 	ifile_rawENDF6.seek(0, 0)
+	ifile = ifile_rawENDF6
 	while True:
 		line = ifile.readline()
 		if (line == ''):
@@ -1263,7 +1269,7 @@ def SPKAINEL(alc1,NLa,ret,nbge,A,Z,En,Q,y):
 	# Calcualtion of PKA spectra due to inelastic scattering 
 	# interaction of neutron.
 	
-def PKAS_INELASTIC (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,eliso,ret,nbge,nbpoints,nre,igtype):
+def PKAS_INELASTIC (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype):
 
 	print ("n,n' .....")
 	val2 = [0]*nbge; cr2 = [0]*nbge
@@ -1309,6 +1315,7 @@ def PKAS_INELASTIC (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,
 	print('-------------------------------------------', file = ofile_outRMINDD)
 
 	ifile_rawENDF6.seek(0, 0)
+	ifile = ifile_rawENDF6
 	ifile.readline()
 	line = ifile201.readline()
 	(ZA,AWR,L0,L1,L2,L3,MAT,MF,MT) = line_type1_info(line)
@@ -1328,6 +1335,7 @@ def PKAS_INELASTIC (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,
 		m = m + 1
 
 	ifile_preprocessedENDF6.seek(0, 0)
+	ifile = ifile_preprocessedENDF6
 	l = 0
 	while True:
 		line = ifile.readline()
@@ -1369,6 +1377,7 @@ def PKAS_INELASTIC (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,
 	if4d = 0
 	if4c = 0
 	ifile_rawENDF6.seek(0, 0)
+	ifile = ifile_rawENDF6
 	l = 0
 	while True:
 		line = ifile.readline()
@@ -1410,6 +1419,7 @@ def PKAS_INELASTIC (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,
 
 	if5c = 0
 	ifile_rawENDF6.seek(0, 0)
+	ifile = ifile_rawENDF6
 	while True:
 		line = ifile.readline()
 		if (line == ''):
@@ -1466,6 +1476,7 @@ def PKAS_INELASTIC (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,
 	if6c = 0
 	if (if4d == 0 or if4c == 0 or if5c == 0):
 		ifile_rawENDF6.seek(0, 0)
+		ifile = ifile_rawENDF6
 		l = 0
 		while True:
 			line = ifile.readline()
@@ -1870,7 +1881,7 @@ def SPKATH (alc1,NLa,ret,nbge,A,En,Q,bta):
 	# Calculation of PKA spectra due to the charged particle emission
 	# reactions of neutron.
 	
-def PKAS_nCPO (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,MTi,lpr,ret,nbge):
+def PKAS_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,lpr,ret,nbge):
 	beta = [0]*281; n1 = [0]*281; ze = [0]*281; cbe = [0]*281
 	xabc = [0]*4; wg = [0]*4
 	ifl4 = [0]*281; ifl6 = [0]*281
@@ -1953,6 +1964,7 @@ def PKAS_nCPO (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,MTi,lpr,re
 	iflpresent = 0
 	NP = 0
 	ifile_preprocessedENDF6.seek(0, 0)
+	ifile = ifile_preprocessedENDF6
 
 	# extraction of cross sections
 	while True:
@@ -2002,6 +2014,7 @@ def PKAS_nCPO (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,MTi,lpr,re
 		ifspad4muf = 0 	# flag for secondary particle angular data in 'mu,f' form
 
 		ifile_rawENDF6.seek(0, 0)
+		ifile = ifile_rawENDF6
 
 		while True:
 			line = ifile.readline()
@@ -2075,6 +2088,7 @@ def PKAS_nCPO (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,MTi,lpr,re
 		iflgfdlcd = 0 	#flag for log(fdata) linear with cdata (LAW=2)
 
 		ifile_rawENDF6.seek(0, 0)
+		ifile = ifile_rawENDF6
 		while True:
 			line = ifile.readline()
 			if (line == ''):
@@ -2413,7 +2427,7 @@ def PKAS_nCPO (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,MTi,lpr,re
 	# reactions of neutron. The PKA spectra estimated is due to all 
 	# reactions given in inexplicit way.
 	
-def PKAS_redtnMF6MT5 (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,eliso,ret,nbge,nbpoints,nre,igtype):
+def PKAS_redtnMF6MT5 (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype):
 
 	print("n,anything .....")
 	erg = [0]*(nre+1)
@@ -2432,6 +2446,7 @@ def PKAS_redtnMF6MT5 (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,ins
 	iflpresent = 0
 	NP = 0
 	ifile_preprocessedENDF6.seek(0, 0)
+	ifile = ifile_preprocessedENDF6
 
 	# extraction of cross sections
 	while True:
@@ -2464,6 +2479,7 @@ def PKAS_redtnMF6MT5 (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,ins
 		A = AWR
 
 		ifile_rawENDF6.seek(0, 0)
+		ifile = ifile_rawENDF6
 		while True:
 			line = ifile.readline()
 			if (line == ''):
@@ -2492,6 +2508,7 @@ def PKAS_redtnMF6MT5 (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,ins
 						break
 
 		ifile_rawENDF6.seek(0, 0)
+		ifile = ifile_rawENDF6
 		while True:
 			line = ifile.readline()
 			if (line == ''):
@@ -2717,7 +2734,7 @@ def PKAS_redtnMF6MT5 (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,ins
 	# Calculation of PKA spectra due to (n,2n), (n,3n) and (n,4n)
 	# reactions of neutron.
 		
-def PKAS_nxn (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,MTi,ret,nbge,nbpoints,nre,igtype):
+def PKAS_nxn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,ret,nbge,nbpoints,nre,igtype):
 
 	cr4 = [0]*nbge
 	pka4 = numpy.zeros((nbge,nbge))
@@ -2739,6 +2756,7 @@ def PKAS_nxn (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,MTi,ret,nbg
 	print('-----------------------------------------------', file = ofile_outRMINDD)
 
 	ifile_rawENDF6.seek(0, 0)
+	ifile = ifile_rawENDF6
 	iflpresent = 0
 
 	ifile.readline()
@@ -2746,6 +2764,7 @@ def PKAS_nxn (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,MTi,ret,nbg
 	(ZA,AWR,l1,LTT,NK,l2, MAT, MF, MT) = line_type1_info(line)
 
 	ifile_preprocessedENDF6.seek(0, 0)
+	ifile = ifile_preprocessedENDF6
 	while True:
 		line = ifile.readline()
 		if (line == ''):
@@ -2769,6 +2788,7 @@ def PKAS_nxn (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,MTi,ret,nbg
 	if (iflpresent == 1):
 		if6 = 0
 		ifile_rawENDF6.seek(0, 0)
+		ifile = ifile_rawENDF6
 
 		while True:
 			line = ifile.readline()
@@ -3045,7 +3065,7 @@ def Tinteg3 (A,n1,n2,tht,Em1max,emn):
 
 	# Calculation of PKA spectra due to (n,g) reaction of neutron.
 
-def PKAS_ng (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,eliso,ret,nbge,nbpoints,nre,igtype):
+def PKAS_ng (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype):
 
 	print("n,g .....")
 	ntm = [0]*nbge; ntmd = [0]*nbge; ncontd = [0]*nbge
@@ -3080,6 +3100,7 @@ def PKAS_ng (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,eliso,r
 		
 	ifl6 = 0
 	ifile_rawENDF6.seek(0, 0)
+	ifile = ifile_rawENDF6
 	while True:
 		line = ifile.readline()
 		if (line == ''):
@@ -3144,6 +3165,7 @@ def PKAS_ng (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,eliso,r
 
 	ifl12 = 0
 	ifile_rawENDF6.seek(0, 0)
+	ifile = ifile_rawENDF6
 	while True:
 		line = ifile.readline()
 		if (line == ''):
@@ -3307,6 +3329,7 @@ def PKAS_ng (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,eliso,r
 
 #-----------------------------------------------------------------------------
 	ifile_preprocessedENDF6.seek(0, 0)
+	ifile = ifile_preprocessedENDF6
 	ifile.readline()
 	line = ifile.readline()
 	(ZA,AWR,L0,L1,L2,L3,MAT,MF,MT) = line_type1_info(line)
@@ -3642,7 +3665,7 @@ def PKAS_ng (ofile_outRMINDD,raw_ENDF6_file,preprocessed_ENDF6_file,insp,eliso,r
 	## The directory of Files (MFs) and the corresponding Sections (MTs)
 	## given in the evaluation are read from File 1 and returned.
 	
-def FILE1 ():
+def FILE1 (ifile_rawENDF6):
 	MFs = [0]*1000; MTs = [0]*1000 
 		# maximum of NXC = 350 (ENDF-102), 
 		# but deviates for Mn55 ENDF/B-VII.1, so changed to 1000 
