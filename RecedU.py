@@ -91,37 +91,46 @@ def TERPOLAPR (iprule,n1,x1,y1,n2,x2):
 
 #========The data in each line are explicitly extracted=======*
 
-def eachlineinfo(line):	
+def eachlineinfo(line):
 	data = [0]*9
 	for i in range(6):
 		s = ''						# 6 data each of 11 places
 		for char in range(i*11,(i+1)*11):
 			s = s + line[char]
 		data[i] = s.lstrip(' ')
-	
+
 	s = ''
 	for char in range(66,70):			# MAT data of 4 places
 		s = s + line[char]
 	data[6] = s.lstrip(' ')
-	
+	# this is done because some ENDF-6 files only give a blank space here in the first line (creates problem)
+	if ((data[6]) == ''):
+		data[6] = 1
+
 	s = ''
 	for char in range(70,72):			# MF data of 2 places
 		s = s + line[char]
 	data[7] = s.lstrip(' ')
-	
+
 	s = ''
 	for char in range(72,75):			# MT data of 3 places
 		s = s + line[char]
 	data[8] = s.lstrip(' ')
-	
+
 	for i in range(6):
-		data[i] = "E-".join(data[i].split('-'))
-		data[i] = "E+".join(data[i].split('+'))
-		data[i] = data[i].lstrip('E')
-	
+		putE = 1
+		for x in data[i]:
+			if (x == 'E' or x == 'e'):
+				putE = 0
+				break
+		if (putE == 1):
+			data[i] = "E-".join(data[i].split('-'))
+			data[i] = "E+".join(data[i].split('+'))
+			data[i] = data[i].lstrip('E')
+
 	return(data)
 
-#========The data in lines of different types of ENDF-6 file are explicitly extracted=======*
+#========The data in lines of different types are explicitly extracted=======*
 
 def line_type1_info(line):
 	data = eachlineinfo(line)
@@ -145,20 +154,28 @@ def line_type2_info(line):
 	dataV7 = int(data[6]); dataV8 = int(data[7]); dataV9 = int(data[8])
 	return(dataV1,dataV2,dataV3,dataV4,dataV5,dataV6,dataV7,dataV8,dataV9)
 
-def line_type3_info (filehandle,numdata,numvariables):
+def line_type3_info(filehandle,numdata,numvariables):
 	# numvariables (1 / 2) denotes no. of variables the given data has to be read into
 	if (numvariables == 2):
 		xdata = [0]*numdata
 		ydata = [0]*numdata
 	if (numvariables == 1):
 		xdata = [0]*numdata
+
 	i = 0
-	
 	if (numvariables == 2):
 		while (i < numdata):
 			line = filehandle.readline()
 			data = eachlineinfo(line)
-			for j in range(0,6,2):
+			# run_limit variable is introduced because in some files 
+			#(e.g. ENDF/B-VIII.0, Si28
+			#  1.000000+0 1.000000+0          0          2          1          21425 6 51
+			#	2          2          0          0          0          01425 6 51)
+			# extra data (more than 2) are given in the interpolation ranges specification line!
+			run_limit = 6
+			if (2*numdata <= run_limit):
+				run_limit = 2*numdata
+			for j in range(0,run_limit,2):
 				if (data[j] != ''):
 					xdata[i] = float(data[j])
 					ydata[i] = float(data[j+1])
@@ -1317,7 +1334,7 @@ def PKAS_INELASTIC (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,
 	ifile_rawENDF6.seek(0, 0)
 	ifile = ifile_rawENDF6
 	ifile.readline()
-	line = ifile201.readline()
+	line = ifile.readline()
 	(ZA,AWR,L0,L1,L2,L3,MAT,MF,MT) = line_type1_info(line)
 
 	Z = int(ZA/1000)
