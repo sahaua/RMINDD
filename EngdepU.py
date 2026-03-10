@@ -5803,7 +5803,7 @@ def file1(ifile_rawENDF6):
 	# searched from the information about evaluation given in File 1 of raw
 	# ENDF-6 file.
 	
-def FindMT(MTfind, ifile_rawENDF6):		# MTfind = raw ENDF MT, iflMTpr = output from FindMT
+def FindMT(MTfind, ifile_rawENDF6):
 	MFs = numpy.zeros(1000); MTs = numpy.zeros(1000)
 	(nfiles,MFs,MTs) = file1(ifile_rawENDF6)
 		
