@@ -75,7 +75,7 @@ if (ReadU.module_name == "EngdepU"):
 	ifile_rawENDF6 = open(ReadU.raw_ENDF6_file, 'r')
 	ifile_preprocessedENDF6 = open(ReadU.preprocessed_ENDF6_file, 'r')
 
-	EngdepU.uqce (ofile_outRMINDD, ifile_rawENDF6, ifile_preprocessedENDF6, ReadU.input_n_spec, 
+	EngdepU.controlAllReactionsHeatingDPA (ofile_outRMINDD, ifile_rawENDF6, ifile_preprocessedENDF6, ReadU.input_n_spec, 
 	ReadU.num_reac_array, ReadU.num_reac, NPt, Etu, ReadU.atom_displ_model, ReadU.threshold_Ed, ReadU.b_arcdpa, ReadU.c_arcdpa, 
 	ReadU.multigroup, ReadU.en_group_type)
 
@@ -150,7 +150,7 @@ if (ReadU.module_name == "TransmU"):
 
 	TransmU.ActivationGasProduction (ofile_outRMINDD, ifile_rawENDF6, ifile_preprocessedENDF6, ReadU.element_isotope_name,
 	ReadU.en_group_type, ReadU.input_n_spec, ReadU.transmgas_group_file, ReadU.transmnucl_group_file, ReadU.transmgas_point_file,
-	ReadU.transmnucl_MF5_point_file, ReadU.transmnucl_net_group_file)
+	ReadU.transmnucl_MF5_point_file, ReadU.transmnucl_net_group_file, NPt, Etu)
 
 ''' 
 The purpose of CombinU is to find neutron induced dpa cross sections in the
@@ -169,5 +169,6 @@ if (ReadU.module_name == "CombinU"):
 
 
 ofile_outRMINDD.close()
+
 
 
