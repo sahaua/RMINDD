@@ -229,6 +229,22 @@ def readCheckInputFile(inpRMINDD, ofile_outRMINDD):
 			for i in range(2, num_partial_reac_tosum + 2):
 				partial_reac_tosum[i-2] = int(words[i])
 
+		## TransmU input cards
+		if (words[0] == 'Transmgas_group_file'):
+			transmgas_group_file = words[2]
+	
+		if (words[0] == 'Transmnucl_group_file'):
+			transmnucl_group_file = words[2]
+	
+		if (words[0] == 'Transmgas_point_file'):
+			transmgas_point_file = words[2]
+	
+		if (words[0] == Transmnucl_MF5_point_file):
+			transmnucl_MF5_point_file = words[2]
+	
+		if (words[0] == Transmnucl_net_group_file):
+			transmnucl_net_group_file = words[2]
+
 	ifile_inpRMINDD.close()
 
 	## checks for different modules
@@ -264,4 +280,5 @@ def readCheckInputFile(inpRMINDD, ofile_outRMINDD):
 		for element in element_Ed_bnd:
 			if (element not in elements_target):
 				raise Exception ('Element mismatch between target and Ed_bnd energy data provided!')
+
 
