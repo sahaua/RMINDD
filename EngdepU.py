@@ -5446,14 +5446,9 @@ def anytnMF6MT5 (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,
 			tot_energy_products = tot_energy_products1
 			tot_energy_n_photons = tot_energy_n_photons1
 
-		# THIS PART IS ADDED TO REMOVE SUDDEN NON-ZERO VALUES BELOW THE 
-		# STARTING ENERGY POINT (WHEN DOING W180 FROM ENDF/B-VII.1)
-		#-------------
-	
-		#for i in range (NPt):
-		#	if (Etu[i] >= 2.0e+7):
-		#		nbstart = i - 1
-		#		break
+		## THIS PART IS ADDED TO REMOVE SUDDEN NON-ZERO VALUES BELOW THE 
+		## STARTING ENERGY POINT (WHEN DOING W180 FROM ENDF/B-VII.1)
+		## -------------
 
 		for i in reversed(range (len(Etu))):
 			if (sdpat[i] == 0 and (sdpat[i-1] > 0 and sdpat[i+1] > 0)):
@@ -5466,97 +5461,26 @@ def anytnMF6MT5 (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,
 				for j in range(i):
 					snhtt[j] = 0
 				break
-		# --------------
-
-		#for i = nbstart, 1, -1
-		#		if (sdpat(i)==0) then
-		#			do j = 1, i
-		#				sdpat(j)=0
-		#			end do
-		#			exit
-		#		end if
-		#	end do
-		#	do i = nbstart, 1, -1
-		#		if (snhtt(i)==0) then
-		#			do j = 1, i
-		#				snhtt(j)=0
-		#			end do
-		#			exit
-		#		end if
-		#	end do
 
 		printtofile (NPt,Etu,siget,num_of_displ,sdpat,5001,0,1)
 		printtofile (NPt,Etu,siget,tot_energy_products,snhtt,5001,0,2)
 		printtofile (NPt,Etu,siget,tot_energy_n_photons,snhtt_EB,5001,0,3)
 	
-		#--------------
 	# **** the above is done only if MF3 for that MT is present ****
 
 	# anytnMF6MT5 (n, anything) completes here
 #====================================================
 
-#=======Make the required unique common energy and call reactions=======*
+#=======Call reactions for heating and dpa calculations =======*
+
 '''	
-It creates an unique energy array out of the MF3 MT1 energy points
-given in the pre-processed ENDF-6 file which is used as the common 
-energy array for partial and total dpa and heating cross section 
-computation. This energy array is called unique because any repetition
-(may occur at the dense resonances regions) in the pre-processed energy 
-points are found out and removed, so that each energy point is present
-only once. It calls other reaction-specific subroutines and their required
-multigrouping according to the inputs given.
+It calls reaction-specific subroutines and their required multigrouping according to the inputs given.
+According to the input options point and multigrouped cross sections and other output data gets printed
+as per the call.
 '''
-
-def uqce (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,nra,nreac,mdisp,Ed,bad,cad,mgyn,igtype):
-
-	# Et=Energy array in MT=1, Etu=unique of Et
-	# extraction of total energy points
-
-	ifile_preprocessedENDF6.seek(0, 0)
-
-	while True:
-		line = ifile_preprocessedENDF6.readline()
-		if (line == ''):
-			break  
-		data = eachlineinfo(line)
-		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
-		if (MAT != -1):
-			if (MF == 3):
-				if (MT == 1):
-					line = ifile_preprocessedENDF6.readline() 
-					data = eachlineinfo(line)
-					QM = float(data[0]); QI =  float(data[1]); NR = int(data[4]); NPt = int(data[5])
-					Et = [0]*NPt
-					LR = int(ifile_preprocessedENDF6.readline().split()[1])
-					i = 0
-					while (i < NPt):
-						line = ifile_preprocessedENDF6.readline()
-						data = eachlineinfo(line)
-						for j in range(0,5,2):
-							if (data[j] != ''):
-								Et[i] = float(data[j])
-								i += 1
-							else:
-								i += 1
-								break
-		else:
-			break
-
-	print('', file = ofile_outRMINDD)
-	print(NPt,' Total cross sections energy points', file = ofile_outRMINDD)
-
-	# make unique common energy
-
-	Etu = numpy.array(Et)
-	Etu = numpy.unique(Etu)
-	NPt = len(Etu)
-
-	print('', file = ofile_outRMINDD)
-	print(NPt,' Unique total cross sections energy points', file = ofile_outRMINDD)
-
-	# call reactions
-
-	# binary variables required in case  nra[i]=7
+def controlAllReactionsHeatingDPA (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,nra,nreac,NPt,Etu,mdisp,Ed,bad,cad,mgyn,igtype):
+	## call reactions
+	## binary variables required in case  nra[i]=7
 	irct1y=0; irct2y=0; irct3y=0; irct4y=0; irct5y=0; irct6y=0
 
 	for i in range(nreac):
@@ -5617,14 +5541,13 @@ def uqce (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,nra,nreac,
 				groupmulti(insp,1,igtype,1) 		# 1= id for output file, 1 = DPA
 				groupmulti(insp,1,igtype,2) 		# 1= id for output file, 2 = Heating
 				groupmulti(insp,1,igtype,3) 		# 1= id for output file, 3 = Heating_Energy_balance
+## ===========================
 
-# ==============================================================
-
-# =======Total=======*
-# Calculation of total neutron dpa and heating cross sections
-# by adding together the partial contributions from individual
-# reactions.
-
+'''
+=======Total=======*
+Calculation of total neutron dpa and heating cross sections
+by adding together the partial contributions from individual reactions.
+'''
 def total (NPt, Etu):
 	print("n, all .....")
 
