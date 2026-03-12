@@ -12,17 +12,18 @@
 
 import numpy, datetime, sys
 from time import process_time
+
 ## import calculation modules
-import ReadU, RecedU, EngdepU, CombinU #, TransmU
+import ReadU, RecedU, EngdepU, CombinU, TransmU
 
 def printIndexesforReactions (ofile_outRMINDD):
-	print( "1 = n,g" , file = ofile_outRMINDD)
-	print( "2 = n,n" , file = ofile_outRMINDD)
-	print( "3 = n,n'" , file = ofile_outRMINDD)
-	print( "4 = n,xn" , file = ofile_outRMINDD)
-	print( "5 = n,particle", file = ofile_outRMINDD)
-	print( "6 = n,anything", file = ofile_outRMINDD)
-	print( "7 = total", file = ofile_outRMINDD)
+	print("1 = n,g" , file = ofile_outRMINDD)
+	print("2 = n,n" , file = ofile_outRMINDD)
+	print("3 = n,n'" , file = ofile_outRMINDD)
+	print("4 = n,xn" , file = ofile_outRMINDD)
+	print("5 = n,particle", file = ofile_outRMINDD)
+	print("6 = n,anything", file = ofile_outRMINDD)
+	print("7 = total", file = ofile_outRMINDD)
 	print('', file = ofile_outRMINDD)
 
 	print('------------------------------------------------', file = ofile_outRMINDD)
@@ -51,9 +52,9 @@ cross sections and recoil energies. Both point and multigrouped dpa and heating
 can be obtained.
 '''
 if (ReadU.module_name == "EngdepU"):
-	print( '~~ RMINDD-EngdepU ~~')
-	print( '~~ RMINDD-EngdepU ~~', file = ofile_outRMINDD)
-	print( ':Messages for you:', file = ofile_outRMINDD)
+	print('~~ RMINDD-EngdepU ~~')
+	print('~~ RMINDD-EngdepU ~~', file = ofile_outRMINDD)
+	print(':Messages for you:', file = ofile_outRMINDD)
 	print('--------------------', file = ofile_outRMINDD)
 	print('', file = ofile_outRMINDD)
 
@@ -97,9 +98,9 @@ group-to-group matrix format. Reaction-wise data, partial sums as well as total 
 spectra can be produced.
 '''
 if (ReadU.module_name == "RecedU"):
-	print( '~~ RMINDD-RecedU ~~')
-	print( '~~ RMINDD-RecedU ~~', file = ofile_outRMINDD)
-	print( ':Messages for you:', file = ofile_outRMINDD)
+	print('~~ RMINDD-RecedU ~~')
+	print('~~ RMINDD-RecedU ~~', file = ofile_outRMINDD)
+	print(':Messages for you:', file = ofile_outRMINDD)
 	print('--------------------', file = ofile_outRMINDD)
 	print('', file = ofile_outRMINDD)
 
@@ -134,13 +135,26 @@ if (ReadU.module_name == "RecedU"):
 	print( 'Total time taken:', file = ofile_outRMINDD)
 	print(total_time, file = ofile_outRMINDD)
 
+'''
+The purpose of TransmU is to find the neutron induced gas and transmutation nuclide production cross sections in the
+given isotope of the target element.
+'''
+if (ReadU.module_name == "TransmU"):
+	print('~~ RMINDD-TransmU ~~')
+	print('~~ RMINDD-TransmU ~~', file = ofile_outRMINDD)
+	print(':Messages for you:', file = ofile_outRMINDD)
+	print('--------------------', file = ofile_outRMINDD)
+	print('', file = ofile_outRMINDD)
+
+	TransmU.ActivationGasProduction (ofile_outRMINDD, ifile_rawENDF6, ifile_preprocessedENDF6, ReadU.element_isotope_name,
+	ReadU.en_group_type, ReadU.input_n_spec, ReadU.transmgas_group_file, ReadU.transmnucl_group_file, ReadU.transmgas_point_file,
+	ReadU.transmnucl_MF5_point_file, ReadU.transmnucl_net_group_file)
 
 ''' 
 The purpose of CombinU is to find neutron induced dpa cross sections in the
 multi-element target material. It should be run only after having the required quantities
 for each isotope in the target material calculated using the EngdepU module.
 '''
-
 if (ReadU.module_name == "CombinU"):
 	print( '~~ RMINDD-CombinU ~~')
 	print( '~~ RMINDD-CombinU ~~', file = ofile_outRMINDD)
@@ -153,3 +167,4 @@ if (ReadU.module_name == "CombinU"):
 
 
 ofile_outRMINDD.close()
+
