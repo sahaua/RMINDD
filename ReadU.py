@@ -150,7 +150,7 @@ def readCheckInputFile(inpRMINDD, ofile_outRMINDD):
 			element_dameff.append(words[2])
 			globals()[f'ifile_Dam_eff_{words[2]}'] = words[3]
 
-		## EngdepU (or RecedU) input cards
+		## EngdepU or RecedU or TransmU input cards
 
 		if (words[0] == 'Element_isotope'):
 			element_isotope_name = words[2]
@@ -233,15 +233,15 @@ def readCheckInputFile(inpRMINDD, ofile_outRMINDD):
 
 	## checks for different modules
 
-	if (module_name == "EngdepU" or module_name == "RecedU"):
+	if (module_name == "EngdepU" or module_name == "RecedU" or module_name == "TransmU"):
 		compareMATNumbers (ofile_outRMINDD, raw_ENDF6_file, element_isotope_name, MAT_num)
 
 		# Check if num_reac is within 1 and 7
-		if (1 > num_reac or num_reac > 7):
+		if ((module_name != "TransmU") and (1 > num_reac or num_reac > 7)):
 			print( 'Error', file = ofile_outRMINDD)
 			print( 'wrong reaction index; please follow the list', file = ofile_outRMINDD)
 			raise Exception('Indices of reactions to compute must be between 1 and 7')
-		
+
 	if (module_name == "CombinU"):
 		if (len(element_recdamen) != num_elements_target):
 			raise Exception ('Recoil and damage energy data for all elements in target are not given!')
@@ -251,7 +251,7 @@ def readCheckInputFile(inpRMINDD, ofile_outRMINDD):
 			raise Exception ('Threshold lattice displacement energy data for all elements in target are not given!')
 		if (len(element_Ed_bnd) != num_elements_target):
 			raise Exception ('Ed below which no displacement occurs in target for all elements in target are not given!')
-	
+
 		for element in element_recdamen:
 			if (element not in elements_target):
 				raise Exception ('Element mismatch between target and damage energy data provided!')
@@ -264,3 +264,4 @@ def readCheckInputFile(inpRMINDD, ofile_outRMINDD):
 		for element in element_Ed_bnd:
 			if (element not in elements_target):
 				raise Exception ('Element mismatch between target and Ed_bnd energy data provided!')
+
