@@ -14,7 +14,7 @@ import numpy, datetime, sys
 from time import process_time
 
 ## import calculation modules
-import ReadU, RecedU, EngdepU, CombinU, TransmU
+import UtilsU, ReadU, RecedU, EngdepU, CombinU, TransmU
 
 def printIndexesforReactions (ofile_outRMINDD):
 	print("1 = n,g" , file = ofile_outRMINDD)
@@ -44,6 +44,8 @@ print(day_execution, ' ', time_execution, '\n', file = ofile_outRMINDD)
 inpRMINDD = sys.argv[1]
 
 ReadU.readCheckInputFile(inpRMINDD, ofile_outRMINDD)
+if (ReadU.module_name=='EngdepU' or ReadU.module_name=='RecedU' or ReadU.module_name=='TransmU'):
+	(NPt, Etu) = UtilsU.uqce(ofile_outRMINDD, ifile_preprocessedENDF6)
 
 '''
 The purpose of EngdepU is to compute dpa and heating cross sections due to
@@ -74,7 +76,7 @@ if (ReadU.module_name == "EngdepU"):
 	ifile_preprocessedENDF6 = open(ReadU.preprocessed_ENDF6_file, 'r')
 
 	EngdepU.uqce (ofile_outRMINDD, ifile_rawENDF6, ifile_preprocessedENDF6, ReadU.input_n_spec, 
-	ReadU.num_reac_array, ReadU.num_reac, ReadU.atom_displ_model, ReadU.threshold_Ed, ReadU.b_arcdpa, ReadU.c_arcdpa, 
+	ReadU.num_reac_array, ReadU.num_reac, NPt, Etu, ReadU.atom_displ_model, ReadU.threshold_Ed, ReadU.b_arcdpa, ReadU.c_arcdpa, 
 	ReadU.multigroup, ReadU.en_group_type)
 
 	ifile_preprocessedENDF6.close()
@@ -167,4 +169,5 @@ if (ReadU.module_name == "CombinU"):
 
 
 ofile_outRMINDD.close()
+
 
