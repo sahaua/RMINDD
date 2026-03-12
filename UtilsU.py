@@ -1,3 +1,78 @@
+''' 
+Code: RMINDD - (Radiation-Matter Interaction and Damage calculation using Nuclear Data)
+Perform: Calculation of metrics of neutron radiation damage in a material using ENDF-6 files
+Module: UtilsU.py -- compilation some useful functions used in other modules
+Author: Uttiyoarnab Saha
+Version and Date: 1.0 and 01/07/2022
+Last modified: 01/07/2022, Kolkata
+Update: 01/07/2022
+Major changes: 
+
+=========================================================================================
+'''
+
+'''
+#======= Make the required unique common energy =======*
+
+It creates an unique energy array out of the MF3 MT1 energy points
+given in the pre-processed ENDF-6 file which is used as the common 
+energy array for partial and total dpa and heating cross section 
+computation. This energy array is called unique because any repetition
+(may occur at the dense resonances regions) in the pre-processed energy 
+points are found out and removed, so that each energy point is present
+only once.
+'''
+
+def uqce (ofile_outRMINDD, ifile_preprocessedENDF6):
+	## Et=Energy array in MT=1, Etu=unique of Et
+	## extraction of total energy points
+
+	ifile_preprocessedENDF6.seek(0, 0)
+
+	while True:
+		line = ifile_preprocessedENDF6.readline()
+		if (line == ''):
+			break  
+		data = eachlineinfo(line)
+		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
+		if (MAT != -1):
+			if (MF == 3):
+				if (MT == 1):
+					line = ifile_preprocessedENDF6.readline() 
+					data = eachlineinfo(line)
+					QM = float(data[0]); QI =  float(data[1]); NR = int(data[4]); NPt = int(data[5])
+					Et = [0]*NPt
+					LR = int(ifile_preprocessedENDF6.readline().split()[1])
+					i = 0
+					while (i < NPt):
+						line = ifile_preprocessedENDF6.readline()
+						data = eachlineinfo(line)
+						for j in range(0,5,2):
+							if (data[j] != ''):
+								Et[i] = float(data[j])
+								i += 1
+							else:
+								i += 1
+								break
+		else:
+			break
+
+	print('', file = ofile_outRMINDD)
+	print(NPt,' Total cross sections energy points', file = ofile_outRMINDD)
+
+	## make unique common energy
+	Etu = numpy.array(Et)
+	Etu = numpy.unique(Etu)
+	NPt = len(Etu)
+
+	print('', file = ofile_outRMINDD)
+	print(NPt,' Unique total cross sections energy points', file = ofile_outRMINDD)
+
+	return(NPt, Etu)
+
+'''
+From a value of Z get the name of the corresponding element. 
+'''
 def elementFromZValue(Z):
 	periodic_table = {
 	1: "H", 2: "He", 3: "Li", 4: "Be", 5: "B", 6: "C", 7: "N", 8: "O", 9: "F", 10: "Ne", 11: "Na", 12: "Mg", 13: "Al",
