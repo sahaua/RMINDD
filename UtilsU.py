@@ -186,6 +186,28 @@ def lineType3Info(filehandle,numdata,numvariables):
 	if (numvariables == 1):
 		return(xdata)
 
+#========The Data from Output File of PKA Matrix in Specific Format==========*
+
+def lineType4Info(filehandle,nre,numdata):
+	xdata = [0]*numdata
+	i = 0
+	while (i < numdata):
+		line = filehandle.readline()
+		line = line.lstrip('[')
+		line = line.rstrip(']')
+		data = line.split()
+		for num in range(len(data)):
+			if (num == len(data) - 1):
+				data[num] = float(data[num].lstrip("'").rstrip("']"))
+			elif (num == 0):
+				data[num] = float(data[num].lstrip("['").rstrip("',"))
+			else:
+				data[num] = float(data[num].lstrip("'").rstrip("',"))
+		for j in range(len(data)):
+			#print(i,j)
+			xdata[i] = float(data[j])
+			i += 1
+	return(xdata)
 
 '''
 From a value of Z get the name of the corresponding element. 
