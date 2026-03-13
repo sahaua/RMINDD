@@ -33,117 +33,6 @@ def interpolateXSToUniqueEnergyArray (E,s1,Etu):
 	s2 = numpy.interp(Etu, E, s1)
 	return(s2)
 
-#========The data in each line are explicitly extracted=======*
-
-def eachlineinfo(line):
-	data = [0]*9
-	for i in range(6):
-		s = ''						# 6 data each of 11 places
-		for char in range(i*11,(i+1)*11):
-			s = s + line[char]
-		data[i] = s.lstrip(' ')
-
-	s = ''
-	for char in range(66,70):			# MAT data of 4 places
-		s = s + line[char]
-	data[6] = s.lstrip(' ')
-	# this is done because some ENDF-6 files only give a blank space here in the first line (creates problem)
-	if ((data[6]) == ''):
-		data[6] = 1
-
-	s = ''
-	for char in range(70,72):			# MF data of 2 places
-		s = s + line[char]
-	data[7] = s.lstrip(' ')
-
-	s = ''
-	for char in range(72,75):			# MT data of 3 places
-		s = s + line[char]
-	data[8] = s.lstrip(' ')
-
-	for i in range(6):
-		putE = 1
-		for x in data[i]:
-			if (x == 'E' or x == 'e'):
-				putE = 0
-				break
-		if (putE == 1):
-			data[i] = "E-".join(data[i].split('-'))
-			data[i] = "E+".join(data[i].split('+'))
-			data[i] = data[i].lstrip('E')
-
-	return(data)
-
-#========The data in lines of different types are explicitly extracted=======*
-
-def line_type1_info(line):
-	data = eachlineinfo(line)
-	dataV1 = 0; dataV2 = 0; dataV3 = 0; dataV4 = 0; dataV5 = 0; dataV6 = 0
-	dataV7 = 0; dataV8 = 0; dataV9 = 0
-	iflspace = 0
-	for element in data:
-		if (element == ''):
-			iflspace = 1
-			break
-	if (iflspace == 0):
-		dataV1 = float(data[0]); dataV2 = float(data[1]); dataV3 = int(data[2])
-		dataV4 = int(data[3]); dataV5 = int(data[4]); dataV6 = int(data[5])
-		dataV7 = int(data[6]); dataV8 = int(data[7]); dataV9 = int(data[8])
-	return(dataV1,dataV2,dataV3,dataV4,dataV5,dataV6,dataV7,dataV8,dataV9)
-
-def line_type2_info(line):
-	data = eachlineinfo(line)
-	dataV1 = float(data[0]); dataV2 = float(data[1]); dataV3 = int(data[2])
-	dataV4 = int(data[3]); dataV5 = int(data[4]); dataV6 = int(data[5])
-	dataV7 = int(data[6]); dataV8 = int(data[7]); dataV9 = int(data[8])
-	return(dataV1,dataV2,dataV3,dataV4,dataV5,dataV6,dataV7,dataV8,dataV9)
-
-def line_type3_info(filehandle,numdata,numvariables):
-	# numvariables (1 / 2) denotes no. of variables the given data has to be read into
-	if (numvariables == 2):
-		xdata = [0]*numdata
-		ydata = [0]*numdata
-	if (numvariables == 1):
-		xdata = [0]*numdata
-
-	i = 0
-	if (numvariables == 2):
-		while (i < numdata):
-			line = filehandle.readline()
-			data = eachlineinfo(line)
-			# run_limit variable is introduced because in some files 
-			#(e.g. ENDF/B-VIII.0, Si28
-			#  1.000000+0 1.000000+0          0          2          1          21425 6 51
-			#	2          2          0          0          0          01425 6 51)
-			# extra data (more than 2) are given in the interpolation ranges specification line!
-			run_limit = 6
-			if (2*numdata <= run_limit):
-				run_limit = 2*numdata
-			for j in range(0,run_limit,2):
-				if (data[j] != ''):
-					xdata[i] = float(data[j])
-					ydata[i] = float(data[j+1])
-					i += 1
-				else:
-					i += 1
-					break
-	if (numvariables == 1):
-		while (i < numdata):
-			line = filehandle.readline()
-			data = eachlineinfo(line)
-			for j in range(6):
-				if (data[j] != ''):
-					xdata[i] = float(data[j])
-					i += 1
-				else:
-					i += 1
-					break
-
-	if (numvariables == 2):
-		return(xdata, ydata)
-	if (numvariables == 1):
-		return(xdata)
-
 #=======Gauss-Legendre Quadrature Points and Weights=======*
 	
 	# GL quadrature 64 points and weights used often for integrature and sometimes
@@ -917,7 +806,7 @@ def gtYMf6Mt5():
 
 	while (True):
 		line = ifile.readline()
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if (MAT == -1):
 			ifl6mt5 = 0
@@ -925,14 +814,14 @@ def gtYMf6Mt5():
 		if (MT == 0):
 			if (MF == 6):
 				line = ifile.readline()
-				data = eachlineinfo(line)
+				data = UtilsU.eachLineInfo(line)
 				ZAv = float(data[0]); AWRv = float(data[1]); l1 = int(data[2])
 				LCT = int(data[3]); NKv = int(data[4]); l2 = int(data[5])
 				MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
 
 			if (MF < 6):
 				line = ifile.readline()
-				data = eachlineinfo(line)
+				data = UtilsU.eachLineInfo(line)
 				ZAv = float(data[0]); AWRv = float(data[1]); l1 = int(data[2])
 				LCT = int(data[3]); NKv = int(data[4]); l2 = int(data[5])
 				MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
@@ -944,7 +833,7 @@ def gtYMf6Mt5():
 					NK = NKv
 					for NSS in range (NK):
 						line = ifile.readline()
-						data = eachlineinfo(line)
+						data = UtilsU.eachLineInfo(line)
 						ZAP = float(data[0]); AWP = float(data[1]); LIP = int(data[2])
 						LAW = int(data[3]); NR6 = int(data[4]); NP6 = int(data[5])
 						MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
@@ -969,7 +858,7 @@ def gtYMf6Mt5():
 							N = 0
 							while (N < NR6):
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								for i in range(0,6,2):
 									NBT = int(data[i])
 									INTr = int(data[i+1])
@@ -977,7 +866,7 @@ def gtYMf6Mt5():
 							N = 0
 							while (N < NP6):
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								for i in range(0,6,2):
 									E = float(data[i])
 									Y = float(data[i+1])
@@ -988,7 +877,7 @@ def gtYMf6Mt5():
 							N = 0
 							while (N < NR6):
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								for i in range(0,6,2):
 									NBTp[ip][N] = int(data[i])
 									INTrp[ip][N] = int(data[i+1])
@@ -996,7 +885,7 @@ def gtYMf6Mt5():
 							N = 0
 							while (N < NP6):
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								for i in range(0,6,2):
 									Eyld[ip][N] = float(data[i])
 									Yld[ip][N] = float(data[i+1])
@@ -1004,7 +893,7 @@ def gtYMf6Mt5():
 
 						if (LAW != 0):	# added this condition for calculating from JEFF-3.3
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = UtilsU.eachLineInfo(line)
 							c1 = float(data[0]); c2 = float(data[1]); l3 = int(data[2])
 							l4 = int(data[3]); NR6 = int(data[4]); NE6 = int(data[5])
 							MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
@@ -1012,14 +901,14 @@ def gtYMf6Mt5():
 							N = 0
 							while (N < NR6):
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								for i in range(0,6,2):
 									NBT = int(data[i])
 									INTr = int(data[i+1])
 									N += 1
 							for i in range(NE6):
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								c1 = float(data[0]); En = float(data[1]); ND = int(data[2])
 								NA = int(data[3]); NW = int(data[4]); NEP = int(data[5])
 								MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
@@ -1028,7 +917,7 @@ def gtYMf6Mt5():
 								J1 = 0
 								while (J1 < NW):
 									line = ifile.readline()
-									data = eachlineinfo(line)
+									data = UtilsU.eachLineInfo(line)
 									for k in range(6):
 										Bvall[J1] = float(data[k])
 										J1 += 1
@@ -1137,11 +1026,11 @@ def n_CPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,lpr,mdisp,
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if ( MT == 0 and MF != 0):
 			line = ifile.readline()
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			iflspace = 0
 			for element in data:
 				if (element == ''):
@@ -1164,7 +1053,7 @@ def n_CPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,lpr,mdisp,
 					ZA = ZAv
 					AWR = AWRv
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					QM = float(data[0]); QI =  float(data[1]); LR = int(data[3])
 					NR = int(data[4]); NP = int(data[5])
 					ifile.readline()
@@ -1175,14 +1064,14 @@ def n_CPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,lpr,mdisp,
 						shall_EB = [0]*NPt
 						tot_energy_n_photons = [0]*NPt
 						dn4_neutrons = [0]*NPt; dn5_photons = [0]*NPt
-						(Eall1, sall1) = line_type3_info(ifile,NP,2)
+						(Eall1, sall1) = UtilsU.lineType3Info(ifile,NP,2)
 					if (NP <= NPt):
 						Eall = [0]*NP; sall = [0]*NP; sdall = [0]*NP
 						shall = [0]*NP; num_of_displ = [0]*NP; tot_energy_products = [0]*NP
 						shall_EB = [0]*NP
 						tot_energy_n_photons = [0]*NP
 						dn4_neutrons = [0]*NP; dn5_photons = [0]*NP
-						(Eall, sall) = line_type3_info(ifile,NP,2)
+						(Eall, sall) = UtilsU.lineType3Info(ifile,NP,2)
 					if (ifdthl == 1):
 						alfull = [[0]*65]*NP; alc = [0]*65
 		else:
@@ -1213,11 +1102,11 @@ def n_CPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,lpr,mdisp,
 				line = ifile.readline()
 				if (line == ''):
 					break
-				data = eachlineinfo(line)
+				data = UtilsU.eachLineInfo(line)
 				MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 				if (MF==3 and MT==0 ):
 					line = ifile.readline()
-					(ZA,AWR,l1,LTT,NK,l2,MAT,MF,MT) = line_type1_info(line)
+					(ZA,AWR,l1,LTT,NK,l2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 				if (MAT != -1):
 					if (MF == 4):
 						if (MT == MTi):
@@ -1226,20 +1115,20 @@ def n_CPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,lpr,mdisp,
 							if (LTT == 3 or LTT == 1):
 								ifspad4al = 1
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								NE1 = int(data[5])
 								## Legendre polynomial coefficients
 								ifile.readline()
 								al4 = [[0]*65]*NE1; EL = [0]*NE1
 								for i in range (NE1):
 									line = ifile.readline()
-									data = eachlineinfo(line)
+									data = UtilsU.eachLineInfo(line)
 									T = float(data[0]); EL[i] = float(data[1]); NL4 = int(data[4])
 									NL4 = NL4 + 1
 									al4[i][0] = 1
 									al4[i][1:-1] = 0.0
 									temporary = [0]*NL4
-									temporary = line_type3_info (ifile,NL4-1,1)
+									temporary = UtilsU.lineType3Info (ifile,NL4-1,1)
 									for j, value in enumerate (temporary, 1):
 										al4[i][j] = value
 
@@ -1253,12 +1142,12 @@ def n_CPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,lpr,mdisp,
 								fmuE = numpy.zeros((NP,64)); fpr = [0]*64
 								for i in range (NE2):
 									line = ifile.readline()
-									data = eachlineinfo(line)
+									data = UtilsU.eachLineInfo(line)
 									T = float(data[0]); Enf[i] = float(data[1]) 
 									NPr[i] = int(ifile.readline().split()[0])
 									temporary1 = [0]*NPr[i]
 									temporary2 = [0]*NPr[i]
-									(temporary1,temporary2) = line_type3_info(ifile,NPr[i],2)
+									(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NPr[i],2)
 									for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 										cdata4[i][j] = value1
 										fdata4[i][j] = value2
@@ -1285,18 +1174,18 @@ def n_CPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,lpr,mdisp,
 			line = ifile.readline()
 			if (line == ''):
 				break
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 			if (MT == 0):
 				line = ifile.readline()
-				data = eachlineinfo(line)
+				data = UtilsU.eachLineInfo(line)
 				iflspace = 0
 				for element in data:
 					if (element == ''):
 						iflspace = 1
 						break
 				if (iflspace == 0):
-					(ZAv,AWRv,l1,LCT,NKv,l2,MAT,MF,MT) = line_type1_info(line)
+					(ZAv,AWRv,l1,LCT,NKv,l2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 			if (MAT != -1):
 				if (MF == 6):
 					if (MT == MTi):
@@ -1310,21 +1199,21 @@ def n_CPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,lpr,mdisp,
 							iflcomlab = 1
 						for NSS in range (NK):
 							line = ifile.readline()
-							data = eachlineinfo(line)
-							(ZAP[NSS],AWP[NSS],LIP,LAW[NSS],NR6,Nyld[NSS],MAT,MF,MT) = line_type1_info(line)
+							data = UtilsU.eachLineInfo(line)
+							(ZAP[NSS],AWP[NSS],LIP,LAW[NSS],NR6,Nyld[NSS],MAT,MF,MT) = UtilsU.lineType1Info(line)
 
 							if (float(AWP[NSS]) > int(beta[lpr])):
 								irs = NSS
 								iflr = 1
 							temporary1 = [0]*NR6
 							temporary2 = [0]*NR6
-							(temporary1,temporary2) = line_type3_info(ifile,NR6,2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NR6,2)
 							for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								NBT[NSS][N] = value1
 								INTr[NSS][N] = value2
 							temporary1 = [0]*int(Nyld[NSS])
 							temporary2 = [0]*int(Nyld[NSS])
-							(temporary1,temporary2) = line_type3_info(ifile,int(Nyld[NSS]),2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,int(Nyld[NSS]),2)
 							for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								Eint6[NSS][N] = value1
 								yi[NSS][N] = value2
@@ -1336,20 +1225,20 @@ def n_CPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,lpr,mdisp,
 									ifspad6 = 1
 									isps = NSS
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								c1 = float(data[0]); c2 = float(data[1]); l3 = int(data[2])
 								l4 = int(data[3]); NR6 = int(data[4]); NE6[NSS] = int(data[5])
 								MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
 								temporary1 = [0]*NR6
 								temporary2 = [0]*NR6
-								(temporary1,temporary2) = line_type3_info(ifile,NR6,2)
+								(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NR6,2)
 								for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 									NBT[NSS][N] = value1
 									INTr[NSS][N] = value2
 
 								for i in range (int(NE6[NSS])):
 									line = ifile.readline()
-									data = eachlineinfo(line)
+									data = UtilsU.eachLineInfo(line)
 									c1 = float(data[0]); En[NSS][i] = float(data[1]); LG[NSS] = int(data[2])
 									l2 = int(data[3]); NW = int(data[4]); NL[NSS][i] = int(data[5])
 									MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
@@ -1359,7 +1248,7 @@ def n_CPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,lpr,mdisp,
 										al6[NSS][i][0] = 1
 										al6[NSS][i][1:-1] = 0
 										temporary = [0]*int(NL[NSS][i])
-										temporary = line_type3_info (ifile,int(NL[NSS][i])-1,1)
+										temporary = UtilsU.lineType3Info (ifile,int(NL[NSS][i])-1,1)
 										for j, value in enumerate (temporary, 1):
 											al6[NSS][i][j] = value
 
@@ -1370,26 +1259,26 @@ def n_CPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,lpr,mdisp,
 											iflgfdlcd = 1
 										temporary1 = [0]*int(NL[NSS][i])
 										temporary2 = [0]*int(NL[NSS][i])
-										(temporary1,temporary2) = line_type3_info(ifile,int(NL[NSS][i]),2)
+										(temporary1,temporary2) = UtilsU.lineType3Info(ifile,int(NL[NSS][i]),2)
 										for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 											cdata6[NSS][i][j] = value1
 											fdata6[NSS][i][j] = value2
 
 							if (int(LAW[NSS]) == 1):
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								c1 = float(data[0]); c2 = float(data[1]); LG[NSS] = int(data[2])
 								LP = int(data[3]); NR6 = int(data[4]); NE6[NSS] = int(data[5])
 								MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
 								temporary1 = [0]*NR6
 								temporary2 = [0]*NR6
-								(temporary1,temporary2) = line_type3_info(ifile,NR6,2)
+								(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NR6,2)
 								for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 									NBT[NSS][N] = value1
 									INTr[NSS][N] = value2
 								for i in range (int(NE6[NSS])):
 									line = ifile.readline()
-									data = eachlineinfo(line)
+									data = UtilsU.eachLineInfo(line)
 									c1 = float(data[0]); En[NSS][i] = float(data[1]); ND = int(data[2])
 									NA = int(data[3]) 
 									NW = int(data[4])
@@ -1403,7 +1292,7 @@ def n_CPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,lpr,mdisp,
 											fiso[NSS] = 1
 											Ball = [0]*NW
 											temporary = [0]*NW
-											temporary = line_type3_info (ifile,NW,1)
+											temporary = UtilsU.lineType3Info (ifile,NW,1)
 											for j1, value in enumerate(temporary, 0):
 												Ball[j1] = value
 											K1 = 0
@@ -1417,7 +1306,7 @@ def n_CPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,lpr,mdisp,
 										fiso[NSS] = 1
 										temporary1 = [0]*int(NEP[NSS][i])
 										temporary2 = [0]*int(NEP[NSS][i])
-										(temporary1,temporary2) = line_type3_info(ifile,int(NEP[NSS][i]),2)
+										(temporary1,temporary2) = UtilsU.lineType3Info(ifile,int(NEP[NSS][i]),2)
 										for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 											Enp[NSS][i][j] = value1
 											f[NSS][i][j] = value2
@@ -2810,11 +2699,11 @@ def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu
 			NP1 = 0
 			while (True):
 				line = ifile.readline()
-				data = eachlineinfo(line)
+				data = UtilsU.eachLineInfo(line)
 				MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 				if (MT == 0 and MF != 0):
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					iflspace = 0
 					for element in data:
 						if (element == ''):
@@ -2832,7 +2721,7 @@ def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu
 							ZA = ZAv
 							AWR = AWRv
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = UtilsU.eachLineInfo(line)
 							QM = float(data[0]); QI =  float(data[1]); LR = int(data[3])
 							NR = int(data[4]); NP1 = int(data[5])
 							E5 = [0]*NP1; sig5 = [0]*NP1
@@ -2845,7 +2734,7 @@ def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu
 							i = 0
 							while (i<NP1):
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								for j in range(0,6,2):
 									if (data[j] != ''):
 										E5[i] = float(data[j])
@@ -3152,11 +3041,11 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NP
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8]) 
 		if (MT == 0):
 			line = ifile.readline()
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			iflspace = 0
 			for element in data:
 				if (element == ''):
@@ -3173,14 +3062,14 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NP
 					ifl6 = 1
 					NK6 = NKv
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					C1 = float(data[0]); C2 =  float(data[1]); LIP = int(data[2])
 					LAW = int(data[3]); NR = int(data[4]); NP6 = int(data[5]); MAT = int(data[6])
 					MF = int(data[7]); MT = int(data[8])
 					N = 0
 					while (N < NR):
 						line = ifile.readline()
-						data = eachlineinfo(line)
+						data = UtilsU.eachLineInfo(line)
 						for i in range(0,6,2):
 							if (data[i] != ''):
 								NBT[N] = int(data[i])
@@ -3192,7 +3081,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NP
 					N = 0
 					while (N < NP6):
 						line = ifile.readline()
-						data = eachlineinfo(line)
+						data = UtilsU.eachLineInfo(line)
 						for i in range(0,6,2):
 							if (data[i] != ''):
 								E6[N] = float(data[i])
@@ -3217,14 +3106,14 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NP
 								Y6tot[i] = TERPOLIN(intflg,Etu[i],E6[j],E6[j+1],Y6[j],Y6[j+1])
 					
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					C1 = float(data[0]); C2 =  float(data[1]); LANG = int(data[2])
 					LEP = int(data[3]); NR6 = int(data[4]); NE6 = int(data[5]); MAT = int(data[6])
 					MF = int(data[7]); MT = int(data[8])
 					N = 0
 					while (N < NR6):
 						line = ifile.readline()
-						data = eachlineinfo(line)
+						data = UtilsU.eachLineInfo(line)
 						for i in range(0,6,2):
 							if (data[i] != ''):
 								NBT6[N] = int(data[i])
@@ -3235,14 +3124,14 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NP
 								break
 					for i in range(NE6):
 						line = ifile.readline()
-						data = eachlineinfo(line)
+						data = UtilsU.eachLineInfo(line)
 						C1 = float(data[0]); En6[i] =  float(data[1]); ND6[i] = int(data[2])
 						NA = int(data[3]); NW = int(data[4]); NPg6[i] = int(data[5]); MAT = int(data[6])
 						MF = int(data[7]); MT = int(data[8])
 						N = 0
 						while (N < NPg6[i]):
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = UtilsU.eachLineInfo(line)
 							for j in range(0,6,2):
 								if (data[j] != ''):
 									Eg6[i][N] = float(data[j])
@@ -3261,12 +3150,12 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NP
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if (MF <= 12 and MT == 0):
 			if (MAT != -1):
 				line = ifile.readline()
-				data = eachlineinfo(line)
+				data = UtilsU.eachLineInfo(line)
 				iflspace = 0
 				for element in data:
 					if (element == ''):
@@ -3280,7 +3169,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NP
 		if (MF == 0):
 			if (MAT != -1):
 				line = ifile.readline()
-				data = eachlineinfo(line)
+				data = UtilsU.eachLineInfo(line)
 				iflspace = 0
 				for element in data:
 					if (element == ''):
@@ -3302,7 +3191,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NP
 					EGk = [0]*NK; ESk = [0]*NK; LP = [0]*NK; NBTk12 = numpy.zeros((NK,20))
 					INTrk12 = numpy.zeros((NK,20)); NRk12 = [0]*NK
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					C1 = float(data[0]); C2 =  float(data[1]); L1 = int(data[2])
 					L2 = int(data[3]); NR = int(data[4]); NP12 = int(data[5]); MAT = int(data[6])
 					MF = int(data[7]); MT = int(data[8])
@@ -3310,7 +3199,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NP
 					N = 0
 					while (N < NR):
 						line = ifile.readline()
-						data = eachlineinfo(line)
+						data = UtilsU.eachLineInfo(line)
 						for i in range(0,6,2):
 							if (data[i] != ''):
 								NBT[N] = int(data[i])
@@ -3322,7 +3211,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NP
 					N = 0
 					while (N < NP12):
 						line = ifile.readline()
-						data = eachlineinfo(line)
+						data = UtilsU.eachLineInfo(line)
 						for i in range(0,6,2):
 							if (data[i] != ''):
 								E12[N] = float(data[i])
@@ -3355,7 +3244,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NP
 					if (NK > 1):
 						for i in range(NK):
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = UtilsU.eachLineInfo(line)
 							EGk[i] = float(data[0]); ESk[i] =  float(data[1]); LP[i] = int(data[2])
 							LF = int(data[3]); NRk12[i] = int(data[4])
 							NPn12[i] = int(data[5]); MAT = int(data[6])
@@ -3363,7 +3252,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NP
 							N = 0
 							while (N < NRk12[i]):
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								for j in range(0,6,2):
 									if (data[j] != ''):
 										NBTk12[i][N] = int(data[j])
@@ -3375,7 +3264,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NP
 							N = 0
 							while (N < NPn12[i]):
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								for j in range(0,6,2):
 									if (data[j] != ''):
 										En12[i][N] = float(data[j])
@@ -3418,11 +3307,11 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NP
 			line = ifile.readline()
 			if (line == ''):
 				break
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 			if (MT == 0):
 				line = ifile.readline()
-				(ZAv,AWRv,L0,L1,NCv,L2,MAT,MF,MT) = line_type1_info(line)
+				(ZAv,AWRv,L0,L1,NCv,L2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 	
 			if (MAT != -1):
 				if (MF == 15):
@@ -3430,11 +3319,11 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NP
 						ifl15 = 1
 						NC = NCv
 						line = ifile.readline()
-						(C1,C2,L1,LF,NR,NP15,MAT,MF,MT) = line_type2_info(line)
+						(C1,C2,L1,LF,NR,NP15,MAT,MF,MT) = UtilsU.lineType2Info(line)
 						N = 0
 						while (N < NR):
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = UtilsU.eachLineInfo(line)
 							for j in range(0,6,2):
 								if (data[j] != ''):
 									NBT[N] = int(data[j])
@@ -3446,7 +3335,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NP
 						N = 0
 						while (N < NP15):
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = UtilsU.eachLineInfo(line)
 							for j in range(0,6,2):
 								if (data[j] != ''):
 									E15[N] = float(data[j])
@@ -3456,11 +3345,11 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NP
 									N += 1
 									break
 						line = ifile.readline()
-						(C1,C2,L1,L2,NR15a,NE15,MAT,MF,MT) = line_type2_info(line)
+						(C1,C2,L1,L2,NR15a,NE15,MAT,MF,MT) = UtilsU.lineType2Info(line)
 						N = 0
 						while (N < NR15a):
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = UtilsU.eachLineInfo(line)
 							for j in range(0,6,2):
 								if (data[j] != ''):
 									NBT15a[N] = int(data[j])
@@ -3471,11 +3360,11 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NP
 									break
 						for i in range(NE15):
 							line = ifile.readline()
-							(C1,En15[i],L1,L2,NR,NPg15[i],MAT,MF,MT) = line_type2_info(line)
+							(C1,En15[i],L1,L2,NR,NPg15[i],MAT,MF,MT) = UtilsU.lineType2Info(line)
 							N = 0
 							while (N < NR):
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								for j in range(0,6,2):
 									if (data[j] != ''):
 										NBT[N] = int(data[j])
@@ -3487,7 +3376,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NP
 							N = 0
 							while (N < NPg15[i]):
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								for j in range(0,6,2):
 									if (data[j] != ''):
 										Eg15[i][N] = float(data[j])
@@ -3505,18 +3394,18 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NP
 	ifile = ifile_preprocessedENDF6
 	ifile.readline()
 	line = ifile.readline()
-	(ZA,AWR,L0,L1,L2,L3,MAT,MF,MT) = line_type1_info(line)
+	(ZA,AWR,L0,L1,L2,L3,MAT,MF,MT) = UtilsU.lineType1Info(line)
 	while True:
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
 		if (MAT != -1):
 			if (MF == 3):
 				if (MT == 102):
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					QM = float(data[0]); QI =  float(data[1]); LR = int(data[3])
 					NR = int(data[4]); NP = int(data[5])
 					ifile.readline()
@@ -3524,7 +3413,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NP
 					i = 0 
 					while (i < NP):
 						line = ifile.readline()
-						data = eachlineinfo(line)
+						data = UtilsU.eachLineInfo(line)
 						for j in range(0,6,2):
 							if (data[j] != ''):
 								E[i] = float(data[j])
@@ -3801,18 +3690,18 @@ def ELASTIC_SCATTERING(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NP
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if (MAT != -1):
 			if (MF == 3):
 				if (MT == 2):
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					QM = float(data[0]); QI =  float(data[1])
 					NR = int(data[4]); NP = int(data[5])
 					E = [0]*NP; sig = [0]*NP
 					LR = int(ifile.readline().split()[3])
-					(E, sig) = line_type3_info(ifile,NP,2)
+					(E, sig) = UtilsU.lineType3Info(ifile,NP,2)
 		else:
 			break
 
@@ -3828,12 +3717,12 @@ def ELASTIC_SCATTERING(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NP
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if (MF == 3 and MT == 0):
 			ifile.readline()
 			line = ifile.readline()
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			iflspace = 0
 			for element in data:
 				if (element == ''):
@@ -3851,24 +3740,24 @@ def ELASTIC_SCATTERING(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NP
 						alc = [0]*65
 					if (LTT == 3 or LTT == 1):
 						line = ifile.readline()
-						data = eachlineinfo(line)
+						data = UtilsU.eachLineInfo(line)
 						NE1 = int(data[5])
 						# Legendre polynomial coefficients
 						ifile.readline()
 						al = numpy.zeros((NE1,65)); EL = [0]*NE1; alc = [0]*65
 						for i in range(NE1):
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = UtilsU.eachLineInfo(line)
 							T = float(data[0]); EL[i] = float(data[1]); NL = int(data[4])
 							NL = NL+1
 							al[i][0] = 1
 							temporary = [0]*NL
-							temporary = line_type3_info(ifile,NL-1,1)
+							temporary = UtilsU.lineType3Info(ifile,NL-1,1)
 							for j, value in enumerate(temporary, 1):
 								al[i][j] = value
 					if (LTT == 3 or LTT == 2):
 						line = ifile.readline()
-						data = eachlineinfo(line)
+						data = UtilsU.eachLineInfo(line)
 						NE2 = int(data[5])
 						# Tabulated Probability
 						ifile.readline()
@@ -3876,14 +3765,14 @@ def ELASTIC_SCATTERING(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NP
 						fdata = numpy.zeros((NE2,201)); ftotal = numpy.zeros((NE2,64))
 						for i in range(NE2):
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = UtilsU.eachLineInfo(line)
 							T = float(data[0]); Enf[i] = float(data[1])
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = UtilsU.eachLineInfo(line)
 							NPr[i] = int(data[0])
 							temporary1 = [0]*201
 							temporary2 = [0]*201
-							(temporary1,temporary2) = line_type3_info(ifile,NPr[i],2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NPr[i],2)
 							for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								cdata[i][j] = value1
 								fdata[i][j] = value2
@@ -4109,7 +3998,7 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,
 	ifile = ifile_rawENDF6
 	ifile.readline()
 	line = ifile.readline()
-	(ZA,AWR,L0,L1,L2,L3,MAT,MF,MT) = line_type1_info(line)
+	(ZA,AWR,L0,L1,L2,L3,MAT,MF,MT) = UtilsU.lineType1Info(line)
 
 	Z = int(ZA/1000)
 	A = AWR
@@ -4131,20 +4020,20 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,
 				line = ifile.readline()
 				if (line == ''):
 					break
-				data = eachlineinfo(line)
+				data = UtilsU.eachLineInfo(line)
 				MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
 				if (MAT != -1):
 					if (MF == 3):
 						if (MT == mta):
 							iflpr = 1
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = UtilsU.eachLineInfo(line)
 							QM = float(data[0]); QI =  float(data[1])
 							LR = int(data[3]); NR = int(data[4]); NP = int(data[5])
 							E = [0]*NP; sig = [0]*NP; sdpal = [0]*NP; snhtl = [0]*NP
 							num_of_displ = numpy.zeros(NP); tot_energy_products = numpy.zeros(NP)
 							ifile.readline()
-							(E, sig) = line_type3_info(ifile,NP,2)
+							(E, sig) = UtilsU.lineType3Info(ifile,NP,2)
 				else:
 					break
 
@@ -4160,11 +4049,11 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,
 					line = ifile.readline()
 					if (line == ''):
 						break
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
 					if (MT == 0):
 						line = ifile.readline()
-						(ZA,AWR,L1,LTTv,L2,L3,MAT,MF,MT) = line_type1_info(line)
+						(ZA,AWR,L1,LTTv,L2,L3,MAT,MF,MT) = UtilsU.lineType1Info(line)
 					if (MAT != -1):
 						if (MF == 4):
 							if (MT == mta):
@@ -4174,20 +4063,20 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,
 									if4c = 1
 								LTT = LTTv
 								line = ifile.readline()
-								(ZA,AWR,LI,LCT,L2,L3,MAT,MF,MT) = line_type1_info(line)
+								(ZA,AWR,LI,LCT,L2,L3,MAT,MF,MT) = UtilsU.lineType1Info(line)
 								if (LTT == 1  and  LI == 0):
 									line = ifile.readline()
-									(C1,C2,L1,L2,NR,NE4,MAT,MF,MT) = line_type2_info(line)
-									(NBT, INTr) = line_type3_info(ifile,NR,2)
+									(C1,C2,L1,L2,NR,NE4,MAT,MF,MT) = UtilsU.lineType2Info(line)
+									(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 									for i in range(NE4):
 										line = ifile.readline()
-										data = eachlineinfo(line)
+										data = UtilsU.eachLineInfo(line)
 										c1 = float(data[0]); En4[i] = float(data[1]); NL4 = int(data[4])
 										NL4 = NL4 + 1
 										al4[i][0] = 1
 										al4[i][1:-1] = 0.0
 										temporary = [0]*NL4
-										temporary = line_type3_info (ifile,NL4-1,1)
+										temporary = UtilsU.lineType3Info (ifile,NL4-1,1)
 										for j, value in enumerate(temporary, 1):
 											al4[i][j] = value
 					else:
@@ -4202,11 +4091,11 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,
 						line = ifile.readline()
 						if (line == ''):
 							break
-						data = eachlineinfo(line)
+						data = UtilsU.eachLineInfo(line)
 						MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
 						if (MT == 0):
 							line = ifile.readline()
-							(ZA,AWR,L1,L2,NKv,L3,MAT,MF,MT) = line_type1_info(line)
+							(ZA,AWR,L1,L2,NKv,L3,MAT,MF,MT) = UtilsU.lineType1Info(line)
 						if (MAT != -1):
 							if (MF == 5):
 								if (MT == 91):
@@ -4215,23 +4104,23 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,
 									for NSS in range(NK5):
 										ifile.readline()
 										line = ifile.readline()
-										(C1,C2,L1,LF[NSS],NR,NP5[NSS],MAT,MF,MT) = line_type2_info(line)
-										(NBT, INTr) = line_type3_info(ifile,NR,2)
-										line_type3_info(ifile,NP5[NSS],2)
+										(C1,C2,L1,LF[NSS],NR,NP5[NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
+										(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
+										UtilsU.lineType3Info(ifile,NP5[NSS],2)
 										if (LF[NSS] == 1):
 											ift5c = 1
 											ifile.readline()
 											line = ifile.readline()
-											(C1,C2,L1,L2,NR,NE5[NSS],MAT,MF,MT) = line_type2_info(line)
-											(NBT, INTr) = line_type3_info(ifile,NR,2)
+											(C1,C2,L1,L2,NR,NE5[NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
+											(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 											for i in range (NE5[NSS]):
 												ifile.readline()
 												line = ifile.readline()
-												(C1,En5[NSS][i],L1,L2,NR,NF5[NSS][i],MAT,MF,MT) = line_type2_info(line)
-												(NBT, INTr) = line_type3_info(ifile,NR,2)
+												(C1,En5[NSS][i],L1,L2,NR,NF5[NSS][i],MAT,MF,MT) = UtilsU.lineType2Info(line)
+												(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 												temporary1 = [0]*NF5[NSS][i]
 												temporary2 = [0]*NF5[NSS][i]
-												(temporary1,temporary2) = line_type3_info(ifile,NF5[NSS][i],2)
+												(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NF5[NSS][i],2)
 												for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 													Enp5[NSS][i][j] = value1
 													f5[NSS][i][j] = value2
@@ -4241,11 +4130,11 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,
 											#read(700,13) (Eint(l,NSS,N), p(l,NSS,N), N = 1, NP5(l,NSS))
 											ifile.readline()
 											line = ifile.readline()
-											(C1,C2,L1,L2,NR,NE5[NSS],MAT,MF,MT) = line_type2_info(line)
-											(NBT, INTr) = line_type3_info(ifile,NR,2)
+											(C1,C2,L1,L2,NR,NE5[NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
+											(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 											temporary1 = [0]*NE5[NSS]
 											temporary2 = [0]*NE5[NSS]
-											(temporary1,temporary2) = line_type3_info(ifile,NE5[NSS],2)
+											(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NE5[NSS],2)
 											for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 												En5[NSS][N] = value1
 												tht[NSS][N] = value2
@@ -4263,18 +4152,18 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,
 						line = ifile.readline()
 						if (line == ''):
 							break
-						data = eachlineinfo(line)
+						data = UtilsU.eachLineInfo(line)
 						MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
 						if (MAT == -1):
 							break
 						if (MT == 0):
 							if (MF == 6):
 								line = ifile.readline()
-								(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = line_type1_info(line)
+								(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = UtilsU.lineType1Info(line)
 							if (MF < 6):
 								ifile.readline()
 								line = ifile.readline()
-								(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = line_type1_info(line)
+								(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = UtilsU.lineType1Info(line)
 						if (MAT != -1):
 							if (MF == 6):
 								if (MT == mta):
@@ -4285,12 +4174,12 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,
 									NK = NKv
 									for NSS in range(NK):
 										line = ifile.readline()
-										data = eachlineinfo(line)
-										(ZAP,AWP,LIP,LAW[NSS],NR,NP6[NSS],MAT,MF,MT) = line_type1_info(line)
-										(NBT, INTr) = line_type3_info(ifile,NR,2)
+										data = UtilsU.eachLineInfo(line)
+										(ZAP,AWP,LIP,LAW[NSS],NR,NP6[NSS],MAT,MF,MT) = UtilsU.lineType1Info(line)
+										(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 										temporary1 = [0]*NP6[NSS]
 										temporary2 = [0]*NP6[NSS]
-										(temporary1,temporary2) = line_type3_info(ifile,NP6[NSS],2)
+										(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NP6[NSS],2)
 										for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 											Eint6[NSS][j] = value1
 											yi[NSS][j] = value2
@@ -4298,31 +4187,31 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,
 											iflawiso = 1
 										if (LAW[NSS] == 2):
 											line = ifile.readline()
-											(c1,c2,l3,l4,NR,NE6[NSS],MAT,MF,MT) = line_type2_info(line)
-											(NBT, INTr) = line_type3_info(ifile,NR,2)
+											(c1,c2,l3,l4,NR,NE6[NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
+											(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 											for i in range (NE6[NSS]):
 												line = ifile.readline()
-												(c1,En[NSS][i],LG[NSS],l2,NW,NL6,MAT,MF,MT) = line_type2_info(line)
+												(c1,En[NSS][i],LG[NSS],l2,NW,NL6,MAT,MF,MT) = UtilsU.lineType2Info(line)
 												NL6 = NL6 + 1
 												al6[i][0] = 1
 												al6[i][1:-1] = 0.0
 												temporary = [0]*NL6
-												temporary = line_type3_info (ifile,NL6-1,1)
+												temporary = UtilsU.lineType3Info (ifile,NL6-1,1)
 												for j, value in enumerate(temporary, 1):
 													al6[i][j] = value
 										if (LAW[NSS] == 1):
 											line = ifile.readline()
-											(c1,c2,LG[NSS],LP,NR,NE6[NSS],MAT,MF,MT) = line_type2_info(line)
-											(NBT, INTr) = line_type3_info(ifile,NR,2)
+											(c1,c2,LG[NSS],LP,NR,NE6[NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
+											(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 											for i in range (NE6[NSS]):
 												line = ifile.readline()
-												(c1,En[NSS][i],ND,NA,NW,NEP[NSS][i],MAT,MF,MT) = line_type2_info(line)
+												(c1,En[NSS][i],ND,NA,NW,NEP[NSS][i],MAT,MF,MT) = UtilsU.lineType2Info(line)
 												if (NA != 0):
 													if (LG[NSS] == 2 or LG[NSS] == 1):
 														fiso[NSS] = 1
 														Ball = [0]*NW
 														temporary = [0]*NW
-														temporary = line_type3_info (ifile,NW,1)
+														temporary = UtilsU.lineType3Info (ifile,NW,1)
 														for j1, value in enumerate(temporary, 0):
 															Ball[j1] = value
 														K1 = 0
@@ -4337,7 +4226,7 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,
 													fiso[NSS] = 1
 													temporary1 = [0]*int(NEP[NSS][i])
 													temporary2 = [0]*int(NEP[NSS][i])
-													(temporary1,temporary2) = line_type3_info(ifile,int(NEP[NSS][i]),2)
+													(temporary1,temporary2) = UtilsU.lineType3Info(ifile,int(NEP[NSS][i]),2)
 													for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 														Enp[NSS][i][j] = value1
 														f[NSS][i][j] = value2
@@ -4701,7 +4590,7 @@ def n_xn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,NPt,Etu,mdi
 	ifile = ifile_rawENDF6
 	ifile.readline() 
 	line = ifile.readline()
-	(ZA,AWR,L0,L1,L2,L3,MAT,MF,MT) = line_type1_info(line)
+	(ZA,AWR,L0,L1,L2,L3,MAT,MF,MT) = UtilsU.lineType1Info(line)
 
 	Z = int(ZA/1000)
 	A = AWR
@@ -4712,19 +4601,19 @@ def n_xn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,NPt,Etu,mdi
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
 		if (MAT != -1):
 			if (MF == 3):
 				if (MT == MTi):
 					iflpresent = 1
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					QM = float(data[0]); QI =  float(data[1])
 					LR = int(data[3]); NR = int(data[4]); NP = int(data[5])
 					ifile.readline()
 					E = [0]*NP; sig = [0]*NP; sdpa = [0]*NP; snht = [0]*NP
-					(E, sig) = line_type3_info(ifile,NP,2)
+					(E, sig) = UtilsU.lineType3Info(ifile,NP,2)
 		else:
 			break
 
@@ -4740,16 +4629,16 @@ def n_xn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,NPt,Etu,mdi
 			line = ifile.readline()
 			if (line == ''):
 				break
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])	
 			if (MT == 0):
 				if (MF == 5):
 					line = ifile.readline()
-					(ZAv,AWRv,L1,L2,NK5,L3,MAT,MF,MT) = line_type1_info(line)
+					(ZAv,AWRv,L1,L2,NK5,L3,MAT,MF,MT) = UtilsU.lineType1Info(line)
 				if (MF < 5):
 					ifile.readline()
 					line = ifile.readline()
-					(ZAv,AWRv,L1,L2,NK5,L3,MAT,MF,MT) = line_type1_info(line)
+					(ZAv,AWRv,L1,L2,NK5,L3,MAT,MF,MT) = UtilsU.lineType1Info(line)
 			if (MAT != -1):
 				if (MF == 5):
 					if (MT == MTi):
@@ -4758,25 +4647,25 @@ def n_xn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,NPt,Etu,mdi
 						if5 = 1
 						for NSS in range (NK5):
 							line = ifile.readline()
-							(C1,C2,L1,LF[NSS],NR,NP5[NSS],MAT,MF,MT) = line_type2_info(line)
-							(NBT, INTr) = line_type3_info(ifile,NR,2)
+							(C1,C2,L1,LF[NSS],NR,NP5[NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
+							(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 							temporary1 = [0]*NP5[NSS]
 							temporary2 = [0]*NP5[NSS]
-							(temporary1,temporary2) = line_type3_info(ifile,NP5[NSS],2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NP5[NSS],2)
 							for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								Eint[NSS][N] = value1
 								p[NSS][N] = value2
 							if (LF[NSS] == 1):
 								line = ifile.readline()
-								(C1,C2,L1,L2,NR,NE5[NSS],MAT,MF,MT) = line_type2_info(line)
-								(NBT, INTr) = line_type3_info(ifile,NR,2)
+								(C1,C2,L1,L2,NR,NE5[NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
+								(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 								for i in range (NE5[NSS]):
 									line = ifile.readline()
-									(C1,En5[NSS][i],L1,L2,NR,NF5[NSS][i],MAT,MF,MT) = line_type2_info(line)
-									(NBT, INTr) = line_type3_info(ifile,NR,2)
+									(C1,En5[NSS][i],L1,L2,NR,NF5[NSS][i],MAT,MF,MT) = UtilsU.lineType2Info(line)
+									(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 									temporary1 = [0]*NF5[NSS][i]
 									temporary2 = [0]*NF5[NSS][i]
-									(temporary1,temporary2) = line_type3_info(ifile,NF5[NSS][i],2)
+									(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NF5[NSS][i],2)
 									for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 										Enp5[NSS][i][j] = value1
 										f5[NSS][i][j] = value2
@@ -4784,11 +4673,11 @@ def n_xn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,NPt,Etu,mdi
 								ift5 = 1
 								U = C1
 								line = ifile.readline()
-								(C1,C2,L1,L2,NR,NE5[NSS],MAT,MF,MT) = line_type2_info(line)
-								(NBT, INTr) = line_type3_info(ifile,NR,2)
+								(C1,C2,L1,L2,NR,NE5[NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
+								(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 								temporary1 = [0]*NE5[NSS]
 								temporary2 = [0]*NE5[NSS]
-								(temporary1,temporary2) = line_type3_info(ifile,NE5[NSS],2)
+								(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NE5[NSS],2)
 								for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 									En5[NSS][N] = value1
 									tht[NSS][N] = value2
@@ -4803,16 +4692,16 @@ def n_xn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,NPt,Etu,mdi
 				line = ifile.readline()
 				if (line == ''):
 					break
-				data = eachlineinfo(line)
+				data = UtilsU.eachLineInfo(line)
 				MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])	
 				if (MT == 0):
 					if (MF == 6):
 						line = ifile.readline()
-						(ZAv,AWRv,l1,LCT,NKv,l2,MAT,MF,MT) = line_type1_info(line)
+						(ZAv,AWRv,l1,LCT,NKv,l2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 					if (MF < 6):
 						ifile.readline()
 						line = ifile.readline()
-						(ZAv,AWRv,l1,LCT,NKv,l2,MAT,MF,MT) = line_type1_info(line)
+						(ZAv,AWRv,l1,LCT,NKv,l2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 				if (MAT != -1):
 					if (MF == 6):
 						if (MT == MTi):
@@ -4823,36 +4712,36 @@ def n_xn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,NPt,Etu,mdi
 
 							for NSS in range (NK):
 								line = ifile.readline()
-								(ZAP,AWP,LIP,LAW[NSS],NR,NP6[NSS],MAT,MF,MT) = line_type1_info(line)
-								(NBT, INTr) = line_type3_info(ifile,NR,2)
+								(ZAP,AWP,LIP,LAW[NSS],NR,NP6[NSS],MAT,MF,MT) = UtilsU.lineType1Info(line)
+								(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 								temporary1 = [0]*NP6[NSS]
 								temporary2 = [0]*NP6[NSS]
-								(temporary1,temporary2) = line_type3_info(ifile,NP6[NSS],2)
+								(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NP6[NSS],2)
 								for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 									Eint6[NSS][N] = value1
 									yi[NSS][N] = value2
 		
 								if (LAW[NSS] == 2):
 									line = ifile.readline()
-									(c1,c2,l3,l4,NR,NE6[NSS],MAT,MF,MT) = line_type2_info(line)
+									(c1,c2,l3,l4,NR,NE6[NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
 									al6 = numpy.zeros((NE6[NSS],65))
-									(NBT, INTr) = line_type3_info(ifile,NR,2)
+									(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 									for i in range (NE6[NSS]):
 										line = ifile.readline()
-										(c1,En[NSS][i],LG[NSS],l2,NW,NL6,MAT,MF,MT) = line_type2_info(line)
+										(c1,En[NSS][i],LG[NSS],l2,NW,NL6,MAT,MF,MT) = UtilsU.lineType2Info(line)
 										NL6 = NL6 + 1
 										al6[i][0] = 1
 										temporary = [0]*NL6
-										temporary = line_type3_info (ifile,NL6,1)
+										temporary = UtilsU.lineType3Info (ifile,NL6,1)
 										for j, value in enumerate(temporary, 1):
 											al6[i][j] = value
 
 								if (LAW[NSS] == 1):
 									line = ifile.readline()
-									(c1,c2,LG[NSS],LP,NR,NE6[NSS],MAT,MF,MT) = line_type2_info(line)
+									(c1,c2,LG[NSS],LP,NR,NE6[NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
 									temporary1 = [0]*NR
 									temporary2 = [0]*NR
-									(temporary1,temporary2) = line_type3_info(ifile,NR,2)
+									(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NR,2)
 									for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 										NBT[N] = value1
 										INTr[N] = value2
@@ -4860,13 +4749,13 @@ def n_xn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,NPt,Etu,mdi
 										# 		read(601,*)
 									for i in range (NE6[NSS]):
 										line = ifile.readline()
-										(c1,En[NSS][i],ND,NA,NW,NEP[NSS][i],MAT,MF,MT) = line_type2_info(line)
+										(c1,En[NSS][i],ND,NA,NW,NEP[NSS][i],MAT,MF,MT) = UtilsU.lineType2Info(line)
 										if (NA != 0):
 											if (LG[NSS] == 2 or LG[NSS] == 1):
 												fiso[NSS] = 1
 												Ball = [0]*NW
 												temporary = [0]*NW
-												temporary = line_type3_info (ifile,NW,1)
+												temporary = UtilsU.lineType3Info (ifile,NW,1)
 												for J1, value in enumerate(temporary, 0):
 													Ball[J1] = value
 												K1 = 0
@@ -4881,7 +4770,7 @@ def n_xn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,NPt,Etu,mdi
 											fiso[NSS] = 1
 											temporary1 = [0]*int(NEP[NSS][i])
 											temporary2 = [0]*int(NEP[NSS][i])
-											(temporary1,temporary2) = line_type3_info(ifile,int(NEP[NSS][i]),2)
+											(temporary1,temporary2) = UtilsU.lineType3Info(ifile,int(NEP[NSS][i]),2)
 											for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 												Enp[NSS][i][j] = value1
 												f[NSS][i][j] = value2
@@ -5081,11 +4970,11 @@ def anytnMF6MT5 (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if ( MT==0 and MF != 0):	# .and. NS==99999
 			line = ifile.readline()
-			(ZA,AWR,L0,L1,NKv,L2,MAT,MF,MT) = line_type1_info(line)
+			(ZA,AWR,L0,L1,NKv,L2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 		if (MAT != -1):
 			if (MF == 3):
 				if (MT == 5):
@@ -5094,14 +4983,14 @@ def anytnMF6MT5 (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,
 					AWR = float(AWR)
 					A = AWR
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					QM = float(data[0]); QI =  float(data[1])
 					LR = int(data[3]); NR = int(data[4]); NP = int(data[5])
 					Eall = [0]*NP; sall = [0]*NP; sdall = [0]*NP; shall = [0]*NP; shall_EB = [0]*NP
 					num_of_displ1 = [0]*NP; tot_energy_products1 = [0]*NP; tot_energy_n_photons1 = [0]*NP
 					dn4_neutrons = [0]*NP; dn5_photons = [0]*NP
 					ifile.readline()
-					(Eall, sall) = line_type3_info(ifile,NP,2)
+					(Eall, sall) = UtilsU.lineType3Info(ifile,NP,2)
 		else:
 			break
 
@@ -5122,18 +5011,18 @@ def anytnMF6MT5 (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,
 			line = ifile.readline()
 			if (line == ''):
 				break
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 			if (MAT == -1):
 				break
 			if (MT == 0):
 				if (MF == 6):
 					line = ifile.readline()
-					(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = line_type1_info(line)
+					(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = UtilsU.lineType1Info(line)
 				if (MF < 6):
 					ifile.readline()
 					line = ifile.readline()
-					(ZAv,AWRv,l1,LCT,NKv,l2,MAT,MF,MT) = line_type1_info(line)
+					(ZAv,AWRv,l1,LCT,NKv,l2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 			if (MAT != -1):
 				if (MF == 6):
 					if (MT == 5):
@@ -5152,18 +5041,18 @@ def anytnMF6MT5 (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,
 			line = ifile.readline()
 			if (line == ''):
 				break
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 			if (MAT == -1):
 				break
 			if (MT == 0):
 				if (MF == 6):
 					line = ifile.readline()
-					(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = line_type1_info(line)
+					(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = UtilsU.lineType1Info(line)
 				if (MF < 6):
 					ifile.readline()
 					line = ifile.readline()
-					(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = line_type1_info(line)
+					(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = UtilsU.lineType1Info(line)
 			if (MAT != -1):
 				if (MF == 6):
 					if (MT == 5):
@@ -5176,31 +5065,31 @@ def anytnMF6MT5 (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,
 							iflcomlab = 1
 						for NSS in range (NK):
 							line = ifile.readline()
-							(ZAP[NSS],AWP[NSS],LIP,LAW[NSS],NR6,Nyld[NSS],MAT,MF,MT) = line_type1_info(line)
+							(ZAP[NSS],AWP[NSS],LIP,LAW[NSS],NR6,Nyld[NSS],MAT,MF,MT) = UtilsU.lineType1Info(line)
 							temporary1 = [0]*NR6
 							temporary2 = [0]*NR6
-							(temporary1,temporary2) = line_type3_info(ifile,NR6,2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NR6,2)
 							for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								NBT[NSS][N] = value1
 								INTr[NSS][N] = value2
 							temporary1 = [0]*Nyld[NSS]
 							temporary2 = [0]*Nyld[NSS]
-							(temporary1,temporary2) = line_type3_info(ifile,Nyld[NSS],2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,Nyld[NSS],2)
 							for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								Eint6[NSS][N] = value1
 								Yi[NSS][N] = value2
 							if (LAW[NSS] == 1):
 								line = ifile.readline()
-								(c1,c2,LG[NSS],LEP[NSS],NR6,NE6[NSS],MAT,MF,MT) = line_type2_info(line)
-								(NBTp, INTrp) = line_type3_info(ifile,NR6,2)
+								(c1,c2,LG[NSS],LEP[NSS],NR6,NE6[NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
+								(NBTp, INTrp) = UtilsU.lineType3Info(ifile,NR6,2)
 								for i in range (int(NE6[NSS])):
 									line = ifile.readline()
-									(c1,En[NSS][i],ND[NSS][i],NA,NW,NEP[NSS][i],MAT,MF,MT) = line_type2_info(line)
+									(c1,En[NSS][i],ND[NSS][i],NA,NW,NEP[NSS][i],MAT,MF,MT) = UtilsU.lineType2Info(line)
 									if (NA != 0):
 										if (LG[NSS] == 1 or LG[NSS] == 2):
 											Ball = [0]*NW
 											temporary = [0]*NW
-											temporary = line_type3_info (ifile,NW,1)
+											temporary = UtilsU.lineType3Info (ifile,NW,1)
 											for J1, value in enumerate(temporary, 0):
 												Ball[J1] = value
 											K1 = 0
@@ -5213,7 +5102,7 @@ def anytnMF6MT5 (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,
 									if (LG[NSS] == 1 and NA == 0):
 										temporary1 = [0]*int(NEP[NSS][i])
 										temporary2 = [0]*int(NEP[NSS][i])
-										(temporary1,temporary2) = line_type3_info(ifile,int(NEP[NSS][i]),2)
+										(temporary1,temporary2) = UtilsU.lineType3Info(ifile,int(NEP[NSS][i]),2)
 										for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 											Enp[NSS][i][j] = value1
 											f[NSS][i][j] = value2
@@ -5675,28 +5564,28 @@ def file1(ifile_rawENDF6):
 	ifile = ifile_rawENDF6
 	ifile.readline()
 	line = ifile.readline()
-	data = eachlineinfo(line)
+	data = UtilsU.eachLineInfo(line)
 	ZA = float(data[0]); AWR = float(data[1])
 	LRP = int(data[2]); LFI = int(data[3]); NLIB = int(data[4])
 	NMOD = int(data[5]); MAT = int(data[6]); MF = int(data[7])
 	MT = int(data[8])
 
 	line = ifile.readline()
-	data = eachlineinfo(line)
+	data = UtilsU.eachLineInfo(line)
 	ELIS = float(data[0]); STA = float(data[1]);
 	LIS = int(data[2]); LISO = int(data[3]); num = int(data[4]);
 	NFOR = int(data[5]); MAT = int(data[6]); MF = int(data[7])
 	MT = int(data[8])
 
 	line = ifile.readline()
-	data = eachlineinfo(line)
+	data = UtilsU.eachLineInfo(line)
 	AWI = float(data[0]); EMAX = float(data[1])
 	LREL = int(data[2]); num = int(data[3]); NSUB = int(data[4]);
 	NVER = int(data[5]); MAT = int(data[6]); MF = int(data[7])
 	MT = int(data[8])
 
 	line = ifile.readline()
-	data = eachlineinfo(line)
+	data = UtilsU.eachLineInfo(line)
 	TEMP = float(data[0]); c2 = float(data[1])
 	LDRV = int(data[2]); num = int(data[3]); NWD = int(data[4])
 	NXC = int(data[5]); MAT = int(data[6]); MF = int(data[7])
@@ -5710,7 +5599,7 @@ def file1(ifile_rawENDF6):
 
 	for i in range(NXC):
 		line = ifile.readline()
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		blnk = data[0]; blnk = data[1]
 		MFs[i] = int(data[2]); MTs[i] = int(data[3])
 		NCn = int(data[4]); MODn = int(data[5]); MAT = int(data[6])
