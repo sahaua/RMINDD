@@ -71,6 +71,123 @@ def uqce (ofile_outRMINDD, ifile_preprocessedENDF6):
 	return(NPt, Etu)
 
 '''
+The following four functions helps to read the formatted data in different sections of
+the ENDF-6 file. For specific data, the corresponding function is called during reading data.
+
+#========The data in each line are explicitly extracted=======*
+'''
+
+def eachLineInfo(line):
+	data = [0]*9
+	for i in range(6):
+		s = ''						# 6 data each of 11 places
+		for char in range(i*11,(i+1)*11):
+			s = s + line[char]
+		data[i] = s.lstrip(' ')
+
+	s = ''
+	for char in range(66,70):			# MAT data of 4 places
+		s = s + line[char]
+	data[6] = s.lstrip(' ')
+	# this is done because some ENDF-6 files only give a blank space here in the first line (creates problem)
+	if ((data[6]) == ''):
+		data[6] = 1
+
+	s = ''
+	for char in range(70,72):			# MF data of 2 places
+		s = s + line[char]
+	data[7] = s.lstrip(' ')
+
+	s = ''
+	for char in range(72,75):			# MT data of 3 places
+		s = s + line[char]
+	data[8] = s.lstrip(' ')
+
+	for i in range(6):
+		putE = 1
+		for x in data[i]:
+			if (x == 'E' or x == 'e'):
+				putE = 0
+				break
+		if (putE == 1):
+			data[i] = "E-".join(data[i].split('-'))
+			data[i] = "E+".join(data[i].split('+'))
+			data[i] = data[i].lstrip('E')
+
+	return(data)
+
+#========The data in lines of different types are explicitly extracted=======*
+
+def lineType1Info(line):
+	data = eachlineinfo(line)
+	dataV1 = 0; dataV2 = 0; dataV3 = 0; dataV4 = 0; dataV5 = 0; dataV6 = 0
+	dataV7 = 0; dataV8 = 0; dataV9 = 0
+	iflspace = 0
+	for element in data:
+		if (element == ''):
+			iflspace = 1
+			break
+	if (iflspace == 0):
+		dataV1 = float(data[0]); dataV2 = float(data[1]); dataV3 = int(data[2])
+		dataV4 = int(data[3]); dataV5 = int(data[4]); dataV6 = int(data[5])
+		dataV7 = int(data[6]); dataV8 = int(data[7]); dataV9 = int(data[8])
+	return(dataV1,dataV2,dataV3,dataV4,dataV5,dataV6,dataV7,dataV8,dataV9)
+
+def lineType2Info(line):
+	data = eachlineinfo(line)
+	dataV1 = float(data[0]); dataV2 = float(data[1]); dataV3 = int(data[2])
+	dataV4 = int(data[3]); dataV5 = int(data[4]); dataV6 = int(data[5])
+	dataV7 = int(data[6]); dataV8 = int(data[7]); dataV9 = int(data[8])
+	return(dataV1,dataV2,dataV3,dataV4,dataV5,dataV6,dataV7,dataV8,dataV9)
+
+def lineType3Info(filehandle,numdata,numvariables):
+	# numvariables (1 / 2) denotes no. of variables the given data has to be read into
+	if (numvariables == 2):
+		xdata = [0]*numdata
+		ydata = [0]*numdata
+	if (numvariables == 1):
+		xdata = [0]*numdata
+
+	i = 0
+	if (numvariables == 2):
+		while (i < numdata):
+			line = filehandle.readline()
+			data = eachlineinfo(line)
+			# run_limit variable is introduced because in some files 
+			#(e.g. ENDF/B-VIII.0, Si28
+			#  1.000000+0 1.000000+0          0          2          1          21425 6 51
+			#	2          2          0          0          0          01425 6 51)
+			# extra data (more than 2) are given in the interpolation ranges specification line!
+			run_limit = 6
+			if (2*numdata <= run_limit):
+				run_limit = 2*numdata
+			for j in range(0,run_limit,2):
+				if (data[j] != ''):
+					xdata[i] = float(data[j])
+					ydata[i] = float(data[j+1])
+					i += 1
+				else:
+					i += 1
+					break
+	if (numvariables == 1):
+		while (i < numdata):
+			line = filehandle.readline()
+			data = eachlineinfo(line)
+			for j in range(6):
+				if (data[j] != ''):
+					xdata[i] = float(data[j])
+					i += 1
+				else:
+					i += 1
+					break
+
+	if (numvariables == 2):
+		return(xdata, ydata)
+	if (numvariables == 1):
+		return(xdata)
+
+
+'''
 From a value of Z get the name of the corresponding element. 
 '''
 def elementFromZValue(Z):
