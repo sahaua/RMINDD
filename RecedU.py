@@ -87,142 +87,6 @@ def TERPOLAPR (iprule,n1,x1,y1,n2,x2):
 				break
 	return(y2)
 
-#===============================================================
-
-#========The data in each line are explicitly extracted=======*
-
-def eachlineinfo(line):
-	data = [0]*9
-	for i in range(6):
-		s = ''						# 6 data each of 11 places
-		for char in range(i*11,(i+1)*11):
-			s = s + line[char]
-		data[i] = s.lstrip(' ')
-
-	s = ''
-	for char in range(66,70):			# MAT data of 4 places
-		s = s + line[char]
-	data[6] = s.lstrip(' ')
-	# this is done because some ENDF-6 files only give a blank space here in the first line (creates problem)
-	if ((data[6]) == ''):
-		data[6] = 1
-
-	s = ''
-	for char in range(70,72):			# MF data of 2 places
-		s = s + line[char]
-	data[7] = s.lstrip(' ')
-
-	s = ''
-	for char in range(72,75):			# MT data of 3 places
-		s = s + line[char]
-	data[8] = s.lstrip(' ')
-
-	for i in range(6):
-		putE = 1
-		for x in data[i]:
-			if (x == 'E' or x == 'e'):
-				putE = 0
-				break
-		if (putE == 1):
-			data[i] = "E-".join(data[i].split('-'))
-			data[i] = "E+".join(data[i].split('+'))
-			data[i] = data[i].lstrip('E')
-
-	return(data)
-
-#========The data in lines of different types are explicitly extracted=======*
-
-def line_type1_info(line):
-	data = eachlineinfo(line)
-	dataV1 = 0; dataV2 = 0; dataV3 = 0; dataV4 = 0; dataV5 = 0; dataV6 = 0
-	dataV7 = 0; dataV8 = 0; dataV9 = 0
-	iflspace = 0
-	for element in data:
-		if (element == ''):
-			iflspace = 1
-			break
-	if (iflspace == 0):
-		dataV1 = float(data[0]); dataV2 = float(data[1]); dataV3 = int(data[2])
-		dataV4 = int(data[3]); dataV5 = int(data[4]); dataV6 = int(data[5])
-		dataV7 = int(data[6]); dataV8 = int(data[7]); dataV9 = int(data[8])
-	return(dataV1,dataV2,dataV3,dataV4,dataV5,dataV6,dataV7,dataV8,dataV9)
-
-def line_type2_info(line):
-	data = eachlineinfo(line)
-	dataV1 = float(data[0]); dataV2 = float(data[1]); dataV3 = int(data[2])
-	dataV4 = int(data[3]); dataV5 = int(data[4]); dataV6 = int(data[5])
-	dataV7 = int(data[6]); dataV8 = int(data[7]); dataV9 = int(data[8])
-	return(dataV1,dataV2,dataV3,dataV4,dataV5,dataV6,dataV7,dataV8,dataV9)
-
-def line_type3_info(filehandle,numdata,numvariables):
-	# numvariables (1 / 2) denotes no. of variables the given data has to be read into
-	if (numvariables == 2):
-		xdata = [0]*numdata
-		ydata = [0]*numdata
-	if (numvariables == 1):
-		xdata = [0]*numdata
-
-	i = 0
-	if (numvariables == 2):
-		while (i < numdata):
-			line = filehandle.readline()
-			data = eachlineinfo(line)
-			# run_limit variable is introduced because in some files 
-			#(e.g. ENDF/B-VIII.0, Si28
-			#  1.000000+0 1.000000+0          0          2          1          21425 6 51
-			#	2          2          0          0          0          01425 6 51)
-			# extra data (more than 2) are given in the interpolation ranges specification line!
-			run_limit = 6
-			if (2*numdata <= run_limit):
-				run_limit = 2*numdata
-			for j in range(0,run_limit,2):
-				if (data[j] != ''):
-					xdata[i] = float(data[j])
-					ydata[i] = float(data[j+1])
-					i += 1
-				else:
-					i += 1
-					break
-	if (numvariables == 1):
-		while (i < numdata):
-			line = filehandle.readline()
-			data = eachlineinfo(line)
-			for j in range(6):
-				if (data[j] != ''):
-					xdata[i] = float(data[j])
-					i += 1
-				else:
-					i += 1
-					break
-
-	if (numvariables == 2):
-		return(xdata, ydata)
-	if (numvariables == 1):
-		return(xdata)
-
-#========The Data from Output File of PKA Matrix in Specific Format==========*
-
-def line_type4_info(filehandle,nre,numdata):
-	xdata = [0]*numdata
-	i = 0
-	while (i < numdata):
-		line = filehandle.readline()
-		line = line.lstrip('[')
-		line = line.rstrip(']')
-		data = line.split()
-		for num in range(len(data)):
-			if (num == len(data) - 1):
-				data[num] = float(data[num].lstrip("'").rstrip("']"))
-			elif (num == 0):
-				data[num] = float(data[num].lstrip("['").rstrip("',"))
-			else:
-				data[num] = float(data[num].lstrip("'").rstrip("',"))
-		for j in range(len(data)):
-			#print(i,j)
-			xdata[i] = float(data[j])
-			i += 1
-	return(xdata)
-
 # =======Interpolate cross section to unique common energy=======*
 	
 	# When the basic / dpa / heating cross sections from partial reactions
@@ -288,7 +152,7 @@ def ALLSUM (num_group_limits,partial_reac_tosum):
 		for i in range(nsp):
 			ifile.readline()
 			temporary = [0]*numdata
-			temporary = line_type4_info(ifile,nre,numdata)
+			temporary = UtilsU.lineType4Info(ifile,nre,numdata)
 			k1 = 0
 			for j in range (nre):
 				for k in range (nre):
@@ -309,11 +173,11 @@ def ALLSUM (num_group_limits,partial_reac_tosum):
 			if (flag == 0):
 				ifile.readline()
 				temporary = [0]*numdata
-				temporary = line_type4_info(ifile,nre,numdata)
+				temporary = UtilsU.lineType4Info(ifile,nre,numdata)
 			if (flag == 1):
 				ifile.readline()
 				temporary = [0]*numdata
-				temporary = line_type4_info(ifile,nre,numdata)
+				temporary = UtilsU.lineType4Info(ifile,nre,numdata)
 				k1 = 0
 				for j in range (nre):
 					for k in range (nre):
@@ -935,19 +799,19 @@ def UQCE():
 	ifile104 = open (preprocessed_ENDF6_file, 'r')
 	while True:
 		line = ifile104.readline()  
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if (MAT != -1):
 			if (MF == 3):
 				if (MT == 1):
 					line = ifile104.readline() 
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					QM = float(data[0]); QI =  float(data[1]); NR = int(data[4]); NPt = int(data[5])
 					Et = [0]*NPt
 					LR = int(ifile104.readline().split()[1])
 					temporary1 = [0]*NPt
 					temporary2 = [0]*NPt
-					(temporary1,temporary2) = line_type3_info(ifile104,NPt,2)
+					(temporary1,temporary2) = UtilsU.lineType3Info(ifile104,NPt,2)
 					for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 						Et[N] = value1
 						s = value2
@@ -997,19 +861,19 @@ def PKAS_ELASTIC (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,el
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if (MAT != -1):
 			if (MF == 3):
 				if (MT == 1):
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					QM = float(data[0]); QI =  float(data[1])
 					NR = int(data[4]); NPt = int(data[5])
 					Et = [0]*NPt; Etu = [0]*NPt; siget = [0]*NPt
 					alfull = numpy.zeros((nbge,65)); fmuE = numpy.zeros((64,nbge))
 					LR = int(ifile.readline().split()[1])
-					(Et, sigt) = line_type3_info(ifile,NPt,2)
+					(Et, sigt) = UtilsU.lineType3Info(ifile,NPt,2)
 		else:
 			break
 
@@ -1024,19 +888,19 @@ def PKAS_ELASTIC (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,el
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 
 		if (MAT != -1):
 			if (MF == 3):
 				if (MT == 2):
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					QM = float(data[0]); QI =  float(data[1])
 					NR = int(data[4]); NP = int(data[5])
 					E = [0]*NP; sig = [0]*NP
 					LR = int(ifile.readline().split()[1])
-					(E, sig) = line_type3_info(ifile,NP,2)
+					(E, sig) = UtilsU.lineType3Info(ifile,NP,2)
 		else:
 			break
 
@@ -1051,14 +915,14 @@ def PKAS_ELASTIC (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,el
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])	
 		if (MF == 3 and MT == 0):		#.and. NS==99999
 			line = ifile.readline()
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 			line = ifile.readline()
-			(ZA,AWR,l1,LTT,NK,l2,MAT,MF,MT) = line_type1_info(line)
+			(ZA,AWR,l1,LTT,NK,l2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 
 		if (MAT != -1):
 			if (MF == 4):
@@ -1068,25 +932,25 @@ def PKAS_ELASTIC (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,el
 						alc = [0]*65
 					if (LTT == 3 or LTT == 1):
 						line = ifile.readline()
-						data = eachlineinfo(line)
+						data = UtilsU.eachLineInfo(line)
 						NE1 = int(data[5])
 						# Legendre polynomial coefficients
 						ifile.readline()
 						NLarray = [0]*NE1; al = numpy.zeros((NE1,65)); EL = [0]*NE1; alc = [0]*65
 						for i in range (NE1):
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = UtilsU.eachLineInfo(line)
 							T = float(data[0]); EL[i] = float(data[1]); NL = int(data[4])
 							NLarray[i] = NL + 1
 							al[i][0] = 1
 							temporary = [0]*NLarray[i]
-							temporary = line_type3_info(ifile,NLarray[i]-1,1)
+							temporary = UtilsU.lineType3Info(ifile,NLarray[i]-1,1)
 							for j, value in enumerate(temporary, 1):
 								al[i][j] = value
 
 					if (LTT == 3 or LTT == 2):
 						line = ifile.readline()
-						data = eachlineinfo(line)
+						data = UtilsU.eachLineInfo(line)
 						NE2 = int(data[5])
 						# Tabulated Probability
 						ifile.readline()
@@ -1094,14 +958,14 @@ def PKAS_ELASTIC (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,el
 						fdata = numpy.zeros((200,NE2)); ftotal = numpy.zeros((64,NE2))
 						for i in range (NE2):
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = UtilsU.eachLineInfo(line)
 							T = float(data[0]); Enf[i] = float(data[1])
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = UtilsU.eachLineInfo(line)
 							NPr[i] = int(data[0])
 							temporary1 = [0]*NPr[i]
 							temporary2 = [0]*NPr[i]
-							(temporary1,temporary2) = line_type3_info(ifile,NPr[i],2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NPr[i],2)
 							for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								cdata[j][i] = value1
 								fdata[j][i] = value2
@@ -1335,7 +1199,7 @@ def PKAS_INELASTIC (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,
 	ifile = ifile_rawENDF6
 	ifile.readline()
 	line = ifile.readline()
-	(ZA,AWR,L0,L1,L2,L3,MAT,MF,MT) = line_type1_info(line)
+	(ZA,AWR,L0,L1,L2,L3,MAT,MF,MT) = UtilsU.lineType1Info(line)
 
 	Z = int(ZA/1000)
 	A = AWR
@@ -1356,33 +1220,33 @@ def PKAS_INELASTIC (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,
 	l = 0
 	while True:
 		line = ifile.readline()
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if (MAT != -1):
 			if (MF == 3):
 				if (MT == 1):
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					QMt = float(data[0]); QIt =  float(data[1])
 					LR = int(data[3]); NR = int(data[4]); NPt = int(data[5])
 					ifile.readline()
 					Et = [0]*NPt; sigt = [0]*NPt; Etu = [0]*NPt; sigit = numpy.zeros((NPt,41))
 					E = numpy.zeros((NPt,41)); sig = numpy.zeros((NPt,41))
 					sigl = numpy.zeros((NPt,41)); alfull = numpy.zeros((NPt,65))
-					(Et, sigt) = line_type3_info(ifile,NPt,2)
+					(Et, sigt) = UtilsU.lineType3Info(ifile,NPt,2)
 
 				if (MT == mta[l] or MT == 91):
 					if (MT == 91):
 						l = 40
 					iflpresent[l] = 1
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					QM = float(data[0]); QI[l] =  float(data[1])
 					LR = int(data[3]); NR = int(data[4]); NP[l] = int(data[5])
 					ifile.readline()
 					temporary1 = [0]*NP[l]
 					temporary2 = [0]*NP[l]
-					(temporary1,temporary2) = line_type3_info(ifile,NP[l],2)
+					(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NP[l],2)
 					for i, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 						E[i][l] = value1
 						sig[i][l] = value2
@@ -1400,11 +1264,11 @@ def PKAS_INELASTIC (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if (MT == 0):
 			line = ifile.readline()
-			(ZA,AWR,L1,LTTv,L2,L3,MAT,MF,MT) = line_type1_info(line)
+			(ZA,AWR,L1,LTTv,L2,L3,MAT,MF,MT) = UtilsU.lineType1Info(line)
 		if (MAT != -1):
 			if (MF == 4):
 				if (MT == mta[l] or MT == 91):
@@ -1415,18 +1279,18 @@ def PKAS_INELASTIC (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,
 						if4c = 1
 					LTT = LTTv
 					line = ifile.readline()
-					(ZA,AWR,LI,LCT,L2,L3,MAT,MF,MT) = line_type1_info(line)
+					(ZA,AWR,LI,LCT,L2,L3,MAT,MF,MT) = UtilsU.lineType1Info(line)
 					if (LTT == 1 and LI == 0):
 						line = ifile.readline()
-						(C1,C2,L1,L2,NR,NE4[l],MAT,MF,MT) = line_type2_info(line)
-						(NBT, INTr) = line_type3_info(ifile,NR,2)
+						(C1,C2,L1,L2,NR,NE4[l],MAT,MF,MT) = UtilsU.lineType2Info(line)
+						(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 						for i in range (int(NE4[l])):
 							line = ifile.readline()
-							(c1,En4[l][i],LT,l2,NL4[l][i],l3,MAT,MF,MT) = line_type2_info(line)
+							(c1,En4[l][i],LT,l2,NL4[l][i],l3,MAT,MF,MT) = UtilsU.lineType2Info(line)
 							NL4[l][i] = NL4[l][i] + 1
 							al4[l][i][0] = 1
 							temporary = [0]*int(NL4[l][i])
-							temporary = line_type3_info (ifile,int(NL4[l][i])-1,1)
+							temporary = UtilsU.lineType3Info (ifile,int(NL4[l][i])-1,1)
 							for j, value in enumerate (temporary, 1):
 								al4[l][i][j] = value
 					if (l != 40):
@@ -1441,11 +1305,11 @@ def PKAS_INELASTIC (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if (MT == 0):
 			line = ifile.readline()
-			(ZA,AWR,L1,L2,NKv,L3,MAT,MF,MT) = line_type1_info(line)
+			(ZA,AWR,L1,L2,NKv,L3,MAT,MF,MT) = UtilsU.lineType1Info(line)
 		if (MAT != -1):
 			if (MF == 5):
 				if (MT == 91):
@@ -1454,35 +1318,35 @@ def PKAS_INELASTIC (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,
 					NK5[l] = NKv
 					for NSS in range (int(NK5[l])):
 						line = ifile.readline()
-						(C1,C2,L1,LF[l][NSS],NR,NP5[l][NSS],MAT,MF,MT) = line_type2_info(line)
+						(C1,C2,L1,LF[l][NSS],NR,NP5[l][NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
 						if (LF[l][NSS] == 1):
 							line = ifile.readline()
-							(C1,C2,L1,L2,NR,NE5[l][NSS],MAT,MF,MT) = line_type2_info(line)
-							(NBT, INTr) = line_type3_info(ifile,NR,2)
+							(C1,C2,L1,L2,NR,NE5[l][NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
+							(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 							for i in range (int(NE5[l][NSS])):
 								line = ifile.readline()
-								(C1,En5[l][NSS][i],L1,L2,NR,NF5[l][NSS][i],MAT,MF,MT) = line_type2_info(line)
-								(NBT, INTr) = line_type3_info(ifile,NR,2)
+								(C1,En5[l][NSS][i],L1,L2,NR,NF5[l][NSS][i],MAT,MF,MT) = UtilsU.lineType2Info(line)
+								(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 								temporary1 = [0]*int(NF5[l][NSS][i])
 								temporary2 = [0]*int(NF5[l][NSS][i])
-								(temporary1,temporary2) = line_type3_info(ifile,int(NF5[l][NSS][i]),2)
+								(temporary1,temporary2) = UtilsU.lineType3Info(ifile,int(NF5[l][NSS][i]),2)
 								for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 									Enp5[NSS][i][j] = value1
 									f5[NSS][i][j] = value2
 						if (LF[l][NSS] == 9):
-							(NBT, INTr) = line_type3_info(ifile,NR,2)
+							(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 							temporary1 = [0]*int(NP5[l][NSS])
 							temporary2 = [0]*int(NP5[l][NSS])
-							(temporary1,temporary2) = line_type3_info(ifile,int(NP5[l][NSS]),2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,int(NP5[l][NSS]),2)
 							for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								Eint[l][NSS][j] = value1
 								p[l][NSS][j] = value2
 							line = ifile.readline()
-							(C1,C2,L1,L2,NR,NE5[l][NSS],MAT,MF,MT) = line_type2_info(line)
-							(NBT, INTr) = line_type3_info(ifile,NR,2)
+							(C1,C2,L1,L2,NR,NE5[l][NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
+							(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 							temporary1 = [0]*int(NE5[l][NSS])
 							temporary2 = [0]*int(NE5[l][NSS])
-							(temporary1,temporary2) = line_type3_info(ifile,int(NE5[l][NSS]),2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,int(NE5[l][NSS]),2)
 							for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								En5[l][NSS][j] = value1
 								tht[l][NSS][j] = value2
@@ -1499,11 +1363,11 @@ def PKAS_INELASTIC (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,
 			line = ifile.readline()
 			if (line == ''):
 				break
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 			if (MT == 0):	#.and. NS==99999
 				line = ifile.readline()
-				(ZAv,AWRv,l1,LCT,NKv,l2,MAT,MF,MT) = line_type1_info(line)
+				(ZAv,AWRv,l1,LCT,NKv,l2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 			if (MAT != -1):
 				if (MF == 6):
 					if (MT == mta[l] or MT == 91):
@@ -1515,42 +1379,42 @@ def PKAS_INELASTIC (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,
 						NK[l] = NKv
 						for NSS in range (int(NK[l])):
 							line = ifile.readline()
-							(ZAP,AWP,LIP,LAW[l][NSS],NR,NP6[l][NSS],MAT,MF,MT) = line_type1_info(line)
-							(NBT, INTr) = line_type3_info(ifile,NR,2)
+							(ZAP,AWP,LIP,LAW[l][NSS],NR,NP6[l][NSS],MAT,MF,MT) = UtilsU.lineType1Info(line)
+							(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 							temporary1 = [0]*int(NP6[l][NSS])
 							temporary2 = [0]*int(NP6[l][NSS])
-							(temporary1,temporary2) = line_type3_info(ifile,int(NP6[l][NSS]),2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,int(NP6[l][NSS]),2)
 							for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								Eint6[l][NSS][j] = value1
 								yi[l][NSS][j] = value2
 
 							if (LAW[l][NSS] == 2):
 								line = ifile.readline()
-								(c1,c2,l3,l4,NR,NE6[l][NSS],MAT,MF,MT) = line_type2_info(line)
-								(NBT, INTr) = line_type3_info(ifile,NR,2)
+								(c1,c2,l3,l4,NR,NE6[l][NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
+								(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 								for i in range (int(NE6[l][NSS])):
 									line = ifile.readline()
-									(c1,En[l][NSS][i],LG[l][NSS],l2,NW,NL[l][NSS][i],MAT,MF,MT) = line_type2_info(line)
+									(c1,En[l][NSS][i],LG[l][NSS],l2,NW,NL[l][NSS][i],MAT,MF,MT) = UtilsU.lineType2Info(line)
 									NL[l][NSS][i] = NL[l][NSS][i] + 1
 									al6[l][NSS][i][0] = 1
 									temporary = [0]*int(NL[l][NSS][i])
-									temporary = line_type3_info (ifile,int(NL[l][NSS][i])-1,1)
+									temporary = UtilsU.lineType3Info (ifile,int(NL[l][NSS][i])-1,1)
 									for j, value in enumerate (temporary, 1):
 										al6[l][NSS][i][j] = value 
 
 							if (LAW[l][NSS] == 1):
 								line = ifile.readline()
-								(c1,c2,LG[l][NSS],LEP[l][NSS],NR,NE6[l][NSS],MAT,MF,MT) = line_type2_info(line)
-								(NBT, INTr) = line_type3_info(ifile,NR,2)
+								(c1,c2,LG[l][NSS],LEP[l][NSS],NR,NE6[l][NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
+								(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 								for i in range (int(NE6[l][NSS])):
 									line = ifile.readline()
-									(c1,En[l][NSS][i],ND,NA,NW,NEP[l][NSS][i],MAT,MF,MT) = line_type2_info(line)
+									(c1,En[l][NSS][i],ND,NA,NW,NEP[l][NSS][i],MAT,MF,MT) = UtilsU.lineType2Info(line)
 									if (NA != 0):
 										if (LG[l][NSS] == 2 or LG[l][NSS] == 1):
 											fiso[NSS] = 1
 											Ball = [0]*NW
 											temporary = [0]*NW
-											temporary = line_type3_info (ifile,NW,1)
+											temporary = UtilsU.lineType3Info (ifile,NW,1)
 											for j1, value in enumerate(temporary, 0):
 												Ball[j1] = value
 											K1 = 0
@@ -1565,7 +1429,7 @@ def PKAS_INELASTIC (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,
 										fiso[NSS] = 1
 										temporary1 = [0]*int(NEP[l][NSS][i])
 										temporary2 = [0]*int(NEP[l][NSS][i])
-										(temporary1,temporary2) = line_type3_info(ifile,int(NEP[l][NSS][i]),2)
+										(temporary1,temporary2) = UtilsU.lineType3Info(ifile,int(NEP[l][NSS][i]),2)
 										for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 											Enp[NSS][i][j] = value1
 											f[NSS][i][j] = value2
@@ -1988,15 +1852,15 @@ def PKAS_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,lpr,re
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if ( MT == 0 and MF != 0):	# .and. NS==99999
 			line = ifile.readline()
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 			if ( MT == 0 and MF == 0):
 				line = ifile.readline()
-			(ZAv,AWRv,L0,L1,NKv,L2,MAT,MF,MT) = line_type1_info(line)
+			(ZAv,AWRv,L0,L1,NKv,L2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 		if (MAT != -1):
 			if (MF == 3):
 				if (MT == MTi):
@@ -2009,14 +1873,14 @@ def PKAS_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,lpr,re
 					ZA = ZAv
 					AWR = AWRv
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					QM = float(data[0]); QI =  float(data[1])
 					LR = int(data[3]); NR = int(data[4]); NP = int(data[5])
 					Eall = [0]*NP; sall = [0]*NP; fr6 = numpy.zeros((NP,nbge))
 					if (ifdthl == 1):
 						alfull = numpy.zeros((nbge,65))
 					ifile.readline()
-					(Eall, sall) = line_type3_info(ifile,NP,2)
+					(Eall, sall) = UtilsU.lineType3Info(ifile,NP,2)
 		else:
 			break
 
@@ -2037,14 +1901,14 @@ def PKAS_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,lpr,re
 			line = ifile.readline()
 			if (line == ''):
 				break
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 			if (MF == 3 and MT==0):
 				line = ifile.readline()
-				data = eachlineinfo(line)
+				data = UtilsU.eachLineInfo(line)
 				MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 				line = ifile.readline()
-				(ZA,AWR,l1,LTT,NK,l2,MAT,MF,MT) = line_type1_info(line)
+				(ZA,AWR,l1,LTT,NK,l2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 			if (MAT != -1):
 				if (MF == 4):
 					if (MT == MTi):
@@ -2057,26 +1921,26 @@ def PKAS_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,lpr,re
 						if (LTT == 3 or LTT == 1):
 							ifspad4al = 1
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = UtilsU.eachLineInfo(line)
 							NE1 = int(data[5])
 						# Legendre polynomial coefficients
 							ifile.readline()
 							al4 = numpy.zeros((NE1,65)); EL = numpy.zeros((NE1))
 							for i in range (NE1):
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								T = float(data[0]); EL[i] = float(data[1]); NL4 = int(data[4])
 								NL4 = NL4 + 1
 								al4[i][0] = 1
 								temporary = [0]*NL4
-								temporary = line_type3_info (ifile,NL4-1,1)
+								temporary = UtilsU.lineType3Info (ifile,NL4-1,1)
 								for j, value in enumerate (temporary, 1):
 									al4[i][j] = value
 
 						if (LTT == 3 or LTT == 2):
 							ifspad4muf = 1
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = UtilsU.eachLineInfo(line)
 							NE2 = int(data[5])
 							# Probability
 							ifile.readline()
@@ -2085,14 +1949,14 @@ def PKAS_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,lpr,re
 							fmuE = numpy.zeros((NP,64)); fpr = [0]*64
 							for i in range (NE2):
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								T = float(data[0]); Enf[i] = float(data[1])
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								NPr[i] = int(data[0])
 								temporary1 = [0]*NPr[i]
 								temporary2 = [0]*NPr[i]
-								(temporary1,temporary2) = line_type3_info(ifile,NPr[i],2)
+								(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NPr[i],2)
 								for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 									cdata4[i][j] = value1
 									fdata4[i][j] = value2
@@ -2110,11 +1974,11 @@ def PKAS_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,lpr,re
 			line = ifile.readline()
 			if (line == ''):
 				break
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 			if (MT == 0):
 				line = ifile.readline()
-				(ZAv,AWRv,l1,LCT,NKv,l2,MAT,MF,MT) = line_type1_info(line)
+				(ZAv,AWRv,l1,LCT,NKv,l2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 			if (MAT != -1):
 				if (MF == 6):
 					if (MT == MTi):
@@ -2122,14 +1986,14 @@ def PKAS_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,lpr,re
 						NK = NKv
 						for NSS in range (NK):
 							line = ifile.readline()
-							(ZAP[NSS],AWP[NSS],LIP,LAW[NSS],NR6,NP6[NSS],MAT,MF,MT) = line_type1_info(line)
+							(ZAP[NSS],AWP[NSS],LIP,LAW[NSS],NR6,NP6[NSS],MAT,MF,MT) = UtilsU.lineType1Info(line)
 							if (AWP[NSS] > beta[lpr]):
 								iflr = 1
 								irs = NSS
-							(NBT, INTr) = line_type3_info(ifile,NR6,2)
+							(NBT, INTr) = UtilsU.lineType3Info(ifile,NR6,2)
 							temporary1 = [0]*NP6[NSS]
 							temporary2 = [0]*NP6[NSS]
-							(temporary1,temporary2) = line_type3_info(ifile,NP6[NSS],2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NP6[NSS],2)
 							for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								Eint6[NSS][N] = value1
 								yi[NSS][N] = value2
@@ -2139,16 +2003,16 @@ def PKAS_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,lpr,re
 									ifspad6 = 1
 									isps = NSS
 								line = ifile.readline()
-								(c1,c2,l3,l4,NR6,NE6[NSS],MAT,MF,MT) = line_type2_info(line)
-								(NBT, INTr) = line_type3_info(ifile,NR6,2)
+								(c1,c2,l3,l4,NR6,NE6[NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
+								(NBT, INTr) = UtilsU.lineType3Info(ifile,NR6,2)
 								for i in range (int(NE6[NSS])):
 									line = ifile.readline()
-									(c1,En[NSS][i],LG[NSS],l2,NW,NL[NSS][i],MAT,MF,MT) = line_type2_info(line)
+									(c1,En[NSS][i],LG[NSS],l2,NW,NL[NSS][i],MAT,MF,MT) = UtilsU.lineType2Info(line)
 									if (LG[NSS] == 0):
 										NL[NSS][i] = NL[NSS][i] + 1
 										al6[NSS][i][0] = 1
 										temporary = [0]*int(NL[NSS][i])
-										temporary = line_type3_info (ifile,int(NL[NSS][i])-1,1)
+										temporary = UtilsU.lineType3Info (ifile,int(NL[NSS][i])-1,1)
 										for j, value in enumerate (temporary, 1):
 											al6[NSS][i][j] = value
 									if (LG[NSS] > 0):
@@ -2158,22 +2022,22 @@ def PKAS_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,lpr,re
 											iflgfdlcd = 1
 										temporary1 = [0]*int(NL[NSS][i])
 										temporary2 = [0]*int(NL[NSS][i])
-										(temporary1,temporary2) = line_type3_info(ifile,int(NL[NSS][i]),2)
+										(temporary1,temporary2) = UtilsU.lineType3Info(ifile,int(NL[NSS][i]),2)
 										for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 											cdata[NSS][i][j] = value1
 											fdata[NSS][i][j] = value2
 							if (LAW[NSS] == 1):
 								line = ifile.readline()
-								(c1,c2,LG[NSS],LEP[NSS],NR6,NE6[NSS],MAT,MF,MT) = line_type2_info(line)
-								(NBT, INTr) = line_type3_info(ifile,NR6,2)
+								(c1,c2,LG[NSS],LEP[NSS],NR6,NE6[NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
+								(NBT, INTr) = UtilsU.lineType3Info(ifile,NR6,2)
 								for i in range (int(NE6[NSS])):
 									line = ifile.readline()
-									(c1,En[NSS][i],ND,NA,NW,NEP[NSS][i],MAT,MF,MT) = line_type2_info(line)
+									(c1,En[NSS][i],ND,NA,NW,NEP[NSS][i],MAT,MF,MT) = UtilsU.lineType2Info(line)
 									if (NA != 0):
 										if (LG[NSS] == 1 or LG[NSS] == 2):
 											Ball = [0]*NW
 											temporary = [0]*NW
-											temporary = line_type3_info (ifile,NW,1)
+											temporary = UtilsU.lineType3Info (ifile,NW,1)
 											for j1, value in enumerate(temporary, 0):
 												Ball[j1] = value
 											K1 = 0
@@ -2187,7 +2051,7 @@ def PKAS_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,lpr,re
 									if (LG[NSS] == 1 and NA == 0):
 										temporary1 = [0]*int(NEP[NSS][i])
 										temporary2 = [0]*int(NEP[NSS][i])
-										(temporary1,temporary2) = line_type3_info(ifile,int(NEP[NSS][i]),2)
+										(temporary1,temporary2) = UtilsU.lineType3Info(ifile,int(NEP[NSS][i]),2)
 										for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 											Enp[NSS][i][j] = value1
 											f[NSS][i][j] = value2
@@ -2470,22 +2334,22 @@ def PKAS_redtnMF6MT5 (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,ins
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if ( MT==0 and MF != 0):	# .and. NS==99999
 			line = ifile.readline()
-			(ZA,AWR,L0,L1,NKv,L2,MAT,MF,MT) = line_type1_info(line)
+			(ZA,AWR,L0,L1,NKv,L2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 		if (MAT != -1):
 			if (MF == 3):
 				if (MT == 5):
 					iflpresent = 1
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					QM = float(data[0]); QI =  float(data[1])
 					LR = int(data[3]); NR = int(data[4]); NP = int(data[5])
 					Eall = [0]*NP; sall = [0]*NP
 					ifile.readline()
-					(Eall, sall) = line_type3_info(ifile,NP,2)
+					(Eall, sall) = UtilsU.lineType3Info(ifile,NP,2)
 		else:
 			break
 
@@ -2501,18 +2365,18 @@ def PKAS_redtnMF6MT5 (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,ins
 			line = ifile.readline()
 			if (line == ''):
 				break
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 			if (MAT == -1):
 				break
 			if (MT == 0):
 				if (MF == 6):
 					line = ifile.readline()
-					(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = line_type1_info(line)
+					(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = UtilsU.lineType1Info(line)
 				if (MF < 6):
 					ifile.readline()
 					line = ifile.readline()
-					(ZAv,AWRv,l1,LCT,NKv,l2,MAT,MF,MT) = line_type1_info(line)
+					(ZAv,AWRv,l1,LCT,NKv,l2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 			if (MAT != -1):
 				if (MF == 6):
 					if (MT == 5):
@@ -2530,48 +2394,48 @@ def PKAS_redtnMF6MT5 (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,ins
 			line = ifile.readline()
 			if (line == ''):
 				break
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 			if (MAT == -1):
 				break
 			if (MT == 0):
 				if (MF == 6):
 					line = ifile.readline()
-					(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = line_type1_info(line)
+					(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = UtilsU.lineType1Info(line)
 				if (MF < 6):
 					ifile.readline()
 					line = ifile.readline()
-					(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = line_type1_info(line)
+					(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = UtilsU.lineType1Info(line)
 			if (MAT != -1):
 				if (MF == 6):
 					if (MT == 5):
 						NK = NKv
 						for NSS in range (NK):
 							line = ifile.readline()
-							(ZAP[NSS],AWP[NSS],LIP,LAW[NSS],NR6,Nyld[NSS],MAT,MF,MT) = line_type1_info(line)
+							(ZAP[NSS],AWP[NSS],LIP,LAW[NSS],NR6,Nyld[NSS],MAT,MF,MT) = UtilsU.lineType1Info(line)
 							temporary1 = [0]*NR6
 							temporary2 = [0]*NR6
-							(temporary1,temporary2) = line_type3_info(ifile,NR6,2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NR6,2)
 							for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								NBT[NSS][N] = value1
 								INTr[NSS][N] = value2
 							temporary1 = [0]*Nyld[NSS]
 							temporary2 = [0]*Nyld[NSS]
-							(temporary1,temporary2) = line_type3_info(ifile,Nyld[NSS],2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,Nyld[NSS],2)
 							for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								Eint6[NSS][N] = value1
 								Yi[NSS][N] = value2
 							if (LAW[NSS] == 1):
 								line = ifile.readline()
-								(c1,c2,LG[NSS],LEP[NSS],NR6,NE6[NSS],MAT,MF,MT) = line_type2_info(line)
-								(NBTp, INTrp) = line_type3_info(ifile,NR6,2)
+								(c1,c2,LG[NSS],LEP[NSS],NR6,NE6[NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
+								(NBTp, INTrp) = UtilsU.lineType3Info(ifile,NR6,2)
 								for i in range (int(NE6[NSS])):
 									line = ifile.readline()
-									(c1,En[NSS][i],ND,NA,NW,NEP[NSS][i],MAT,MF,MT) = line_type2_info(line)
+									(c1,En[NSS][i],ND,NA,NW,NEP[NSS][i],MAT,MF,MT) = UtilsU.lineType2Info(line)
 									if (NA != 0):
 										if (LG[NSS] == 1 or LG[NSS] == 2):
 											temporary = [0]*NW
-											temporary = line_type3_info (ifile,NW,1)
+											temporary = UtilsU.lineType3Info (ifile,NW,1)
 											for J1, value in enumerate(temporary, 0):
 												Ball[J1] = value
 											K1 = 0
@@ -2584,7 +2448,7 @@ def PKAS_redtnMF6MT5 (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,ins
 									if (LG[NSS] == 1 and NA == 0):
 										temporary1 = [0]*int(NEP[NSS][i])
 										temporary2 = [0]*int(NEP[NSS][i])
-										(temporary1,temporary2) = line_type3_info(ifile,int(NEP[NSS][i]),2)
+										(temporary1,temporary2) = UtilsU.lineType3Info(ifile,int(NEP[NSS][i]),2)
 										for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 											Enp[NSS][i][j] = value1
 											f[NSS][i][j] = value2
@@ -2778,7 +2642,7 @@ def PKAS_nxn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,ret,nbg
 
 	ifile.readline()
 	line = ifile.readline()
-	(ZA,AWR,l1,LTT,NK,l2, MAT, MF, MT) = line_type1_info(line)
+	(ZA,AWR,l1,LTT,NK,l2, MAT, MF, MT) = UtilsU.lineType1Info(line)
 
 	ifile_preprocessedENDF6.seek(0, 0)
 	ifile = ifile_preprocessedENDF6
@@ -2786,19 +2650,19 @@ def PKAS_nxn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,ret,nbg
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if (MAT != -1):
 			if (MF == 3):
 				if (MT == MTi):
 					iflpresent = 1
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					QM = float(data[0]); QI =  float(data[1])
 					LR = int(data[3]); NR = int(data[4]); NP = int(data[5])
 					E = [0]*NP; sig = [0]*NP
 					ifile.readline()
-					(E, sig) = line_type3_info(ifile,NP,2)
+					(E, sig) = UtilsU.lineType3Info(ifile,NP,2)
 		else:
 			break
 
@@ -2811,16 +2675,16 @@ def PKAS_nxn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,ret,nbg
 			line = ifile.readline()
 			if (line == ''):
 				break
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 			if (MT == 0):
 				if (MF == 6):
 					line = ifile.readline()
-					(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = line_type1_info(line)
+					(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = UtilsU.lineType1Info(line)
 				if (MF < 6):
 					ifile.readline()
 					line = ifile.readline()
-					(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = line_type1_info(line)
+					(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = UtilsU.lineType1Info(line)
 			if (MAT != -1):
 				if (MF == 6):
 					if (MT == MTi):
@@ -2830,43 +2694,43 @@ def PKAS_nxn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,ret,nbg
 						NK = NKv
 						for NSS in range (NK):
 							line = ifile.readline()
-							(ZAP,AWP,LIP,LAW[NSS],NR,NP6[NSS],MAT,MF,MT) = line_type1_info(line)
+							(ZAP,AWP,LIP,LAW[NSS],NR,NP6[NSS],MAT,MF,MT) = UtilsU.lineType1Info(line)
 							temporary1 = [0]*NR
 							temporary2 = [0]*NR
-							(temporary1,temporary2) = line_type3_info(ifile,NR,2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NR,2)
 							for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								NBT[N] = value1
 								INTr[N] = value2
 							temporary1 = [0]*NP6[NSS]
 							temporary2 = [0]*NP6[NSS]
-							(temporary1,temporary2) = line_type3_info(ifile,NP6[NSS],2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NP6[NSS],2)
 							for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								Eint6[NSS][N] = value1
 								yi[NSS][N] = value2
 							if (LAW[NSS] == 2):
 								line = ifile.readline()
-								(c1,c2,l3,l4,NR,NE6[NSS],MAT,MF,MT) = line_type2_info(line)
+								(c1,c2,l3,l4,NR,NE6[NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
 								temporary1 = [0]*NR
 								temporary2 = [0]*NR
-								(temporary1,temporary2) = line_type3_info(ifile,NR,2)
+								(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NR,2)
 								for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 									NBT[N] = value1
 									INTr[N] = value2
 								for i in range (int(NE6[NSS])):
 									line = ifile.readline()
-									(c1,En[NSS][i],LG[NSS],l2,NW,NL[NSS][i], MAT,MF,MT) = line_type2_info(line)
+									(c1,En[NSS][i],LG[NSS],l2,NW,NL[NSS][i], MAT,MF,MT) = UtilsU.lineType2Info(line)
 									NL[NSS][i] = NL[NSS][i] + 1
 									al6[NSS][i][0] = 1
 									temporary = [0]*int(NL[NSS][i])
-									temporary = line_type3_info (ifile,int(NL[NSS][i])-1,1)
+									temporary = UtilsU.lineType3Info (ifile,int(NL[NSS][i])-1,1)
 									for j, value in enumerate (temporary, 1):
 										al6[NSS][i][j] = value
 							if (LAW[NSS] == 1):
 								line = ifile.readline()
-								(c1,c2,LG[NSS],LEP[NSS],NR,NE6[NSS],MAT,MF,MT) = line_type2_info(line)
+								(c1,c2,LG[NSS],LEP[NSS],NR,NE6[NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
 								temporary1 = [0]*NR
 								temporary2 = [0]*NR
-								(temporary1,temporary2) = line_type3_info(ifile,NR,2)
+								(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NR,2)
 								for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 									NBT[N] = value1
 									INTr[N] = value2
@@ -2874,12 +2738,12 @@ def PKAS_nxn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,ret,nbg
 									# 		read(601,*)
 								for i in range (int(NE6[NSS])):
 									line = ifile.readline()
-									(c1,En[NSS][i],ND,NA,NW,NEP[NSS][i],MAT,MF,MT) = line_type2_info(line)
+									(c1,En[NSS][i],ND,NA,NW,NEP[NSS][i],MAT,MF,MT) = UtilsU.lineType2Info(line)
 									if (NA != 0):
 										if (LG[NSS] == 1 or LG[NSS] == 2):
 											Ball = [0]*NW
 											temporary = [0]*NW
-											temporary = line_type3_info (ifile,NW,1)
+											temporary = UtilsU.lineType3Info (ifile,NW,1)
 											for j1, value in enumerate(temporary, 0):
 												Ball[j1] = value
 											K1 = 0
@@ -2892,7 +2756,7 @@ def PKAS_nxn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,ret,nbg
 									if (LG[NSS] == 1 and NA == 0):
 										temporary1 = [0]*int(NEP[NSS][i])
 										temporary2 = [0]*int(NEP[NSS][i])
-										(temporary1,temporary2) = line_type3_info(ifile,int(NEP[NSS][i]),2)
+										(temporary1,temporary2) = UtilsU.lineType3Info(ifile,int(NEP[NSS][i]),2)
 										for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 											Enp[NSS][i][j] = value1
 											f[NSS][i][j] = value2
@@ -3122,27 +2986,27 @@ def PKAS_ng (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,r
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if (MT == 0):
 			line = ifile.readline()
-			(ZAv,AWRv,L0,LCT,NKv,L2,MAT,MF,MT) = line_type1_info(line)
+			(ZAv,AWRv,L0,LCT,NKv,L2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 		if (MAT != -1):
 			if (MF == 6):
 				if (MT == 102):
 					ifl6 = 1
 					NK6 = NKv
 					line = ifile.readline()
-					(C1,C2,LIP,LAW,NR,NP6,MAT,MF,MT) = line_type2_info(line)
+					(C1,C2,LIP,LAW,NR,NP6,MAT,MF,MT) = UtilsU.lineType2Info(line)
 					temporary1 = [0]*NR
 					temporary2 = [0]*NR
-					(temporary1,temporary2) = line_type3_info(ifile,NR,2)
+					(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NR,2)
 					for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 						NBT[N] = value1
 						INTr[N] = value2
 					temporary1 = [0]*NP6
 					temporary2 = [0]*NP6
-					(temporary1,temporary2) = line_type3_info(ifile,NP6,2)
+					(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NP6,2)
 					for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 						E6[N] = value1
 						Y6[N] = value2
@@ -3161,19 +3025,19 @@ def PKAS_ng (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,r
 								Y6tot[i] = TERPOLIN(intflg,ret[i],E6[j],E6[j+1],Y6[j],Y6[j+1])
 								break
 					line = ifile.readline()
-					(C1,C2,LANG,LEP,NR6,NE6,MAT,MF,MT) = line_type2_info(line)
+					(C1,C2,LANG,LEP,NR6,NE6,MAT,MF,MT) = UtilsU.lineType2Info(line)
 					temporary1 = [0]*NR6
 					temporary2 = [0]*NR6
-					(temporary1,temporary2) = line_type3_info(ifile,NR6,2)
+					(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NR6,2)
 					for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 						NBT6[N] = value1
 						INTr6[N] = value2
 					for i in range (NE6):
 						line = ifile.readline()
-						(C1,En6[i],ND6[i],NA,NW,NPg6[i],MAT,MF,MT) = line_type2_info(line)
+						(C1,En6[i],ND6[i],NA,NW,NPg6[i],MAT,MF,MT) = UtilsU.lineType2Info(line)
 						temporary1 = [0]*NPg6[i]
 						temporary2 = [0]*NPg6[i]
-						(temporary1,temporary2) = line_type3_info(ifile,NPg6[i],2)
+						(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NPg6[i],2)
 						for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 							Eg6[i][N] = value1
 							g6[i][N] = value2
@@ -3187,17 +3051,17 @@ def PKAS_ng (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,r
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 
 		if (MF <= 12 and MT == 0):
 			if (MAT != -1):
 				line = ifile.readline()
-				(ZAv,AWRv,Lo,L1,NKv,L2,MAT,MF,MT) = line_type1_info(line)
+				(ZAv,AWRv,Lo,L1,NKv,L2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 		if (MF == 0):
 			if (MAT != -1):
 				line = ifile.readline()
-				(ZAv,AWRv,Lo,L1,NKv,L2,MAT,MF,MT) = line_type1_info(line)
+				(ZAv,AWRv,Lo,L1,NKv,L2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 		if (MAT != -1):
 			if (MF == 12):
 				if (MT == 102):
@@ -3209,17 +3073,17 @@ def PKAS_ng (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,r
 					EGk = [0]*NK; ESk = [0]*NK; LP = [0]*NK; NBTk12 = numpy.zeros((NK,20)); INTrk12 = numpy.zeros((NK,20))
 					NRk12 = [0]*NK
 					line = ifile.readline()
-					(C1,C2,L1,L2,NR,NP12,MAT,MF,MT) = line_type2_info(line)
+					(C1,C2,L1,L2,NR,NP12,MAT,MF,MT) = UtilsU.lineType2Info(line)
 					E12 = [0]*NP12; Y12 = [0]*NP12
 					temporary1 = [0]*NR
 					temporary2 = [0]*NR
-					(temporary1,temporary2) = line_type3_info(ifile,NR,2)
+					(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NR,2)
 					for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 						NBT[N] = value1
 						INTr[N] = value2
 					temporary1 = [0]*NP12
 					temporary2 = [0]*NP12
-					(temporary1,temporary2) = line_type3_info(ifile,NP12,2)
+					(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NP12,2)
 					for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 						E12[N] = value1
 						Y12[N] = value2
@@ -3247,17 +3111,17 @@ def PKAS_ng (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,r
 					if (NK > 1):
 						for i in range (NK):
 							line = ifile501.readline()
-							(EGk[i],ESk[i],LP[i],LF,NRk12[i],NPn12[i],MAT,MF,MT) = line_type2_info(line)
+							(EGk[i],ESk[i],LP[i],LF,NRk12[i],NPn12[i],MAT,MF,MT) = UtilsU.lineType2Info(line)
 							temporary1 = [0]*NRk12[i]
 							temporary2 = [0]*NRk12[i]
-							(temporary1,temporary2) = line_type3_info(ifile,NRk12[i],2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NRk12[i],2)
 							for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								NBTk12[i][N] = value1
 								INTrk12[i][N] = value2
 
 							temporary1 = [0]*NPn12[i]
 							temporary2 = [0]*NPn12[i]
-							(temporary1,temporary2) = line_type3_info(ifile,NPn12[i],2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NPn12[i],2)
 							for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								En12[i][N] = value1
 								Yk12[i][N] = value2
@@ -3294,50 +3158,50 @@ def PKAS_ng (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,r
 			line = ifile.readline()
 			if (line == ''):
 				break
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 			if (MT == 0):
 				line = ifile.readline()
-				(ZAv,AWRv,Lo,L1,NCv,L2,MAT,MF,MT) = line_type1_info(line)
+				(ZAv,AWRv,Lo,L1,NCv,L2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 			if (MAT != -1):
 				if (MF == 15):
 					if (MT == 102):
 						ifl15 = 1
 						NC = NCv
 						line = ifile.readline()
-						(C1,C2,L1,LF,NR,NP15,MAT,MF,MT) = line_type2_info(line)
+						(C1,C2,L1,LF,NR,NP15,MAT,MF,MT) = UtilsU.lineType2Info(line)
 						temporary1 = [0]*NR
 						temporary2 = [0]*NR
-						(temporary1,temporary2) = line_type3_info(ifile,NR,2)
+						(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NR,2)
 						for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 							NBT[N] = value1
 							INTr[N] = value2
 						temporary1 = [0]*NP15
 						temporary2 = [0]*NP15
-						(temporary1,temporary2) = line_type3_info(ifile,NP15,2)
+						(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NP15,2)
 						for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 							E15[N] = value1
 							Y15[N] = value2
 						line = ifile.readline()
-						(C1,C2,L1,L2,NR15a,NE15,MAT,MF,MT) = line_type2_info(line)
+						(C1,C2,L1,L2,NR15a,NE15,MAT,MF,MT) = UtilsU.lineType2Info(line)
 						temporary1 = [0]*NR15a
 						temporary2 = [0]*NR15a
-						(temporary1,temporary2) = line_type3_info(ifile,NR15a,2)
+						(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NR15a,2)
 						for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 							NBT15a[N] = value1
 							INTr15a[N] = value2
 						for i in range (NE15):
 							line = ifile.readline()
-							(C1,En15[i],L1,L2,NR,NPg15[i],MAT,MF,MT) = line_type2_info(line)
+							(C1,En15[i],L1,L2,NR,NPg15[i],MAT,MF,MT) = UtilsU.lineType2Info(line)
 							temporary1 = [0]*NR
 							temporary2 = [0]*NR
-							(temporary1,temporary2) = line_type3_info(ifile,NR,2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NR,2)
 							for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								NBT[N] = value1
 								INTr[N] = value2
 							temporary1 = [0]*NPg15
 							temporary2 = [0]*NPg15
-							(temporary1,temporary2) = line_type3_info(ifile,NPg15,2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NPg15,2)
 							for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								Eg15[N] = value1
 								g15[N] = value2
@@ -3349,25 +3213,25 @@ def PKAS_ng (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,r
 	ifile = ifile_preprocessedENDF6
 	ifile.readline()
 	line = ifile.readline()
-	(ZA,AWR,L0,L1,L2,L3,MAT,MF,MT) = line_type1_info(line)
+	(ZA,AWR,L0,L1,L2,L3,MAT,MF,MT) = UtilsU.lineType1Info(line)
 	while True:
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if (MAT != -1):
 			if (MF == 3):
 				if (MT == 102):
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					QM = float(data[0]); QI =  float(data[1])
 					LR = int(data[3]); NR = int(data[4]); NP = int(data[5])
 					ifile.readline()
 					E = [0]*NP; sig = [0]*NP
 					temporary1 = [0]*NP
 					temporary2 = [0]*NP
-					(temporary1,temporary2) = line_type3_info(ifile,NP,2)
+					(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NP,2)
 					for i, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 						E[i] = value1
 						sig[i] = value2
@@ -3689,18 +3553,18 @@ def FILE1 (ifile_rawENDF6):
 	ifile = open(raw_ENDF6_file,'r')
 	ifile.readline()
 	line = ifile.readline()
-	(ZA,AWR,LRP,LFI,NLIB,NMOD,MAT,MF,MT) = line_type1_info(line)
+	(ZA,AWR,LRP,LFI,NLIB,NMOD,MAT,MF,MT) = UtilsU.lineType1Info(line)
 	line = ifile.readline()
-	(ELIS,STA,LIS,LISO,num,NFOR,MAT,MF,MT) = line_type1_info(line)
+	(ELIS,STA,LIS,LISO,num,NFOR,MAT,MF,MT) = UtilsU.lineType1Info(line)
 	line = ifile.readline()
-	(AWI,EMAX,LREL,num,NSUB,NVER,MAT,MF,MT) = line_type1_info(line)
+	(AWI,EMAX,LREL,num,NSUB,NVER,MAT,MF,MT) = UtilsU.lineType1Info(line)
 	line = ifile.readline()
-	(TEMP,c2,LDRV,num,NWD,NXC,MAT,MF,MT) = line_type1_info(line)
+	(TEMP,c2,LDRV,num,NWD,NXC,MAT,MF,MT) = UtilsU.lineType1Info(line)
 	for i in range (NWD):
 		ifile.readline()
 	for i in range (NXC):
 		line = ifile.readline()
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		blnk = data[0]; blnk = data[1]
 		MFs[i] = int(data[2]); MTs[i] = int(data[3])
 		NCn = int(data[4]); MODn = int(data[5]); MAT = int(data[6])
@@ -3747,17 +3611,17 @@ def GROUPMULTI (insp,igtype,mttg,num_group_limits):
 		line = ifile54.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if (MAT != -1):
 			if (MF == 3):
 				if (MT == mttg):
 					line = ifile54.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					QM = float(data[0]); QI =  float(data[1]); NR = int(data[4]); NP = int(data[5])
 					E = [0]*NP; sdpa = [0]*NP
 					LR = int(ifile54.readline().split()[3])
-					(E,sdpa) = line_type3_info(ifile54,NP,2)
+					(E,sdpa) = UtilsU.lineType3Info(ifile54,NP,2)
 		else:
 			break
 	ifile54.close()
