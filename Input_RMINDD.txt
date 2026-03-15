@@ -41,6 +41,7 @@ Energy_group_type_index =
 
 Module_name = "CombinU"
 
+Files_directory = 
 Num_elements_target = 
 Elements_target = 
 ## give in the same order as given elements

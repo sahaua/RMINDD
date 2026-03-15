@@ -15,9 +15,13 @@ import numpy
 import math
 import os
 
-def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,eliso,en_group_type,input_n_spec,
-transmgas_group_file, transmnucl_group_file, transmgas_point_file, transmnucl_MF5_point_file, 
-transmnucl_net_group_file, NPt, Etu):
+def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6, NPt, Etu, dict_input_file_variables):
+
+	(eliso, en_group_type, input_n_spec, transmgas_group_file, transmnucl_group_file, \
+	transmgas_point_file, transmnucl_MF5_point_file, transmnucl_net_group_file, NPt, Etu) = (dict_input_file_variables['element_isotope_name'], \
+	dict_input_file_variables['en_group_type'], dict_input_file_variables['input_n_spec'], dict_input_file_variables['transmgas_group_file'], \
+	dict_input_file_variables['transmnucl_group_file'], dict_input_file_variables['transmgas_point_file'], \
+	dict_input_file_variables['transmnucl_MF5_point_file'], dict_input_file_variables['transmnucl_net_group_file'])
 
 ## Calculation of gas production and total activation cross section
 ## due to charged particle production reactions and (n,xn) and (n,g)
@@ -145,19 +149,18 @@ transmnucl_net_group_file, NPt, Etu):
 	
 		if (iflag[nreac] == 1):
 			if (MTi in [203, 204, 205, 206, 207]):
-			if (MTi == 203 or MTi == 204 or MTi == 205 or MTi == 206 or MTi == 207):
-				globals()[f'E{MTi}'] = []; globals()[f'sig{MTi}'] = []
-				globals()[f'E{MTi}'] = numpy.append(globals()[f'E{MTi}'], E1)
-				globals()[f'sig{MTi}'] = numpy.append(globals()[f'sig{MTi}'], sig1)
+				dict_input_file_variables[f'E{MTi}'] = []; dict_input_file_variables[f'sig{MTi}'] = []
+				dict_input_file_variables[f'E{MTi}'] = numpy.append(dict_input_file_variables[f'E{MTi}'], E1)
+				dict_input_file_variables[f'sig{MTi}'] = numpy.append(dict_input_file_variables[f'sig{MTi}'], sig1)
+
+	## Calculation of gas production and activation from individual
+	## CPO and other reactions; nreac = 1 to nrab(=37) => these MTs.
 
 	iflp103 = 0
 	iflp104 = 0
 	iflp105 = 0
 	iflp106 = 0
 	iflp107 = 0
-
-	## Calculation of gas production and activation from individual
-	## CPO and other reactions; nreac = 1 to nrab(=37) => these MTs.
 
 	for nreac in range(nrab):
 		ifile_preprocessedENDF6.seek(0, 0)
@@ -180,11 +183,16 @@ transmnucl_net_group_file, NPt, Etu):
 				if (MF == 3):
 					if (MT == MTi):
 						iflag[nreac] = 1
-						if (MT == 103) iflp103 = 1
-						if (MT == 104) iflp104 = 1
-						if (MT == 105) iflp105 = 1
-						if (MT == 106) iflp106 = 1
-						if (MT == 107) iflp107 = 1
+						if (MT == 103):
+							iflp103 = 1
+						if (MT == 104):
+							iflp104 = 1
+						if (MT == 105):
+							iflp105 = 1
+						if (MT == 106):
+							iflp106 = 1
+						if (MT == 107):
+							iflp107 = 1
 						print( 'MT = ', MTi, '.....')
 						ZA = ZAv
 						AWR = AWRv
@@ -201,9 +209,9 @@ transmnucl_net_group_file, NPt, Etu):
 		if (iflag[nreac] == 1):
 			print('', file = ofile_outRMINDD)
 			print(f'Activation and/or Gas production MT = {MTi} given', file = ofile_outRMINDD)
-			globals()[f'E{MTi}'] = []; globals()[f'sig{MTi}'] = []
-			globals()[f'E{MTi}'] = numpy.append(globals()[f'E{MTi}'], E1)
-			globals()[f'sig{MTi}'] = numpy.append(globals()[f'sig{MTi}'], sig1)
+			dict_input_file_variables[f'E{MTi}'] = []; dict_input_file_variables[f'sig{MTi}'] = []
+			dict_input_file_variables[f'E{MTi}'] = numpy.append(dict_input_file_variables[f'E{MTi}'], E1)
+			dict_input_file_variables[f'sig{MTi}'] = numpy.append(dict_input_file_variables[f'sig{MTi}'], sig1)
 			
 	## The calculation from MT = 600 to 849 is performed when 
 	## MT = 103, ....., 107 are not given. These are performed in
@@ -366,14 +374,14 @@ transmnucl_net_group_file, NPt, Etu):
 	for nreac in range(42):
 		MTi = MTnum(nreac)
 		if (iflag[nreac] == 1):
-			NPtg = len(globals()[f'E{MTi}'])
+			NPtg = len(dict_input_file_variables[f'E{MTi}'])
 			if (MTi == 5):
-				sig5tot = terpolAPR(2,NPtg,globals()[f'E{MTi}'],globals()[f'sig{MTi}'],NPt,Etu)
+				sig5tot = terpolAPR(2,NPtg,dict_input_file_variables[f'E{MTi}'],dict_input_file_variables[f'sig{MTi}'],NPt,Etu)
 			else:
-				sigparttot = terpolAPR(2,NPtg,globals()[f'E{MTi}'],globals()[f'sig{MTi}'],NPt,Etu)
+				sigparttot = terpolAPR(2,NPtg,dict_input_file_variables[f'E{MTi}'],dict_input_file_variables[f'sig{MTi}'],NPt,Etu)
 
 			## Cross section gets multigrouped based on n-spectrum here .....
-			gsig = groupmulti (input_n_spec,globals()[f'E{MTi}'],globals()[f'sig{MTi}'],NPtg,Eg,Ngl) 
+			gsig = groupmulti (input_n_spec,dict_input_file_variables[f'E{MTi}'],dict_input_file_variables[f'sig{MTi}'],NPtg,Eg,Ngl) 
 
 			## cross sections from lumped MT = 5 data
 			if (MTi == 5):
@@ -411,7 +419,6 @@ transmnucl_net_group_file, NPt, Etu):
 					for i in range(NPt):
 						sppoint[i] = sppoint[i] + sigparttot[i]
 						sigtpoint[i] = sigtpoint[i] + sigparttot[i]
-					end do
 
 			if (MTi == 203):
 				for i in range(Ngl):
@@ -491,7 +498,6 @@ transmnucl_net_group_file, NPt, Etu):
 				for i in range(NPt):
 					sapoint[i] = sigparttot[i]
 					sigtpoint[i] = sigtpoint[i] + sigparttot[i]
-					end do
 
 			if (MTi == 16 or MTi == 17 or MTi == 37 or MTi == 102):
 				for i in range(Ngl):
@@ -759,7 +765,7 @@ transmnucl_net_group_file, NPt, Etu):
 
 	for i in range(itrnstot+1):
 		print(i, Zvaltrack[i], Avaltrack[i], cntrack[i], file = ofile_transmnucl_group)
-	print('------------------'
+	print('------------------')
 
 	for i in range(itrnstot):
 		print( i, eliso, Zvaltrack[i], Avaltrack[i], file = ofile_transmnucl_net_group)
@@ -997,7 +1003,7 @@ def gtYMf6Mt5():
 							ip = 3
 						if (int(ZAP) == iZp[4] and int(ceiling(AWP)) == iAp[5]):
 							ip = 4
-		
+
 						if (iflgp == 0):
 							N = 0
 							while (N < NR6):
@@ -1189,16 +1195,17 @@ def adddiscnth(ifile_preprocessedENDF6,iflMTpr,MTnth,Etu,NPt):
 							MTi = MT
 						iflp = 1
 						iflMTpr = 1
-						write(*,*) 'MT = ', MTi, '.....'
+						print ('MT = ', MTi, '.....')
 						ZA = ZAv
 						AWR = AWRv
-						read(500,2) QM, QI, LR, NR, NP1
-						allocate(E1(NP1),sig1(NP1))
-						read(500,*) 
-						read(500,3) (E1(j), sig1(j), j = 1, NP1)
+						ine = ifile_preprocessedENDF6.readline()
+						data = eachlineinfo(line)
+						QM = float(data[0]); QI =  float(data[1])
+						NR = int(data[4]); NP1 = int(data[5])
+						E1 = numpy.zeros(NP1); sig1 = numpy.zeros(NP1)
+						ifile_preprocessedENDF6.readline()
+						(E1, sig1) = line_type3_info(ifile_preprocessedENDF6,NP1,2)
 						MTi = MTi + 1
-					end if
-				end if
 			else:
 				break
 	
@@ -1226,22 +1233,22 @@ def adddiscnth(ifile_preprocessedENDF6,iflMTpr,MTnth,Etu,NPt):
 ## The weighting spectrum for multigrouping of cross sections
 		
 def spectrum (En,L):
- 	match L:
-	case 1:
-		fi = En * math.exp(-En/0.0253)
-		return(fi)
-	case 2:
-		fi = 1/En
-		return(fi)
-	case 3:
-		fi = math.sqrt(En) * math.exp(-En/(1.415e+6))
-		return(fi)
-	case 4:
-		fi = 1
-		return(fi)
-	case _:
-		fi = 0
-		return(fi)
+	match L:
+		case 1:
+			fi = En * math.exp(-En/0.0253)
+			return(fi)
+		case 2:
+			fi = 1/En
+			return(fi)
+		case 3:
+			fi = math.sqrt(En) * math.exp(-En/(1.415e+6))
+			return(fi)
+		case 4:
+			fi = 1
+			return(fi)
+		case _:
+			fi = 0
+	return(fi)
 
 def crstd(x,x1,x2,y1,y2):
 	y = y1 + ((y2-y1)*(x-x1)/(x2-x1))

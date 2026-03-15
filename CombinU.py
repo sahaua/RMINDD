@@ -125,40 +125,44 @@ def engrp8():
 	return(Eg)
 
 
-def combineXSMultiElementTarget (ofile_outRMINDD, elements_target, isotopes_evaluated, element_recdamen, element_dameff, \
-percent_abundances_all, element_stoich, files_dir):
+def combineXSMultiElementTarget (ofile_outRMINDD, dict_input_file_variables):
+
+	(elements_target, isotopes_evaluated, element_recdamen, element_dameff, \
+	percent_abundances_all, element_stoich, files_dir) = (dict_input_file_variables['elements_target'], \
+	dict_input_file_variables['isotopes_evaluated'], dict_input_file_variables['element_recdamen'], \
+	dict_input_file_variables['element_dameff'], dict_input_file_variables['percent_abundances_all'], \
+	dict_input_file_variables['element_stoich'], dict_input_file_variables['files_dir'])
 
 	know_work_direc = os.getcwd()
-	
+
 	## have to test for some universal value for threshold lattice displacement energy in the target
 	## testing for target SiC -- according to the results of tests, may have to change in inputs that are taken! 
 	checkvalue_Ed = 2.0/(1/35 + 1/20)
-	
+
 	## Read and store damage energy and damage efficiency data
-	
+
 	for element in element_dameff:
-		ifile = open (globals()[f'ifile_Dam_eff_{element}'], 'r')
+		ifile = open (dict_input_file_variables[f'ifile_Dam_eff_{element}'], 'r')
 		ifile.readline()
 		ifile.readline()
 		ifile.readline()
-	
+
 		globals()[f'num_data_{element}_ref'] = int(ifile.readline().split()[0])
 		globals()[f'T_dam_{element}_ref'] = numpy.zeros(globals()[f'num_data_{element}_ref'])
 		globals()[f'Dam_eff_{element}_ref'] = numpy.zeros(globals()[f'num_data_{element}_ref'])
-	
+
 		for i in range(globals()[f'num_data_{element}_ref']):
 			data = ifile.readline().split()
 			globals()[f'T_dam_{element}_ref'][i] = float(data[0]) * 1000.0
 			globals()[f'Dam_eff_{element}_ref'][i] = float(data[1])
 		ifile.close()
-	
-	
+
 	## Find damage energy from SRIM-2013 for the target
 	## Read and store data for recoil energy, damage energy and number of vacancies
 	## obtained from SRIM-2013
-	
+
 	for element in element_recdamen:
-		ifile = open(globals()[f'ifile_Rec_dam_en_{element}'], 'r')
+		ifile = open(dict_input_file_variables[f'ifile_Rec_dam_en_{element}'], 'r')
 		ifile.readline()
 		line = ifile.readline()
 		globals()[f'num_data_{element}_srim'] = int(line.split()[1])
@@ -172,19 +176,18 @@ percent_abundances_all, element_stoich, files_dir):
 			globals()[f'num_vac_{element}_srim'].append(float(data[-1]))
 		ifile.close()
 	
-	
 	## Using reaction-wise isotopic cross sections and recoil energies
 	## from evaluated nuclear data to find damage energies and number 
 	## of displacements using the damage efficiency data, whcih are
 	## computed using the EngdepU module.
-	
+
 	## The data are expected to be in directories named according to the isotopes of elements,
 	## i.e., as per the input isotopes_evaluated in the input file such as Si28, C12, Ni58, etc.
-	
+
 	## First extracting the required data into containers
-	
+
 	## Total n-interaction cross sections in isotopes
-	
+
 	os.chdir(files_dir)
 	for isotope in isotopes_evaluated:
 		os.chdir(isotope)
@@ -192,34 +195,33 @@ percent_abundances_all, element_stoich, files_dir):
 		globals()[f'num{isotope}'] = int(ifile.readline().split()[0])
 		globals()[f'En{isotope}_MT1'] = numpy.zeros(globals()[f'num{isotope}'])
 		globals()[f'XS{isotope}_MT1'] = numpy.zeros(globals()[f'num{isotope}'])
-		
+
 		for i in range(globals()[f'num{isotope}']):
 			data = ifile.readline().split()
 			globals()[f'En{isotope}_MT1'][i] = float(data[0])
 			globals()[f'XS{isotope}_MT1'][i] = float(data[1])
 		ifile.close()
 		os.chdir('../')
-	
-	
+
 	## Loop through all files in each isotope directory
-	
+
 	for isotope in isotopes_evaluated:
 		os.chdir(isotope)
 		try:
 			(element, mass_num) = separateSymbolMassNumber(isotope)
 		except ValueError as e:
 			print(f"Error: {e}")
-	
+
 		## Match files with a specific pattern
 		globals()[f'file_pattern{isotope}'] = "nheat*.txt"
 		globals()[f'files{isotope}'] = glob.glob(globals()[f'file_pattern{isotope}'])
 		globals()[f'MTreac{isotope}'] = []
-	
+
 		for file in globals()[f'files{isotope}']:
 			MTreac = file.split('.')[0][5:]
 			with open(file, 'r') as ifile:
 				num = int(ifile.readline().split()[0])
-	
+
 				globals()[f'En{isotope}_MT{MTreac}'] = numpy.zeros(num)
 				globals()[f"XS1{isotope}_MT{MTreac}"] = numpy.zeros(num)
 				globals()[f"Er1{isotope}_MT{MTreac}"] = numpy.zeros(num)
@@ -230,7 +232,7 @@ percent_abundances_all, element_stoich, files_dir):
 					globals()[f'Er1{isotope}_MT{MTreac}'][i] = float(data[2])
 			ifile.close()
 			globals()[f'MTreac{isotope}'].append(MTreac)
-	
+
 			globals()[f'Tdam{isotope}_MT{MTreac}'] = numpy.zeros(globals()[f'num{isotope}'])
 			globals()[f'DamEff{isotope}_MT{MTreac}'] = numpy.zeros(globals()[f'num{isotope}'])
 			globals()[f'dpa{isotope}_MT{MTreac}'] = numpy.zeros(globals()[f'num{isotope}'])
@@ -241,16 +243,16 @@ percent_abundances_all, element_stoich, files_dir):
 			globals()[f'numvacSi28_MT{MTreac}'] = numpy.interp (globals()[f'Tdam{isotope}_MT{MTreac}'], globals()[f'T_dam_{element}_srim'], globals()[f'num_vac_{element}_srim'])
 			globals()[f'DamEff{isotope}_MT{MTreac}'] = numpy.interp (globals()[f'Tdam{isotope}_MT{MTreac}'], globals()[f'T_dam_{element}_ref'], globals()[f'Dam_eff_{element}_ref'])
 			for i in range(globals()[f'num{isotope}']):
-				if (globals()[f'Tdam{isotope}_MT{MTreac}'][i] < globals()[f'Ed_{element}']):
+				if (globals()[f'Tdam{isotope}_MT{MTreac}'][i] < dict_input_file_variables[f'Ed_{element}']):
 					globals()[f'dpa{isotope}_MT{MTreac}'][i] = 0.0
 					globals()[f'NRTdpa{isotope}_MT{MTreac}'][i] = 0.0
-				if (globals()[f'Tdam{isotope}_MT{MTreac}'][i] >= globals()[f'Ed_{element}'] and globals()[f'Tdam{isotope}_MT{MTreac}'][i] < 2*globals()[f'Ed_{element}']/0.8):
+				if (globals()[f'Tdam{isotope}_MT{MTreac}'][i] >= dict_input_file_variables[f'Ed_{element}'] and globals()[f'Tdam{isotope}_MT{MTreac}'][i] < 2*dict_input_file_variables[f'Ed_{element}']/0.8):
 					globals()[f'dpa{isotope}_MT{MTreac}'][i] = 1.0 * globals()[f"XS{isotope}_MT{MTreac}"][i]
 					globals()[f'NRTdpa{isotope}_MT{MTreac}'][i] = 1.0 * globals()[f"XS{isotope}_MT{MTreac}"][i]
-				if (globals()[f'Tdam{isotope}_MT{MTreac}'][i] >= 2*globals()[f'Ed_{element}']/0.8):
-					globals()[f'dpa{isotope}_MT{MTreac}'][i] = 0.8/(2*globals()[f'Ed_{element}']) * globals()[f'DamEff{isotope}_MT{MTreac}'][i] * globals()[f'Tdam{isotope}_MT{MTreac}'][i] \
+				if (globals()[f'Tdam{isotope}_MT{MTreac}'][i] >= 2*dict_input_file_variables[f'Ed_{element}']/0.8):
+					globals()[f'dpa{isotope}_MT{MTreac}'][i] = 0.8/(2*dict_input_file_variables[f'Ed_{element}']) * globals()[f'DamEff{isotope}_MT{MTreac}'][i] * globals()[f'Tdam{isotope}_MT{MTreac}'][i] \
 					*  globals()[f"XS{isotope}_MT{MTreac}"][i]
-					globals()[f'NRTdpa{isotope}_MT{MTreac}'][i] = 0.8/(2*globals()[f'Ed_{element}']) * globals()[f'Tdam{isotope}_MT{MTreac}'][i] * globals()[f"XS{isotope}_MT{MTreac}"][i]
+					globals()[f'NRTdpa{isotope}_MT{MTreac}'][i] = 0.8/(2*dict_input_file_variables[f'Ed_{element}']) * globals()[f'Tdam{isotope}_MT{MTreac}'][i] * globals()[f"XS{isotope}_MT{MTreac}"][i]
 		os.chdir('../')
 	
 	## Calculate dpa cross section in the target
@@ -268,38 +270,32 @@ percent_abundances_all, element_stoich, files_dir):
 		for MT in globals()[f'MTreac{isotope}']:
 			if (MT != 102):
 				for i in range(globals()[f'num{isotope}']):
-					if (globals()[f'Tdam{isotope}_MT{MT}'][i] >= globals()[f'Ed_bnd_{element}']):
+					if (globals()[f'Tdam{isotope}_MT{MT}'][i] >= dict_input_file_variables[f'Ed_bnd_{element}']):
 						globals()[f'dpa{isotope}_MT1not102'][i] = globals()[f'dpa{isotope}_MT1not102'][i] + globals()[f'dpa{isotope}_MT{MT}'][i]
 						globals()[f'NRTdpa{isotope}_MT1not102'][i] = globals()[f'NRTdpa{isotope}_MT1not102'][i] + globals()[f'NRTdpa{isotope}_MT{MT}'][i]
-	
-	
+
 	## make unique En grid out of En's of all isotopes
-	
+
 	all_elements = ''.join(str(item) for item in elements_target)
 	globals()[f'En{all_elements}'] = numpy.concatenate([globals()[f'En{isotope}_MT1'] for isotope in isotopes_evaluated])
 	globals()[f'En{all_elements}_unique'] = numpy.unique(globals()[f'En{all_elements}'])
 	num_data = len(globals()[f'En{all_elements}_unique'])
-	
+
 	## Find all quantities to the unique energy grid
-	
+
 	for isotope in isotopes_evaluated:
 		globals()[f'XS{isotope}_MT102unique'] = numpy.interp(globals()[f'En{all_elements}_unique'], globals()[f'En{isotope}_MT102'], globals()[f'XS{isotope}_MT102'])
-	
-		globals()[f'XS{isotope}_MT1unique'] = numpy.interp(globals()[f'En{all_elements}_unique'], globals()[f'En{isotope}_MT1'], globals()[f'XS{isotope}_MT1'])
-	
+		globals()[f'XS{isotope}_MT1unique'] = numpy.interp(globals()[f'En{all_elements}_unique'], globals()[f'En{isotope}_MT1'], globals()[f'XS{isotope}_MT1'])	
 		globals()[f'XS{isotope}_MT1not102unique'] = numpy.zeros(num_data)
 		for i in range(num_data):
 			globals()[f'XS{isotope}_MT1not102unique'][i] = globals()[f'XS{isotope}_MT1unique'][i] - globals()[f'XS{isotope}_MT102unique'][i]
 	
-		globals()[f'dpa{isotope}_MT102unique'] = numpy.interp(globals()[f'En{all_elements}_unique'], globals()[f'En{isotope}_MT102'], globals()[f'dpa{isotope}_MT102'])
-	
+		globals()[f'dpa{isotope}_MT102unique'] = numpy.interp(globals()[f'En{all_elements}_unique'], globals()[f'En{isotope}_MT102'], globals()[f'dpa{isotope}_MT102'])	
 		globals()[f'NRTdpa{isotope}_MT102unique'] = numpy.interp(globals()[f'En{all_elements}_unique'], globals()[f'En{isotope}_MT102'], globals()[f'NRTdpa{isotope}_MT102'])
-	
-		globals()[f'dpa{isotope}_MT1not102unique'] = numpy.interp(globals()[f'En{all_elements}_unique'], globals()[f'En{isotope}_MT1'], globals()[f'dpa{isotope}_MT1not102'])
-	
+		globals()[f'dpa{isotope}_MT1not102unique'] = numpy.interp(globals()[f'En{all_elements}_unique'], globals()[f'En{isotope}_MT1'], globals()[f'dpa{isotope}_MT1not102'])	
 		globals()[f'NRTdpa{isotope}_MT1not102unique'] = numpy.interp(globals()[f'En{all_elements}_unique'], globals()[f'En{isotope}_MT1'], globals()[f'NRTdpa{isotope}_MT1not102'])
-	
-	
+
+
 		## Abundances of Si isotopes for finding the cross sections
 		## and recoil energies
 	
@@ -325,39 +321,35 @@ percent_abundances_all, element_stoich, files_dir):
 	
 				if (element == element_iso):
 					globals()[f'XS{element}_MT102unique'][i] = globals()[f'XS{element}_MT102unique'][i] + globals()[f'ab{isotope}']*globals()[f'XS{isotope}_MT102unique'][i]
-	
 					globals()[f'dpa{element}_MT102unique'][i] = globals()[f'dpa{element}_MT102unique'][i] + globals()[f'ab{isotope}']*globals()[f'dpa{isotope}_MT102unique'][i]
-	
-					globals()[f'NRTdpa{element}_MT102unique'][i] = globals()[f'NRTdpa{element}_MT102unique'][i] + globals()[f'ab{isotope}']*globals()[f'NRTdpa{isotope}_MT102unique'][i]
-	
+					globals()[f'NRTdpa{element}_MT102unique'][i] = globals()[f'NRTdpa{element}_MT102unique'][i] + globals()[f'ab{isotope}']*globals()[f'NRTdpa{isotope}_MT102unique'][i]	
 					globals()[f'XS{element}_MT1not102unique'][i] = globals()[f'XS{element}_MT1not102unique'][i] + globals()[f'ab{isotope}']*globals()[f'XS{isotope}_MT1not102unique'][i]
-					
-					globals()[f'dpa{element}_MT1not102unique'][i] = globals()[f'dpa{element}_MT1not102unique'][i] + globals()[f'ab{isotope}']*globals()[f'dpa{isotope}_MT1not102unique'][i]
-	
+					globals()[f'dpa{element}_MT1not102unique'][i] = globals()[f'dpa{element}_MT1not102unique'][i] + globals()[f'ab{isotope}']*globals()[f'dpa{isotope}_MT1not102unique'][i]	
 					globals()[f'NRTdpa{element}_MT1not102unique'][i] = globals()[f'NRTdpa{element}_MT1not102unique'][i] + globals()[f'ab{isotope}']*globals()[f'NRTdpa{isotope}_MT1not102unique'][i]
-	
-	
-	
+
+
 	## Combine the dpa cross sections in elements
-	
+
 	globals()[f'dpa{all_elements}'] = numpy.zeros(num_data)
 	globals()[f'NRTdpa{all_elements}'] = numpy.zeros(num_data)
-	
+
 	#globals()[f'simple_dpa{all_elements}'] = numpy.zeros(num_data)
 	#globals()[f'simple_NRTdpa{all_elements}'] = numpy.zeros(num_data)
-	
-	
+
+
 	# print data to output files
-	
+
 	os.chdir(know_work_direc)
-	
+
 	## dpa cross sections
+	print('Multi-element dpa cross sections in: CombinU-XS.out', file = ofile_outRMINDD)
 	ofile = open('CombinU-XS.out', 'w')
 	print(num_data, file = ofile)
-	
+
 	## PKA formation probabilities
 	for element in elements_target:
 		globals()[f'ofile1{element}'] = open('CombinU-Probabilities-'+element+'.out', 'w')
+		print('PKA formarion probabilities are written in: ', f'CombinU-Probabilities-{element}.out', file = ofile_outRMINDD)
 		print(num_data, '(n,g) / (n, other)', file = globals()[f'ofile1{element}'])
 	
 	for i in range(num_data):
@@ -381,16 +373,16 @@ percent_abundances_all, element_stoich, files_dir):
 	
 		## dpa cross sections
 		print(globals()[f'En{all_elements}_unique'][i], globals()[f'NRTdpa{all_elements}'][i], globals()[f'dpa{all_elements}'][i], file = ofile)
-	
+
 		## PKA formation probabilities
 		for element in elements_target:
 			print(globals()[f'En{all_elements}_unique'][i], globals()[f'f{element}102']/element_stoich[elements_target.index(element)], globals()[f'f{element}1not102']/element_stoich[elements_target.index(element)], file = globals()[f'ofile1{element}'])
-	
+
 	for element in elements_target:
 		globals()[f'ofile1{element}'].close()
 	
 	## multigroup dpa cross sections
-	
+	print('grouped ..')
 	(Ngl, Eg, globals()[f'grouped_dpa{all_elements}']) = groupmulti(7, num_data, globals()[f'En{all_elements}_unique'], globals()[f'dpa{all_elements}'])
 	(Ngl, Eg, globals()[f'grouped_NRTdpa{all_elements}']) = groupmulti(7, num_data, globals()[f'En{all_elements}_unique'], globals()[f'NRTdpa{all_elements}'])
 	
@@ -409,10 +401,10 @@ percent_abundances_all, element_stoich, files_dir):
 				(element_iso, mass_num) = separateSymbolMassNumber(isotope)
 			except ValueError as e:
 				print(f"Error: {e}")
-	
+
 			if (element == element_iso):
 				globals()[f'Tdam{isotope}'] = numpy.concatenate([globals()[f'Tdam{isotope}_MT{mts}'] for mts in globals()[f'MTreac{isotope}']])
-	
+
 		## doing for the isotope
 		globals()[f'Tdam{element}_isotopes'] = []
 		for isotope in isotopes_evaluated:
@@ -420,15 +412,16 @@ percent_abundances_all, element_stoich, files_dir):
 				(element_iso, mass_num) = separateSymbolMassNumber(isotope)
 			except ValueError as e:
 				print(f"Error: {e}")
-	
+
 			if (element == element_iso):
 				globals()[f'Tdam{element}_isotopes'] = numpy.append(globals()[f'Tdam{element}_isotopes'], globals()[f'Tdam{isotope}'])
-	
+
 		globals()[f'Tdam{element}'] = numpy.unique(globals()[f'Tdam{element}_isotopes'])
 		globals()[f'DamEff{element}_{all_elements}'] = numpy.interp(globals()[f'Tdam{element}'], globals()[f'T_dam_{element}_ref'], globals()[f'Dam_eff_{element}_ref'])
-	
+
 	## print the damage efficiencies to file
-	
+	print('Damage efficiency data ..')
+	print('Damage efficiency data used are written in: CombinU-DamageEfficiencyData.out', file = ofile_outRMINDD)
 	ofile = open('CombinU-DamageEfficiencyData.out', 'w')
 	for element in elements_target:
 		print(f'{element} in {all_elements}', file = ofile)

@@ -43,8 +43,11 @@ print(day_execution, ' ', time_execution, '\n', file = ofile_outRMINDD)
 ## command line input for input file name
 inpRMINDD = sys.argv[1]
 
-ReadU.readCheckInputFile(inpRMINDD, ofile_outRMINDD)
-if (ReadU.module_name=='EngdepU' or ReadU.module_name=='RecedU' or ReadU.module_name=='TransmU'):
+## all data read in from the input file
+dict_input_file_variables = ReadU.readCheckInputFile(inpRMINDD, ofile_outRMINDD)
+
+## unique energy array and number of energy points
+if (dict_input_file_variables['module_name'] in ['EngdepU', 'RecedU', 'TransmU']):
 	(NPt, Etu) = UtilsU.uqce(ofile_outRMINDD, ifile_preprocessedENDF6)
 
 '''
@@ -53,7 +56,7 @@ interactions by neutrons in the isotope of a material. It also produces basic
 cross sections and recoil energies. Both point and multigrouped dpa and heating
 can be obtained.
 '''
-if (ReadU.module_name == "EngdepU"):
+if (dict_input_file_variables['module_name'] == "EngdepU"):
 	print('~~ RMINDD-EngdepU ~~')
 	print('~~ RMINDD-EngdepU ~~', file = ofile_outRMINDD)
 	print(':Messages for you:', file = ofile_outRMINDD)
@@ -72,26 +75,23 @@ if (ReadU.module_name == "EngdepU"):
 	print('Total from (n, xn) reactions is in: ....1601.txt', file = ofile_outRMINDD)
 	print('Total from (n, anything) inexplicit reaction data is in: ....5001.txt', file = ofile_outRMINDD)
 
-	ifile_rawENDF6 = open(ReadU.raw_ENDF6_file, 'r')
-	ifile_preprocessedENDF6 = open(ReadU.preprocessed_ENDF6_file, 'r')
+	ifile_rawENDF6 = open(dict_input_file_variables['raw_ENDF6_file'], 'r')
+	ifile_preprocessedENDF6 = open(dict_input_file_variables['preprocessed_ENDF6_file'], 'r')
 
-	EngdepU.controlAllReactionsHeatingDPA (ofile_outRMINDD, ifile_rawENDF6, ifile_preprocessedENDF6, ReadU.input_n_spec, 
-	ReadU.num_reac_array, ReadU.num_reac, NPt, Etu, ReadU.atom_displ_model, ReadU.threshold_Ed, ReadU.b_arcdpa, ReadU.c_arcdpa, 
-	ReadU.multigroup, ReadU.en_group_type)
+	EngdepU.controlAllReactionsHeatingDPA (ofile_outRMINDD, ifile_rawENDF6, ifile_preprocessedENDF6, \
+	dict_input_file_variables['input_n_spec'], dict_input_file_variables['num_reac_array'], dict_input_file_variables['num_reac'], \
+	NPt, Etu, dict_input_file_variables['atom_displ_model'], dict_input_file_variables['threshold_Ed'], \
+	dict_input_file_variables['b_arcdpa'], dict_input_file_variables['c_arcdpa'], \
+	dict_input_file_variables['multigroup'], dict_input_file_variables['en_group_type'])
 
 	ifile_preprocessedENDF6.close()
 	ifile_rawENDF6.close()
 
-	if (ReadU.num_MT_multigroup > 0):
+	if (dict_input_file_variables['num_MT_multigroup'] > 0):
 		print( 'Multigroup partial reactions .....')
-		for i in range (ReadU.num_MT_multigroup):
-			print( 'MT = ',ReadU.num_MT_group_array[i])
+		for i in range (dict_input_file_variables['num_MT_multigroup']):
+			print( 'MT = ', dict_input_file_variables['num_MT_group_array'][i])
 
-	stop_time = process_time()
-	total_time = stop_time - start_time
-	print('', file = ofile_outRMINDD)
-	print( 'Total time taken:', file = ofile_outRMINDD)
-	print(total_time, file = ofile_outRMINDD)
 
 '''
 The purpose of RecedU is to produce the PKA spectra induced by reactions of energetic
@@ -99,7 +99,7 @@ neutrons with the isotopes of material. The PKA spectra are produced in a energy
 group-to-group matrix format. Reaction-wise data, partial sums as well as total PKA
 spectra can be produced.
 '''
-if (ReadU.module_name == "RecedU"):
+if (dict_input_file_variables['module_name'] == "RecedU"):
 	print('~~ RMINDD-RecedU ~~')
 	print('~~ RMINDD-RecedU ~~', file = ofile_outRMINDD)
 	print(':Messages for you:', file = ofile_outRMINDD)
@@ -112,63 +112,57 @@ if (ReadU.module_name == "RecedU"):
 	print('PKA-MATRICES.txt -- each reaction', file = ofile_outRMINDD)
 	print('n-allPKAspectra.txt -- sum total', file = ofile_outRMINDD)
 
-	ifile_rawENDF6 = open(ReadU.raw_ENDF6_file, 'r')
-	ifile_preprocessedENDF6 = open(ReadU.preprocessed_ENDF6_file, 'r')
+	ifile_rawENDF6 = open(dict_input_file_variables['raw_ENDF6_file'], 'r')
+	ifile_preprocessedENDF6 = open(dict_input_file_variables['preprocessed_ENDF6_file'], 'r')
 
-	RecedU.FINE_ENERGY_CALL_REAC (ofile_outRMINDD, ifile_rawENDF6, ifile_preprocessedENDF6, ReadU.input_n_spec, 
-	ReadU.element_isotope_name, ReadU.en_group_type, ReadU.num_group_limits, ReadU.num_fine_en_points, ReadU.num_reac_array)
+	RecedU.FINE_ENERGY_CALL_REAC (ofile_outRMINDD, ifile_rawENDF6, ifile_preprocessedENDF6, dict_input_file_variables['input_n_spec'], \
+	dict_input_file_variables['element_isotope_name'], dict_input_file_variables['en_group_type'], \
+	dict_input_file_variables['num_group_limits'], dict_input_file_variables['num_fine_en_points'], dict_input_file_variables['num_reac_array'])
 
 	ifile_preprocessedENDF6.close()
 	ifile_rawENDF6.close()
 
-	if (ReadU.num_partial_reac_tosum > 0):
+	if (dict_input_file_variables['num_partial_reac_tosum'] > 0):
 		ofile1001 = open('n-sum-partialsPKAspectra.txt', 'a')
-		print(ReadU.element_isotope_name, file = ofile1001)
-		dsdt = numpy.zeros((ReadU.num_group_limits-1, ReadU.num_group_limits-1))
-		dsdt = RecedU.ALLSUM (ReadU.num_group_limits, ReadU.partial_reac_tosum)
+		print(dict_input_file_variables['element_isotope_name'], file = ofile1001)
+		dsdt = numpy.zeros((dict_input_file_variables['num_group_limits']-1, dict_input_file_variables['num_group_limits']-1))
+		dsdt = RecedU.ALLSUM (dict_input_file_variables['num_group_limits'], dict_input_file_variables['partial_reac_tosum'])
 		print('The sum of recoil nuclei energy spectra for given partial reactions', file = ofile1001)
-		for it in range (ReadU.num_group_limits-1):
-			print (['{:.6E}'.format(dsdt[it][jt]) for jt in range (ReadU.num_group_limits-1)], file = ofile1001)
+		for it in range (dict_input_file_variables['num_group_limits']-1):
+			print (['{:.6E}'.format(dsdt[it][jt]) for jt in range (dict_input_file_variables['num_group_limits']-1)], file = ofile1001)
 		ofile1001.close()
-
-	stop_time = process_time()
-	total_time = stop_time - start_time
-	print('', file = ofile_outRMINDD)
-	print( 'Total time taken:', file = ofile_outRMINDD)
-	print(total_time, file = ofile_outRMINDD)
 
 '''
 The purpose of TransmU is to find the neutron induced gas and transmutation nuclide production cross sections in the
 given isotope of the target element.
 '''
-if (ReadU.module_name == "TransmU"):
+if (dict_input_file_variables['module_name'] == "TransmU"):
 	print('~~ RMINDD-TransmU ~~')
 	print('~~ RMINDD-TransmU ~~', file = ofile_outRMINDD)
 	print(':Messages for you:', file = ofile_outRMINDD)
 	print('--------------------', file = ofile_outRMINDD)
 	print('', file = ofile_outRMINDD)
 
-	TransmU.ActivationGasProduction (ofile_outRMINDD, ifile_rawENDF6, ifile_preprocessedENDF6, ReadU.element_isotope_name,
-	ReadU.en_group_type, ReadU.input_n_spec, ReadU.transmgas_group_file, ReadU.transmnucl_group_file, ReadU.transmgas_point_file,
-	ReadU.transmnucl_MF5_point_file, ReadU.transmnucl_net_group_file, NPt, Etu)
+	TransmU.ActivationGasProduction (ofile_outRMINDD, ifile_rawENDF6, ifile_preprocessedENDF6, NPt, Etu, dict_input_file_variables)
 
 ''' 
 The purpose of CombinU is to find neutron induced dpa cross sections in the
 multi-element target material. It should be run only after having the required quantities
 for each isotope in the target material calculated using the EngdepU module.
 '''
-if (ReadU.module_name == "CombinU"):
+if (dict_input_file_variables['module_name'] == "CombinU"):
 	print( '~~ RMINDD-CombinU ~~')
 	print( '~~ RMINDD-CombinU ~~', file = ofile_outRMINDD)
 	print( ':Messages for you:', file = ofile_outRMINDD)
 	print('--------------------', file = ofile_outRMINDD)
 	print('', file = ofile_outRMINDD)
 
-	CombinU.combineXSMultiElementTarget (ReadU.elements_target, ReadU.isotopes_evaluated, ReadU.element_recdamen,
-	ReadU.element_dameff, ReadU.percent_abundances_all, ReadU.element_stoich, ReadU.files_dir)
+	CombinU.combineXSMultiElementTarget (ofile_outRMINDD, dict_input_file_variables)
 
+stop_time = process_time()
+total_time = stop_time - start_time
+print('', file = ofile_outRMINDD)
+print( 'Total time taken:', file = ofile_outRMINDD)
+print(total_time, file = ofile_outRMINDD)
 
 ofile_outRMINDD.close()
-
-
-
