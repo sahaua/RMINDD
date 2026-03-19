@@ -5633,9 +5633,9 @@ def FindMT(MTfind, ifile_rawENDF6):
 	
 def groupmulti(insp,MTg,igtype,ifldh):
 	MTgname =  str(MTg)
-		
+
 	print("Group .....")
-		
+
 	if (insp == 1):
 		ifile = open('NeutronSpectrum.txt', 'r')
 		nre = int(ifile.readline().split()[-1])

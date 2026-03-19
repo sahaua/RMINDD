@@ -801,7 +801,7 @@ def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedEN
 
 
 ## To energy multigroup cross sections depending on neutron spectrum
-	
+
 def groupmulti (input_n_spec,E1p,sig,NPtg,Eg,Ngl):
 	gsig = numpy.zeros(Ngl)
 
