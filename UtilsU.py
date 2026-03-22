@@ -11,6 +11,8 @@ Major changes:
 =========================================================================================
 '''
 
+import numpy
+
 '''
 #======= Make the required unique common energy =======*
 
@@ -33,20 +35,20 @@ def uqce (ofile_outRMINDD, ifile_preprocessedENDF6):
 		line = ifile_preprocessedENDF6.readline()
 		if (line == ''):
 			break  
-		data = eachlineinfo(line)
+		data = eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if (MAT != -1):
 			if (MF == 3):
 				if (MT == 1):
 					line = ifile_preprocessedENDF6.readline() 
-					data = eachlineinfo(line)
+					data = eachLineInfo(line)
 					QM = float(data[0]); QI =  float(data[1]); NR = int(data[4]); NPt = int(data[5])
 					Et = [0]*NPt
 					LR = int(ifile_preprocessedENDF6.readline().split()[1])
 					i = 0
 					while (i < NPt):
 						line = ifile_preprocessedENDF6.readline()
-						data = eachlineinfo(line)
+						data = eachLineInfo(line)
 						for j in range(0,5,2):
 							if (data[j] != ''):
 								Et[i] = float(data[j])
@@ -119,7 +121,7 @@ def eachLineInfo(line):
 #========The data in lines of different types are explicitly extracted=======*
 
 def lineType1Info(line):
-	data = eachlineinfo(line)
+	data = eachLineInfo(line)
 	dataV1 = 0; dataV2 = 0; dataV3 = 0; dataV4 = 0; dataV5 = 0; dataV6 = 0
 	dataV7 = 0; dataV8 = 0; dataV9 = 0
 	iflspace = 0
@@ -134,7 +136,7 @@ def lineType1Info(line):
 	return(dataV1,dataV2,dataV3,dataV4,dataV5,dataV6,dataV7,dataV8,dataV9)
 
 def lineType2Info(line):
-	data = eachlineinfo(line)
+	data = eachLineInfo(line)
 	dataV1 = float(data[0]); dataV2 = float(data[1]); dataV3 = int(data[2])
 	dataV4 = int(data[3]); dataV5 = int(data[4]); dataV6 = int(data[5])
 	dataV7 = int(data[6]); dataV8 = int(data[7]); dataV9 = int(data[8])
@@ -152,7 +154,7 @@ def lineType3Info(filehandle,numdata,numvariables):
 	if (numvariables == 2):
 		while (i < numdata):
 			line = filehandle.readline()
-			data = eachlineinfo(line)
+			data = eachLineInfo(line)
 			# run_limit variable is introduced because in some files 
 			#(e.g. ENDF/B-VIII.0, Si28
 			#  1.000000+0 1.000000+0          0          2          1          21425 6 51
@@ -172,7 +174,7 @@ def lineType3Info(filehandle,numdata,numvariables):
 	if (numvariables == 1):
 		while (i < numdata):
 			line = filehandle.readline()
-			data = eachlineinfo(line)
+			data = eachLineInfo(line)
 			for j in range(6):
 				if (data[j] != ''):
 					xdata[i] = float(data[j])

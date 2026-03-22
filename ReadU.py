@@ -84,6 +84,8 @@ def readCheckInputFile(inpRMINDD, ofile_outRMINDD):
 
 		if (words[0] == 'Module_number'):
 			module_number = int(words[2])
+			dict_input_file_variables[module_number] = {}
+
 		if (words[0] == 'Module_name'):
 			dict_input_file_variables[module_number]['module_name'] = words[2]
 
@@ -186,6 +188,9 @@ def readCheckInputFile(inpRMINDD, ofile_outRMINDD):
 
 		if (words[0] == 'c_arcdpa'):
 			dict_input_file_variables[module_number]['c_arcdpa'] = float(words[2])
+
+		if (words[0] == 'Output_filenames'):
+			dict_input_file_variables[module_number]['output_filenames'] = words[2]
 
 		if (words[0] == 'Multigroup'):
 			dict_input_file_variables[module_number]['multigroup'] = int(words[2])

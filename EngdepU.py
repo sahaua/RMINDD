@@ -783,7 +783,7 @@ def Tintegheat1(A2,E,Q,bta,n3,f1,f2,f3):
 	
 # Collect the yields of five species of light charged particles
 # from File 6 MT = 5.
-	
+
 def gtYMf6Mt5():
 	Eyld = [[0]*200]*5; Yld = [[0]*200]*5
 	iZp = [0]*5; iAp = [0]*5; Nyld = [0]*5
@@ -843,15 +843,15 @@ def gtYMf6Mt5():
 						or int(ZAP) == iZp[3] or int(ZAP) == iZp[4]):
 							iflgp = 1
 						
-						if (int(ZAP) == iZp[0] and int(ceiling(AWP)) == iAp[0]):
+						if (int(ZAP) == iZp[0] and int(math.ceil(AWP)) == iAp[0]):
 							ip = 0
-						if (int(ZAP) == iZp[1] and int(ceiling(AWP)) == iAp[1]):
+						if (int(ZAP) == iZp[1] and int(math.ceil(AWP)) == iAp[1]):
 							ip = 1
-						if (int(ZAP) == iZp[2] and int(ceiling(AWP)) == iAp[2]):
+						if (int(ZAP) == iZp[2] and int(math.ceil(AWP)) == iAp[2]):
 							ip = 2
-						if (int(ZAP) == iZp[3] and int(ceiling(AWP)) == iAp[4]):
+						if (int(ZAP) == iZp[3] and int(math.ceil(AWP)) == iAp[3]):
 							ip = 3
-						if (int(ZAP) == iZp[4] and int(ceiling(AWP)) == iAp[5]):
+						if (int(ZAP) == iZp[4] and int(math.ceil(AWP)) == iAp[4]):
 							ip = 4
 		
 						if (iflgp == 0):
@@ -932,7 +932,7 @@ def gtYMf6Mt5():
 	## Calculation of neutron dpa and heating cross sections due to
 	## charged particle out reactions of neutrons.
 	
-def n_CPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
+def n_CPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu,out_filenames):
 	sdpat = numpy.zeros(NPt); snhtt = numpy.zeros(NPt)
 	signcpol = numpy.zeros(NPt); tot_energy_products1 = numpy.zeros(NPt); num_of_displ1 = numpy.zeros(NPt)
 	# for energy-balance heating
@@ -2008,7 +2008,7 @@ def n_CPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,lpr,mdisp,
 	# number 1601. This number is also used in the file name giving the
 	# total from (n,xn) reactions.
 
-def CONTROL_nxn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad):
+def CONTROL_nxn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames):
 	dpaxn1 = [0]*NPt; snhtxn1 = [0]*NPt; signxntot = [0]*NPt
 	num_of_displnxntot = [0]*NPt; tot_energy_productsnxntot = [0]*NPt
 		# snhtt = Heating cross section from (n,(i)n)				
@@ -2025,7 +2025,8 @@ def CONTROL_nxn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,
 		MTfind = MTnum[i]
 		iflMTpr = FindMT (MTfind, ifile_rawENDF6)
 		if (iflMTpr == 1):
-			(signxnl, num_disp, tot_en_products, sdpat, snhtt, iflpresent) = n_xn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTnum[i],NPt,Etu,mdisp,Ed,bad,cad)
+			(signxnl, num_disp, tot_en_products, sdpat, snhtt, iflpresent) = \
+			n_xn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTnum[i],NPt,Etu,mdisp,Ed,bad,cad,out_filenames)
 			if (iflpresent == 1):
 				MTc = MTnum[i]
 				print ( 'MT = ', MTc)
@@ -2037,8 +2038,8 @@ def CONTROL_nxn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,
 					snhtxn1[isum] = snhtxn1[isum] + snhtt[isum]
 
 	# 1601 = id for (n,xn) output file, 1 = DPA
-	printtofile (NPt,Etu,signxntot, num_of_displnxntot, dpaxn1,1601,0,1)
-	printtofile (NPt,Etu,signxntot, tot_energy_productsnxntot, snhtxn1,1601,0,2)
+	printToFile (NPt,Etu,signxntot, num_of_displnxntot, dpaxn1,1601,0,1,out_filenames)
+	printToFile (NPt,Etu,signxntot, tot_energy_productsnxntot, snhtxn1,1601,0,2,out_filenames)
 
 #==============================================
 
@@ -2049,7 +2050,7 @@ def CONTROL_nxn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,
 	# and kept in an arbitrarily assigned MT number 3001. This number is 
 	# also used in the file name giving the total from (n,CPO) reactions.
 
-def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad):
+def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames):
 
 	tmdpaMT103 = [0]*NPt; tmdpaMT104 = [0]*NPt
 	tmdpaMT105 = [0]*NPt; tmdpaMT106 = [0]*NPt; tmdpaMT107 = [0]*NPt
@@ -2188,7 +2189,7 @@ def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu
 			if (iflMTpr == 1):
 				(signcpol,num_of_displ1,tot_energy_products1, \
 				tot_energy_n_photons1,dpanth, snhtt, snhtt_EB, ifdpd, iflpresent) = \
-											n_CPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTtpnum[j],lpr,mdisp,Ed,bad,cad,NPt,Etu)
+					n_CPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTtpnum[j],lpr,mdisp,Ed,bad,cad,NPt,Etu,out_filenames)
 				if (iflpresent == 1):
 					MTc = MTtpnum[j]
 					print('MT = ', MTc)
@@ -2200,9 +2201,9 @@ def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu
 						num_of_displMT103 = num_of_displ1
 						tot_energy_productsMT103 = tot_energy_products1
 						tot_energy_n_photonsMT103 = tot_energy_n_photons1
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpaMT103,203,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtMT103,203,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtMT103_EB,203,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpaMT103,203,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtMT103,203,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtMT103_EB,203,0,3,out_filenames)
 					if (MTc == 204):
 						dpaMT104 = dpanth
 						snhtMT104 = snhtt
@@ -2211,9 +2212,9 @@ def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu
 						num_of_displMT104 = num_of_displ1
 						tot_energy_productsMT104 = tot_energy_products1
 						tot_energy_n_photonsMT104 = tot_energy_n_photons1
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpaMT104,204,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtMT104,204,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtMT104_EB,204,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpaMT104,204,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtMT104,204,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtMT104_EB,204,0,3,out_filenames)
 					if (MTc == 205):
 						dpaMT105 = dpanth
 						snhtMT105 = snhtt
@@ -2222,9 +2223,9 @@ def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu
 						num_of_displMT105 = num_of_displ1
 						tot_energy_productsMT105 = tot_energy_products1
 						tot_energy_n_photonsMT105 = tot_energy_n_photons1
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpaMT105,205,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtMT105,205,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtMT105_EB,205,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpaMT105,205,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtMT105,205,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtMT105_EB,205,0,3,out_filenames)
 					if (MTc == 206):
 						dpaMT106 = dpanth
 						snhtMT106 = snhtt
@@ -2233,9 +2234,9 @@ def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu
 						num_of_displMT106 = num_of_displ1
 						tot_energy_productsMT106 = tot_energy_products1
 						tot_energy_n_photonsMT106 = tot_energy_n_photons1
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpaMT106,206,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtMT106,206,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtMT106_EB,206,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpaMT106,206,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtMT106,206,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtMT106_EB,206,0,3,out_filenames)
 					if (MTc == 207):
 						dpaMT107 = dpanth
 						snhtMT107 = snhtt
@@ -2244,9 +2245,9 @@ def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu
 						num_of_displMT107 = num_of_displ1
 						tot_energy_productsMT107 = tot_energy_products1
 						tot_energy_n_photonsMT107 = tot_energy_n_photons1
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpaMT107,207,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtMT107,207,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtMT107_EB,207,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpaMT107,207,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtMT107,207,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtMT107_EB,207,0,3,out_filenames)
 				# for the iflpresent
  			# for the iflMTpr
  		# for loop
@@ -2276,7 +2277,7 @@ def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu
 
 				(signcpol,num_of_displ1,tot_energy_products1, \
 				tot_energy_n_photons1,dpanth, snhtt, snhtt_EB, ifdpd, iflpresent) = \
-											n_CPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,int(MTnum[j]),j,mdisp,Ed,bad,cad,NPt,Etu)
+					n_CPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,int(MTnum[j]),j,mdisp,Ed,bad,cad,NPt,Etu,out_filenames)
 				if (iflpresent == 1):
 					MTc = int(MTnum[j])
 					print('MT = ', MTc)
@@ -2329,9 +2330,9 @@ def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu
 
 					if (MTc < 600):
 
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
 
 						for isum in range (NPt):
 							dpa3[isum] = dpa3[isum] + dpanth[isum]
@@ -2354,9 +2355,9 @@ def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu
 							num_of_displMT103[isum] = num_of_displMT103[isum] + num_of_displ1[isum]
 							tot_energy_productsMT103[isum] = tot_energy_productsMT103[isum] + tot_energy_products1[isum]
 							tot_energy_n_photonsMT103[isum] = tot_energy_n_photonsMT103[isum] + tot_energy_n_photons1[isum]
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
 
 					if (ifdpd == 0 and ifdisc103 == 1):
 						for isum in range(NPt):
@@ -2367,9 +2368,9 @@ def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu
 							num_of_displMT103[isum] = num_of_displMT103[isum] + num_of_displ1[isum]
 							tot_energy_productsMT103[isum] = tot_energy_productsMT103[isum] + tot_energy_products1[isum]
 							tot_energy_n_photonsMT103[isum] = tot_energy_n_photonsMT103[isum] + tot_energy_n_photons1[isum]
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
 					if (ifdpd == 0 and ifdisc103 == 0):
 						dpaMT103 = dpanth 
 						snhtMT103 = snhtt
@@ -2378,18 +2379,18 @@ def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu
 						num_of_displMT103 = num_of_displ1
 						tot_energy_productsMT103 = tot_energy_products1
 						tot_energy_n_photonsMT103[isum] = tot_energy_n_photons1[isum]
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
 					if (MTc == 649):
 						iffldd103 = 1
 						print('..... taking disc.+cont. (n,p)')
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
-						printtofile(NPt,Etu,signcpoMT103,num_of_displMT103,dpaMT103,103,0,1)
-						printtofile(NPt,Etu,signcpoMT103,tot_energy_productsMT103,snhtMT103,103,0,2)
-						printtofile(NPt,Etu,signcpoMT103,tot_energy_n_photonsMT103,snhtMT103_EB,103,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
+						printToFile(NPt,Etu,signcpoMT103,num_of_displMT103,dpaMT103,103,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpoMT103,tot_energy_productsMT103,snhtMT103,103,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpoMT103,tot_energy_n_photonsMT103,snhtMT103_EB,103,0,3,out_filenames)
 				#-------------------
 
 				if (650 <= MTc and MTc <= 699):
@@ -2404,9 +2405,9 @@ def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu
 							num_of_displMT104[isum] = num_of_displMT104[isum] + num_of_displ1[isum]
 							tot_energy_productsMT104[isum] = tot_energy_productsMT104[isum] + tot_energy_products1[isum]
 							tot_energy_n_photonsMT104[isum] = tot_energy_n_photonsMT104[isum] + tot_energy_n_photons1[isum]
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
 					if (ifdpd == 0 and ifdisc104 == 1):
 						for isum in range (NPt):
 							dpaMT104[isum] = dpaMT104[isum] + dpanth[isum]
@@ -2416,9 +2417,9 @@ def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu
 							num_of_displMT104[isum] = num_of_displMT104[isum] + num_of_displ1[isum]
 							tot_energy_productsMT104[isum] = tot_energy_productsMT104[isum] + tot_energy_products1[isum]
 							tot_energy_n_photonsMT104[isum] = tot_energy_n_photonsMT104[isum] + tot_energy_n_photons1[isum]
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
 					if (ifdpd == 0 and ifdisc104 == 0):
 						dpaMT104 = dpanth
 						snhtMT104 = snhtt
@@ -2427,18 +2428,18 @@ def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu
 						num_of_displMT104 = num_of_displ1
 						tot_energy_productsMT104 = tot_energy_products1
 						tot_energy_n_photonsMT104 = tot_energy_n_photons1
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
 					if (MTc == 699):
 						iffldd104 = 1
 						print('..... taking disc.+cont. (n,d)')
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
-						printtofile(NPt,Etu,signcpoMT104,num_of_displMT104,dpaMT104,104,0,1)
-						printtofile(NPt,Etu,signcpoMT104,tot_energy_productsMT104,snhtMT104,104,0,2)
-						printtofile(NPt,Etu,signcpoMT104,tot_energy_n_photonsMT104,snhtMT104_EB,104,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
+						printToFile(NPt,Etu,signcpoMT104,num_of_displMT104,dpaMT104,104,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpoMT104,tot_energy_productsMT104,snhtMT104,104,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpoMT104,tot_energy_n_photonsMT104,snhtMT104_EB,104,0,3,out_filenames)
 				#-------------------
 
 				if (700 <= MTc and MTc <= 749):
@@ -2453,10 +2454,10 @@ def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu
 							num_of_displMT105[isum] = num_of_displMT105[isum] + num_of_displ1[isum]
 							tot_energy_productsMT105[isum] = tot_energy_productsMT105[isum] + tot_energy_products1[isum]
 							tot_energy_n_photonsMT105[isum] = tot_energy_n_photonsMT105[isum] + tot_energy_n_photons1[isum]
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
-					if (ifdpd == 0 and ifdisc105==1): 		
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
+					if (ifdpd == 0 and ifdisc105==1):
 						for isum in range(NPt):
 							dpaMT105[isum] = dpaMT105[isum] + dpanth[isum]
 							snhtMT105[isum] = snhtMT105[isum] + snhtt[isum]
@@ -2465,9 +2466,9 @@ def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu
 							num_of_displMT105[isum] = num_of_displMT105[isum] + num_of_displ1[isum]
 							tot_energy_productsMT105[isum] = tot_energy_productsMT105[isum] + tot_energy_products1[isum]
 							tot_energy_n_photonsMT105[isum] = tot_energy_n_photonsMT105[isum] + tot_energy_n_photons1[isum]
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
 					if (ifdpd == 0 and ifdisc105 == 0):
 						dpaMT105 = dpanth
 						snhtMT105 = snhtt
@@ -2476,18 +2477,18 @@ def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu
 						num_of_displMT105 = num_of_displ1
 						tot_energy_productsMT105 = tot_energy_products1
 						tot_energy_n_photonsMT105 = tot_energy_n_photons1
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
 					if (MTc == 749):
 						iffldd105 = 1
 						print('..... taking disc.+cont. (n,t)')
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
-						printtofile(NPt,Etu,signcpoMT105,num_of_displMT105,dpaMT105,105,0,1)
-						printtofile(NPt,Etu,signcpoMT105,tot_energy_productsMT105,snhtMT105,105,0,2)
-						printtofile(NPt,Etu,signcpoMT105,tot_energy_n_photonsMT105,snhtMT105_EB,105,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
+						printToFile(NPt,Etu,signcpoMT105,num_of_displMT105,dpaMT105,105,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpoMT105,tot_energy_productsMT105,snhtMT105,105,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpoMT105,tot_energy_n_photonsMT105,snhtMT105_EB,105,0,3,out_filenames)
 				#-------------------
 
 				if (750 <= MTc and MTc <= 799):
@@ -2502,9 +2503,9 @@ def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu
 							num_of_displMT106[isum] = num_of_displMT106[isum] + num_of_displ1[isum]
 							tot_energy_productsMT106[isum] = tot_energy_productsMT106[isum] + tot_energy_products1[isum]
 							tot_energy_n_photonsMT106[isum] = tot_energy_n_photonsMT106[isum] + tot_energy_n_photons1[isum]
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
 					if (ifdpd == 0 and ifdisc106 == 1):
 						for isum in range (NPt):
 							dpaMT106[isum] = dpaMT106[isum] + dpanth[isum]
@@ -2514,9 +2515,9 @@ def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu
 							num_of_displMT106[isum] = num_of_displMT106[isum] + num_of_displ1[isum]
 							tot_energy_productsMT106[isum] = tot_energy_productsMT106[isum] + tot_energy_products1[isum]
 							tot_energy_n_photonsMT106[isum] = tot_energy_n_photonsMT106[isum] + tot_energy_n_photons1[isum]
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
 					if (ifdpd == 0 and ifdisc106 == 0):
 						dpaMT106 = dpanth
 						snhtMT106 = snhtt
@@ -2525,18 +2526,18 @@ def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu
 						num_of_displMT106 = num_of_displ1
 						tot_energy_productsMT106 = tot_energy_products1
 						tot_energy_n_photonsMT106 = tot_energy_n_photons1
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
 					if (MTc == 799):
 						iffldd106 = 1
 						print('..... taking disc.+cont. (n,3He)')
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
-						printtofile(NPt,Etu,signcpoMT106,num_of_displMT106,dpaMT106,106,0,1)
-						printtofile(NPt,Etu,signcpoMT106,tot_energy_productsMT106,snhtMT106,106,0,2)
-						printtofile(NPt,Etu,signcpoMT106,tot_energy_n_photonsMT106,snhtMT106_EB,106,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
+						printToFile(NPt,Etu,signcpoMT106,num_of_displMT106,dpaMT106,106,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpoMT106,tot_energy_productsMT106,snhtMT106,106,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpoMT106,tot_energy_n_photonsMT106,snhtMT106_EB,106,0,3,out_filenames)
 				# -------------------
 				
 				if (800 <= MTc and MTc <= 849):
@@ -2551,9 +2552,9 @@ def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu
 							num_of_displMT107[isum] = num_of_displMT107[isum] + num_of_displ1[isum]
 							tot_energy_productsMT107[isum] = tot_energy_productsMT107[isum] + tot_energy_products1[isum]
 							tot_energy_n_photonsMT107[isum] = tot_energy_n_photonsMT107[isum] + tot_energy_n_photons1[isum]
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
 					if (ifdpd == 0 and ifdisc107 == 1):
 						for isum in range(NPt):
 							dpaMT107[isum] = dpaMT107[isum] + dpanth[isum]
@@ -2563,9 +2564,9 @@ def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu
 							num_of_displMT107[isum] = num_of_displMT107[isum] + num_of_displ1[isum]
 							tot_energy_productsMT107[isum] = tot_energy_productsMT107[isum] + tot_energy_products1[isum]
 							tot_energy_n_photonsMT107[isum] = tot_energy_n_photonsMT107[isum] + tot_energy_n_photons1[isum]
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
 					if (ifdpd == 0 and ifdisc107 == 0):
 						dpaMT107 = dpanth
 						snhtMT107 = snhtt
@@ -2574,18 +2575,18 @@ def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu
 						num_of_displMT107 = num_of_displ1
 						tot_energy_productsMT107 = tot_energy_products1
 						tot_energy_n_photonsMT107 = tot_energy_n_photons1
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
 					if (MTc == 849):
 						iffldd107 = 1
 						print('..... taking disc.+cont. (n,a)')
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
-						printtofile(NPt,Etu,signcpoMT107,num_of_displMT107,dpaMT107,107,0,1)
-						printtofile(NPt,Etu,signcpoMT107,tot_energy_productsMT107,snhtMT107,107,0,2)
-						printtofile(NPt,Etu,signcpoMT107,tot_energy_n_photonsMT107,snhtMT107_EB,107,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
+						printToFile(NPt,Etu,signcpoMT107,num_of_displMT107,dpaMT107,107,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpoMT107,tot_energy_productsMT107,snhtMT107,107,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpoMT107,tot_energy_n_photonsMT107,snhtMT107_EB,107,0,3,out_filenames)
 					# -------------------
 				# for the iflpresent
 			# for the iflMTpr
@@ -2602,9 +2603,9 @@ def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu
 			tot_energy_n_photonsMT103 = tmtot_energy_n_photonsMT103
 			if (ifdisdata103==1):
 				print('..... taking only MT=103')
-			printtofile(NPt,Etu,signcpoMT103,num_of_displMT103,dpaMT103,103,0,1)
-			printtofile(NPt,Etu,signcpoMT103,tot_energy_productsMT103,snhtMT103,103,0,2)
-			printtofile(NPt,Etu,signcpoMT103,tot_energy_n_photonsMT103,snhtMT103_EB,103,0,3)
+			printToFile(NPt,Etu,signcpoMT103,num_of_displMT103,dpaMT103,103,0,1,out_filenames)
+			printToFile(NPt,Etu,signcpoMT103,tot_energy_productsMT103,snhtMT103,103,0,2,out_filenames)
+			printToFile(NPt,Etu,signcpoMT103,tot_energy_n_photonsMT103,snhtMT103_EB,103,0,3,out_filenames)
 		# -------------------
 		if ((ifdisdata104 == 0 or iffldd104 == 0) and ifl104pr == 1):
 			dpaMT104 = tmdpaMT104
@@ -2616,9 +2617,9 @@ def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu
 			tot_energy_n_photonsMT104 = tmtot_energy_n_photonsMT104
 			if (ifdisdata104 == 1):
 				print('..... taking only MT=104')
-			printtofile(NPt,Etu,signcpoMT104,num_of_displMT104,dpaMT104,104,0,1)
-			printtofile(NPt,Etu,signcpoMT104,tot_energy_productsMT104,snhtMT104,104,0,2)
-			printtofile(NPt,Etu,signcpoMT104,tot_energy_n_photonsMT104,snhtMT104_EB,104,0,3)
+			printToFile(NPt,Etu,signcpoMT104,num_of_displMT104,dpaMT104,104,0,1,out_filenames)
+			printToFile(NPt,Etu,signcpoMT104,tot_energy_productsMT104,snhtMT104,104,0,2,out_filenames)
+			printToFile(NPt,Etu,signcpoMT104,tot_energy_n_photonsMT104,snhtMT104_EB,104,0,3,out_filenames)
 		# -------------------
 		if ((ifdisdata105 == 0 or iffldd105 == 0) and ifl105pr == 1):
 			dpaMT105 = tmdpaMT105
@@ -2630,9 +2631,9 @@ def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu
 			tot_energy_n_photonsMT105 = tmtot_energy_n_photonsMT105
 			if (ifdisdata105 == 1):
 				print('..... taking only MT=105')
-			printtofile(NPt,Etu,signcpoMT105,num_of_displMT105,dpaMT105,105,0,1)
-			printtofile(NPt,Etu,signcpoMT105,tot_energy_productsMT105,snhtMT105,105,0,2)
-			printtofile(NPt,Etu,signcpoMT105,tot_energy_n_photonsMT105,snhtMT105_EB,105,0,3)
+			printToFile(NPt,Etu,signcpoMT105,num_of_displMT105,dpaMT105,105,0,1,out_filenames)
+			printToFile(NPt,Etu,signcpoMT105,tot_energy_productsMT105,snhtMT105,105,0,2,out_filenames)
+			printToFile(NPt,Etu,signcpoMT105,tot_energy_n_photonsMT105,snhtMT105_EB,105,0,3,out_filenames)
 		# -------------------
 		if ((ifdisdata106 == 0 or iffldd106 == 0) and ifl106pr == 1):
 			dpaMT106 = tmdpaMT106
@@ -2644,9 +2645,9 @@ def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu
 			tot_energy_n_photonsMT106 = tmtot_energy_n_photonsMT106
 			if (ifdisdata106 == 1):
 				print('..... taking only MT=106')
-			printtofile(NPt,Etu,signcpoMT106,num_of_displMT106,dpaMT106,106,0,1)
-			printtofile(NPt,Etu,signcpoMT106,tot_energy_productsMT106,snhtMT106,106,0,2)
-			printtofile(NPt,Etu,signcpoMT106,tot_energy_n_photonsMT106,snhtMT106_EB,106,0,3)
+			printToFile(NPt,Etu,signcpoMT106,num_of_displMT106,dpaMT106,106,0,1,out_filenames)
+			printToFile(NPt,Etu,signcpoMT106,tot_energy_productsMT106,snhtMT106,106,0,2,out_filenames)
+			printToFile(NPt,Etu,signcpoMT106,tot_energy_n_photonsMT106,snhtMT106_EB,106,0,3,out_filenames)
 		# -------------------
 		if ((ifdisdata107 == 0 or iffldd107 == 0) and ifl107pr == 1):
 			dpaMT107 = tmdpaMT107
@@ -2658,9 +2659,9 @@ def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu
 			tot_energy_n_photonsMT107 = tmtot_energy_n_photonsMT107
 			if (ifdisdata107 == 1):
 				print('..... taking only MT=107')
-			printtofile(NPt,Etu,signcpoMT107,num_of_displMT107,dpaMT107,107,0,1)
-			printtofile(NPt,Etu,signcpoMT107,tot_energy_productsMT107,snhtMT107,107,0,2)
-			printtofile(NPt,Etu,signcpoMT107,tot_energy_n_photonsMT107,snhtMT107_EB,107,0,3)
+			printToFile(NPt,Etu,signcpoMT107,num_of_displMT107,dpaMT107,107,0,1,out_filenames)
+			printToFile(NPt,Etu,signcpoMT107,tot_energy_productsMT107,snhtMT107,107,0,2,out_filenames)
+			printToFile(NPt,Etu,signcpoMT107,tot_energy_n_photonsMT107,snhtMT107_EB,107,0,3,out_filenames)
 		# --------------------
 
 		# If required take Contributions coming from MT = 5
@@ -2892,8 +2893,8 @@ def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu
 				num_of_displ3 = interpolateXSToUniqueEnergyArray(E5, num_of_displMT5, Etu)
 				tot_energy_products3 = interpolateXSToUniqueEnergyArray(E5, tot_energy_productsMT5, Etu)
 	
-				printtofile(NPt,Etu,sigetMT5,num_of_displ3,dpaMT5,5,0,1)
-				printtofile(NPt,Etu,sigetMT5,tot_energy_products3,snhtMT5,5,0,2)
+				printToFile(NPt,Etu,sigetMT5,num_of_displ3,dpaMT5,5,0,1,out_filenames)
+				printToFile(NPt,Etu,sigetMT5,tot_energy_products3,snhtMT5,5,0,2,out_filenames)
 
 			# if for iflmt5absreac == 1
 		# if required, then take contributions from MT = 5
@@ -2950,9 +2951,9 @@ def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu
 			break
 	# --------------
 
-	printtofile(NPt,Etu,signcpo3,num_of_displ3,dpa3,3001,0,1)
-	printtofile(NPt,Etu,signcpo3,tot_energy_products3,snht3,3001,0,2)
-	printtofile(NPt,Etu,signcpo3,tot_energy_n_photons3,snht3_EB,3001,0,3)
+	printToFile(NPt,Etu,signcpo3,num_of_displ3,dpa3,3001,0,1,out_filenames)
+	printToFile(NPt,Etu,signcpo3,tot_energy_products3,snht3,3001,0,2,out_filenames)
+	printToFile(NPt,Etu,signcpo3,tot_energy_n_photons3,snht3_EB,3001,0,3,out_filenames)
 
 #=======Average Eg2 from Continuum and discrete (File 6)=======*	
 
@@ -3004,7 +3005,7 @@ def avegsqc(Ep1,fEEp,nfe,iplaw,ndisc,Yd,iFile):
 	## Calculation of neutron dpa and heating cross sections due to
 	## radiative capture of neutron reaction.
 
-def RADIATIVE_CAPTURE (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad):
+def RADIATIVE_CAPTURE (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames):
 	siget = numpy.zeros(NPt); sdpa = numpy.zeros(NPt); snht = numpy.zeros(NPt)
 	s1 = numpy.zeros(NPt); s2 = numpy.zeros(NPt)
 	num_of_displ = numpy.zeros(NPt); tot_energy_products = numpy.zeros(NPt)
@@ -3660,15 +3661,15 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NP
 			sdpa[i] = abs(siget[i]*dn1)
 			snht[i] = abs(siget[i]*dn2)
 
-	printtofile(NPt,Etu,siget,num_of_displ,sdpa,102,0,1)
-	printtofile(NPt,Etu,siget,tot_energy_products,snht,102,0,2)
+	printToFile(NPt,Etu,siget,num_of_displ,sdpa,102,0,1,out_filenames)
+	printToFile(NPt,Etu,siget,tot_energy_products,snht,102,0,2,out_filenames)
 
 #=========== ELASTIC INTERACTION ===========*
 		
     # Calculation of neutron dpa and heating cross sections due to the elastic
 	# scattering interactions.
 	
-def ELASTIC_SCATTERING(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad):
+def ELASTIC_SCATTERING(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames):
 
 	siget = [0]*NPt; sdpat = [0]*NPt; snht = [0]*NPt
 	alfull = numpy.zeros((NPt,65)); fmuE = numpy.zeros((NPt,64))
@@ -3941,10 +3942,9 @@ def ELASTIC_SCATTERING(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NP
 		sdpat[i] = siget[i]*dn1
 		snht[i] = siget[i]*dn2
 
-	printtofile (NPt,Etu,siget,num_of_displ,sdpat,2,0,1) 
-	printtofile (NPt,Etu,siget,tot_energy_products,snht,2,0,2)
+	printToFile (NPt,Etu,siget,num_of_displ,sdpat,2,0,1,out_filenames) 
+	printToFile (NPt,Etu,siget,tot_energy_products,snht,2,0,2,out_filenames)
 
-#-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 
 # NOT USED	
@@ -3968,7 +3968,7 @@ def AKPel(A,Z,En,Ed):
 	# Calculation of neutron dpa and heating cross sections due to the inelastic
 	# scattering interactions.
 	
-def INELASTIC_SCATTERING(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad):
+def INELASTIC_SCATTERING(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames):
 
 	sdpa = [0]*NPt; sdpatemp = [0]*NPt; snhttemp = [0]*NPt
 	snht = [0]*NPt; alc = [0]*65; alfull = numpy.zeros((NPt,65))
@@ -4545,15 +4545,15 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,
 					num_of_displ4[i] = num_of_displ4[i] + num_of_displ_temp[i]
 					tot_energy_products4[i] = tot_energy_products4[i] + tot_energy_products_temp[i]
 
-			printtofile (NPt, Etu, siginel_temp, num_of_displ_temp, sdpatemp, mta, 0, 1)
-			printtofile (NPt, Etu, siginel_temp, tot_energy_products_temp, snhttemp, mta, 0, 2)
+			printToFile (NPt, Etu, siginel_temp, num_of_displ_temp, sdpatemp, mta, 0, 1, out_filenames)
+			printToFile (NPt, Etu, siginel_temp, tot_energy_products_temp, snhttemp, mta, 0, 2, out_filenames)
 #--------------------------------------------------------------------	
 
 		if (mta == 91):
 			break
 
-	printtofile (NPt,Etu,tot_siginel4,num_of_displ4,sdpa,4,0,1)
-	printtofile (NPt,Etu,tot_siginel4,tot_energy_products4,snht,4,0,2)
+	printToFile (NPt,Etu,tot_siginel4,num_of_displ4,sdpa,4,0,1,out_filenames)
+	printToFile (NPt,Etu,tot_siginel4,tot_energy_products4,snht,4,0,2,out_filenames)
 
 #=============================================
 
@@ -4562,7 +4562,7 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,
 	# Calculation of neutron dpa and heating cross sections due to
 	# (n, 2n), (n, 3n) and (n, 4n) reactions.
 
-def n_xn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,NPt,Etu,mdisp,Ed,bad,cad):
+def n_xn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,NPt,Etu,mdisp,Ed,bad,cad,out_filenames):
 
 	sdpat = [0]*NPt; snhtt = [0]*NPt; signxnl = [0]*NPt; alc = [0]*65
 	num_of_displ = [0]*NPt; tot_energy_products = [0]*NPt
@@ -4940,9 +4940,9 @@ def n_xn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,NPt,Etu,mdi
 
 		sdpat = interpolateXSToUniqueEnergyArray (E,sdpa,Etu)
 		signxnl = interpolateXSToUniqueEnergyArray (E,sig,Etu)
-		printtofile (NPt,Etu,signxnl,num_of_displ,sdpat,MTi,0,1)
+		printToFile (NPt,Etu,signxnl,num_of_displ,sdpat,MTi,0,1,out_filenames)
 		snhtt = interpolateXSToUniqueEnergyArray (E,snht,Etu)
-		printtofile (NPt,Etu,signxnl,tot_energy_products,snhtt,MTi,0,2)
+		printToFile (NPt,Etu,signxnl,tot_energy_products,snhtt,MTi,0,2,out_filenames)
 
 	return(signxnl, num_of_displ, tot_energy_products, sdpat, snhtt, iflpresent)
 #============================================
@@ -4951,7 +4951,7 @@ def n_xn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,NPt,Etu,mdi
 	# Calculation of neutron dpa and heating cross sections due to
 	# all inexplicitly given neutron reactions.
 
-def anytnMF6MT5 (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad):
+def anytnMF6MT5 (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames):
 	sdpat = [0]*NPt; snhtt = [0]*NPt; snhtt_EB = [0]*NPt
 	num_of_displ = [0]*NPt; tot_energy_products = [0]*NPt; tot_energy_n_photons = [0]*NPt
 	siget = [0]*NPt
@@ -5351,9 +5351,9 @@ def anytnMF6MT5 (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,
 					snhtt[j] = 0
 				break
 
-		printtofile (NPt,Etu,siget,num_of_displ,sdpat,5001,0,1)
-		printtofile (NPt,Etu,siget,tot_energy_products,snhtt,5001,0,2)
-		printtofile (NPt,Etu,siget,tot_energy_n_photons,snhtt_EB,5001,0,3)
+		printToFile (NPt,Etu,siget,num_of_displ,sdpat,5001,0,1,out_filenames)
+		printToFile (NPt,Etu,siget,tot_energy_products,snhtt,5001,0,2,out_filenames)
+		printToFile (NPt,Etu,siget,tot_energy_n_photons,snhtt_EB,5001,0,3,out_filenames)
 	
 	# **** the above is done only if MF3 for that MT is present ****
 
@@ -5368,7 +5368,7 @@ According to the input options point and multigrouped cross sections and other o
 as per the call.
 '''
 def controlAllReactionsHeatingDPA (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,nra,nreac,NPt,Etu,\
-mdisp,Ed,bad,cad,mgyn,igtype):
+mdisp,Ed,bad,cad,mgyn,igtype,out_filenames):
 	## call reactions
 	## binary variables required in case  nra[i]=7
 	irct1y=0; irct2y=0; irct3y=0; irct4y=0; irct5y=0; irct6y=0
@@ -5377,60 +5377,60 @@ mdisp,Ed,bad,cad,mgyn,igtype):
 
 		irct = nra[i]
 		if (irct == 1):
-			RADIATIVE_CAPTURE (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad) # MT=102
+			RADIATIVE_CAPTURE (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames) # MT=102
 			if (mgyn==1):
-				groupmulti(insp,102,igtype,1) 	# 102=id for output file, 1=DPA
-				groupmulti(insp,102,igtype,2) 	# 102=id for output file, 2=Heating
+				groupmulti(insp,102,igtype,1,out_filenames) 	# 102=id for output file, 1=DPA
+				groupmulti(insp,102,igtype,2,out_filenames) 	# 102=id for output file, 2=Heating
 			irct1y=1
 		if (irct==2):
-			ELASTIC_SCATTERING (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad) 	# MT=2
+			ELASTIC_SCATTERING (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames) 	# MT=2
 			if (mgyn==1): 
-				groupmulti(insp,2,igtype,1)
-				groupmulti(insp,2,igtype,2)
+				groupmulti(insp,2,igtype,1,out_filenames)
+				groupmulti(insp,2,igtype,2,out_filenames)
 			irct2y=1
 		if (irct==3):
-			INELASTIC_SCATTERING (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad) 		# MT=51 to 91
+			INELASTIC_SCATTERING (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames) 		# MT=51 to 91
 			if (mgyn==1):
-				groupmulti(insp,4,igtype,1)
-				groupmulti(insp,4,igtype,2)
+				groupmulti(insp,4,igtype,1,out_filenames)
+				groupmulti(insp,4,igtype,2,out_filenames)
 			irct3y=1
 		if (irct==4):							 # (n,2n), (n,3n) and (n,4n)
-			CONTROL_nxn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad) 
+			CONTROL_nxn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames) 
 			if (mgyn==1):
-				groupmulti(insp,1601,igtype,1)
-				groupmulti(insp,1601,igtype,2)
+				groupmulti(insp,1601,igtype,1,out_filenames)
+				groupmulti(insp,1601,igtype,2,out_filenames)
 			irct4y=1
 		if (irct==5):
-			CONTROL_nCPO(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad) 		# (n,CPO)
+			CONTROL_nCPO(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames) 		# (n,CPO)
 			if (mgyn==1):
-				groupmulti(insp,3001,igtype,1)
-				groupmulti(insp,3001,igtype,2)
+				groupmulti(insp,3001,igtype,1,out_filenames)
+				groupmulti(insp,3001,igtype,2,out_filenames)
 			irct5y=1
 		if (irct==6):
-			anytnMF6MT5(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad)		# (n, anything)
+			anytnMF6MT5(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames)		# (n, anything)
 			if (mgyn==1):
-				groupmulti(insp,5001,igtype,1)
-				groupmulti(insp,5001,igtype,2)
-				groupmulti(insp,5001,igtype,3)
+				groupmulti(insp,5001,igtype,1,out_filenames)
+				groupmulti(insp,5001,igtype,2,out_filenames)
+				groupmulti(insp,5001,igtype,3,out_filenames)
 			irct6y=1
 		if (irct==7): 				# Total DPA and Heating due to incident neutron
 			if(irct1y==0):
-				RADIATIVE_CAPTURE (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad)
+				RADIATIVE_CAPTURE (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames)
 			if(irct2y==0):
-				ELASTIC_SCATTERING (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad)
+				ELASTIC_SCATTERING (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames)
 			if(irct3y==0):
-				INELASTIC_SCATTERING (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad)
+				INELASTIC_SCATTERING (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames)
 			if(irct4y==0):
-				CONTROL_nxn(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad)
+				CONTROL_nxn(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames)
 			if(irct5y==0):
-				CONTROL_nCPO(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad)
+				CONTROL_nCPO(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames)
 			if(irct6y==0):
-				anytnMF6MT5(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad)
-			total(NPt,Etu)				# Add contributions to DPA,Heating from all partial reactions
+				anytnMF6MT5(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames)
+			total(NPt,Etu,out_filenames)				# Add contributions to DPA,Heating from all partial reactions
 			if (mgyn==1):
-				groupmulti(insp,1,igtype,1) 		# 1= id for output file, 1 = DPA
-				groupmulti(insp,1,igtype,2) 		# 1= id for output file, 2 = Heating
-				groupmulti(insp,1,igtype,3) 		# 1= id for output file, 3 = Heating_Energy_balance
+				groupmulti(insp,1,igtype,1,out_filenames) 		# 1= id for output file, 1 = DPA
+				groupmulti(insp,1,igtype,2,out_filenames) 		# 1= id for output file, 2 = Heating
+				groupmulti(insp,1,igtype,3,out_filenames) 		# 1= id for output file, 3 = Heating_Energy_balance
 ## ===========================
 
 '''
@@ -5438,7 +5438,7 @@ mdisp,Ed,bad,cad,mgyn,igtype):
 Calculation of total neutron dpa and heating cross sections
 by adding together the partial contributions from individual reactions.
 '''
-def total (NPt, Etu):
+def total (NPt, Etu, out_filenames):
 	print("n, all .....")
 
 	for iprd in range(1, 4):
@@ -5448,43 +5448,43 @@ def total (NPt, Etu):
 		for nrct in range (1, 7):
 			s1 = [0]*NPt
 			if (nrct == 1 and iprd == 1):
-				ifile = open("ndpa2.txt", 'r')
+				ifile = open(out_filenames+"ndpa2.txt", 'r')
 			if (nrct == 2 and iprd == 1):
-				ifile = open("ndpa4.txt", 'r')
+				ifile = open(out_filenames+"ndpa4.txt", 'r')
 			if (nrct == 3 and iprd == 1):
-				ifile = open("ndpa1601.txt", 'r')
+				ifile = open(out_filenames+"ndpa1601.txt", 'r')
 			if (nrct == 4 and iprd == 1):
-				ifile = open("ndpa102.txt", 'r') 
+				ifile = open(out_filenames+"ndpa102.txt", 'r') 
 			if (nrct == 5 and iprd == 1):
-				ifile = open("ndpa3001.txt", 'r')
+				ifile = open(out_filenames+"ndpa3001.txt", 'r')
 			if (nrct == 6 and iprd == 1):
-				ifile = open("ndpa5001.txt", 'r') 
+				ifile = open(out_filenames+"ndpa5001.txt", 'r') 
 
 			if (nrct == 1 and iprd == 2):
-				ifile = open("nheat2.txt", 'r')
+				ifile = open(out_filenames+"nheat2.txt", 'r')
 			if (nrct == 2 and iprd == 2):
-				ifile = open("nheat4.txt", 'r')
+				ifile = open(out_filenames+"nheat4.txt", 'r')
 			if (nrct == 3 and iprd == 2):
-				ifile = open("nheat1601.txt", 'r')
+				ifile = open(out_filenames+"nheat1601.txt", 'r')
 			if (nrct == 4 and iprd == 2):
-				ifile = open("nheat102.txt", 'r') 
+				ifile = open(out_filenames+"nheat102.txt", 'r') 
 			if (nrct == 5 and iprd == 2):
-				ifile = open("nheat3001.txt", 'r') 
+				ifile = open(out_filenames+"nheat3001.txt", 'r') 
 			if (nrct == 6 and iprd == 2):
-				ifile = open("nheat5001.txt", 'r')
+				ifile = open(out_filenames+"nheat5001.txt", 'r')
 
 			if (nrct == 1 and iprd == 3):
-				ifile = open("nheat2.txt", 'r')
+				ifile = open(out_filenames+"nheat2.txt", 'r')
 			if (nrct == 2 and iprd == 3):
-				ifile = open("nheat4.txt", 'r')
+				ifile = open(out_filenames+"nheat4.txt", 'r')
 			if (nrct == 3 and iprd == 3):
-				ifile = open("nheat1601.txt", 'r')
+				ifile = open(out_filenames+"nheat1601.txt", 'r')
 			if (nrct == 4 and iprd == 3):
-				ifile = open("nheat102.txt", 'r') 
+				ifile = open(out_filenames+"nheat102.txt", 'r') 
 			if (nrct == 5 and iprd == 3):
-				ifile = open("nheat_EB3001.txt", 'r') 
+				ifile = open(out_filenames+"nheat_EB3001.txt", 'r') 
 			if (nrct == 6 and iprd == 3):
-				ifile = open("nheat_EB5001.txt", 'r')
+				ifile = open(out_filenames+"nheat_EB5001.txt", 'r')
 
 			npmt = int(ifile.readline().split()[0])
 			if (npmt != 0):
@@ -5497,21 +5497,20 @@ def total (NPt, Etu):
 					s1[i] = float(data[3])
 					tot_dhsig[i] = tot_dhsig[i] + s1[i]
 			ifile.close()
-		printtofile (NPt,Etu,tot_sig,tot_dhval,tot_dhsig,1,0,iprd)
-
+		printToFile (NPt,Etu,tot_sig,tot_dhval,tot_dhsig,1,0,iprd,out_filenames)
 
 # ===================================================================
 
 # =======Print the dpa / heating cross sections to files=======*
-		
+
 	# The point and multigrouped dpa / heating cross sections are
 	# written in files in the energy -- cross sections two-column format.
 	# The files are named according to point / grouped, dpa / heat and
 	# the MT number of the partial contribution. The total point dpa 
 	# and heating cross sections are written only up to 20 MeV since in 
 	# general information above 20 MeV is available only for (n,n) partial.
-		
-def printtofile (NPt,Etu,siget,disp_heat_value,sdpat,MTtp,iflgrouped,ifldh):
+
+def printToFile (NPt,Etu,siget,disp_heat_value,sdpat,MTtp,iflgrouped,ifldh,out_filenames):
 	MTname = str(MTtp)
 
 	# NPt = Total points in Etu, sdpat=cross section, 
@@ -5519,33 +5518,33 @@ def printtofile (NPt,Etu,siget,disp_heat_value,sdpat,MTtp,iflgrouped,ifldh):
 	# point data: 1, grouped data, ifldh, 1 = DPA: 2 = Heating 
 	# Create o/p files with name as: [ndpa(grouped)+id for output file],
 	# [nheat(grouped)+ id for outputfile].
-		
+
 	if (ifldh == 1):
 		if (iflgrouped == 0):
-			dpafilename_point = 'ndpa' + MTname + '.txt'
+			dpafilename_point = out_filenames + 'ndpa' + MTname + '.txt'
 			ofile100 = open(dpafilename_point, 'w')
 		if (iflgrouped == 1):
-			dpafilename_grouped = 'ndpagrouped' + MTname + '.txt'
+			dpafilename_grouped = out_filenames + 'ndpagrouped' + MTname + '.txt'
 			ofile100 = open(dpafilename_grouped, 'w')
 
 	if (ifldh==2):
 		if (iflgrouped == 0):
-			heatfilename_point = 'nheat' + MTname + '.txt'
+			heatfilename_point = out_filenames + 'nheat' + MTname + '.txt'
 			ofile100 = open(heatfilename_point, 'w')
 		if (iflgrouped == 1):
-			heatfilename_grouped = 'nheatgrouped' + MTname + '.txt'
+			heatfilename_grouped = out_filenames + 'nheatgrouped' + MTname + '.txt'
 			ofile100 = open(heatfilename_grouped, 'w')
 
 	if (ifldh==3):
 		if (iflgrouped == 0):
-			heatfilename_point = 'nheat_EB' + MTname + '.txt'
+			heatfilename_point = out_filenames + 'nheat_EB' + MTname + '.txt'
 			ofile100 = open(heatfilename_point, 'w')
 		if (iflgrouped == 1):
-			heatfilename_grouped = 'nheatgrouped_EB' + MTname + '.txt'
+			heatfilename_grouped = out_filenames + 'nheatgrouped_EB' + MTname + '.txt'
 			ofile100 = open(heatfilename_grouped, 'w')
 
 	NPtlast = NPt
-	
+
 	print(NPtlast, file = ofile100)
 	if (NPt != 0):
 		for i in range(NPtlast):
@@ -5632,7 +5631,7 @@ def FindMT(MTfind, ifile_rawENDF6):
 	## Multigroup, according to requirement, the point dpa and heating
 	## cross sections into the chosen neutron energy group structure.
 	
-def groupmulti(insp,MTg,igtype,ifldh):
+def groupmulti(insp,MTg,igtype,ifldh,out_filenames):
 	MTgname =  str(MTg)
 
 	print("Group .....")
@@ -5648,13 +5647,13 @@ def groupmulti(insp,MTg,igtype,ifldh):
 		ifile.close()
 
 	if (ifldh == 1):
-		filename = 'ndpa' + MTgname + '.txt'
+		filename = out_filenames + 'ndpa' + MTgname + '.txt'
 		ifile = open(filename, 'r')
 	if (ifldh == 2):
-		filename = 'nheat' + MTgname + '.txt'
+		filename = out_filenames + 'nheat' + MTgname + '.txt'
 		ifile = open(filename, 'r')
 	if (ifldh == 3):
-		filename = 'nheat_EB' + MTgname + '.txt'
+		filename = out_filenames + 'nheat_EB' + MTgname + '.txt'
 		ifile = open(filename, 'r')
 
 	NP = int(ifile.readline().split()[-1])
@@ -5818,7 +5817,7 @@ def groupmulti(insp,MTg,igtype,ifldh):
 			if (dhcs != 0 and denominator != 0):
 				gsdpa[i] = dhcs/denominator
 
-		printtofile(Ngl,Eg,gsiget,gdhval,gsdpa,MTg,1,ifldh)
+		printToFile(Ngl,Eg,gsiget,gdhval,gsdpa,MTg,1,ifldh,out_filenames)
 
 #******************************** WEIGHT SPECTRUM GENERATOR **************************		
  		

@@ -13,12 +13,12 @@ Major changes:
 
 import numpy
 import math
-import os
+import UtilsU
 
 def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6, NPt, Etu, this_module):
 
 	(eliso, en_group_type, input_n_spec, transmgas_group_file, transmnucl_group_file, \
-	transmgas_point_file, transmnucl_MF5_point_file, transmnucl_net_group_file, NPt, Etu) = (this_module['element_isotope_name'], \
+	transmgas_point_file, transmnucl_MF5_point_file, transmnucl_net_group_file) = (this_module['element_isotope_name'], \
 	this_module['en_group_type'], this_module['input_n_spec'], this_module['transmgas_group_file'], \
 	this_module['transmnucl_group_file'], this_module['transmgas_point_file'], \
 	this_module['transmnucl_MF5_point_file'], this_module['transmnucl_net_group_file'])
@@ -27,13 +27,7 @@ def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedEN
 ## due to charged particle production reactions and (n,xn) and (n,g)
 ## reactions of neutron.
 
-	tnEyld = numpy.zeros((200,200)); tnYld = numpy.zeros((200,200))
-	tnNBTp = numpy.zeros((200,20)); tnINTrp = numpy.zeros((200,20))
-	tnNyld = [0]*200; tnZp = [0]*200
-
-	Eyld = numpy.zeros((5,200)); Yld = numpy.zeros((5,200))
-	Nyld = [0]*5; iflMTtppr = [0]*5
-	NBTp = numpy.zeros((5,20)); INTrp = numpy.zeros((5,20))
+	iflMTtppr = [0]*5
 	NBTpp = [0]*20; NBTpd = [0]*20; NBTpt = [0]*20; NBTp3He = [0]*20; NBTpal = [0]*20
 	INTrpp = [0]*20; INTrpd = [0]*20; INTrpt = [0]*20; INTrp3He = [0]*20; INTrpal = [0]*20
 
@@ -60,19 +54,19 @@ def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedEN
 	MTnum = [5,11,16,17,22,23,24,25,28,29,30,32,33,34,35,36,37,41, \
 	42,44,45,102,103,104,105,106,107,108,109,110,111,112,113,114, \
 	115,116,117,203,204,205,206,207]
-	
+
 	## Read and Store the Values of Z and A of the target nucleus
-	
+
 	ifile_preprocessedENDF6.seek(0, 0)
 	while True:
 		line = ifile_preprocessedENDF6.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if ( MT == 0 and MF == 0 ):
 			line = ifile_preprocessedENDF6.readline()
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			iflspace = 0
 			for element in data:
 				if (element == ''):
@@ -84,16 +78,13 @@ def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedEN
 				MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
 
 				Ztarget = int(ZAv)/1000
-				Atarget =  mod(int(ZAv),1000)
+				Atarget =  numpy.mod(int(ZAv),1000)
 		else:
 			break
 
-	## REMEMBER to SEND to this program the unique ENERGY ARRAY and total number of points
-	## extracted from FILE 1 ........<<<<  
-	
-	print ( NPt, ' Total cross section energy points', file = ofile_outRMINDD)
-	
-	for i in range (NP):
+	print (NPt, ' Total cross section energy points', file = ofile_outRMINDD)
+
+	for i in range (NPt):
 		if (Etu[i] >= 20.0E+06):
 			ifull = i
 			break
@@ -101,33 +92,32 @@ def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedEN
 	print ( NP, ' Energy points up to 20 MeV', file = ofile_outRMINDD)
 
 	print ( 'Reading Data .....' )
-	
+
 	## Gas producion cross sections MT = 203, ...., 207	
 	## may be given sometimes; nreac = 38 to 42 => these MTs
-	
-	
+
 	sig5tot = [0]*NPt; sigparttot = [0]*NPt; sppoint = [0]*NPt; sdpoint = [0]*NPt
 	strpoint = [0]*NPt; s3Hepoint = [0]*NPt; sapoint = [0]*NPt; sigtpoint = [0]*NPt
-	
-	for nreac in range(38, 43):
+
+	for nreac in range(38, 42):
 		ifile_preprocessedENDF6.seek(0, 0)
-	
+
 		iflag[nreac] = 0
 		iflMTtppr[nreac-38] = 0
-	
+
 		MTi = MTnum[nreac]
-	
+
 		## extraction of cross sections
 		NP1 = 0
 		while (True):
 			line = ifile_preprocessedENDF6.readline()
 			if (line == ''):
 				break
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 			if (MT == 0 and MF != 0):
 				line = ifile_preprocessedENDF6.readline()
-				(ZAv,AWRv,L0,L1,NKv,L2,MAT,MF,MT) = line_type1_info(line)
+				(ZAv,AWRv,L0,L1,NKv,L2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 			if (MAT != -1):
 				if (MF == 3):
 					if (MT == MTi):
@@ -138,12 +128,12 @@ def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedEN
 						ZA = ZAv
 						AWR = AWRv
 						line = ifile_preprocessedENDF6.readline()
-						data = eachlineinfo(line)
+						data = UtilsU.eachLineInfo(line)
 						QM = float(data[0]); QI =  float(data[1])
 						NR = int(data[4]); NP1 = int(data[5])
 						E1 = numpy.zeros(NP1); sig1 = numpy.zeros(NP1)
 						ifile_preprocessedENDF6.readline()
-						(E1, sig1) = line_type3_info(ifile_preprocessedENDF6,NP1,2)
+						(E1, sig1) = UtilsU.lineType3Info(ifile_preprocessedENDF6,NP1,2)
 			else:
 				break
 	
@@ -174,11 +164,11 @@ def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedEN
 			line = ifile_preprocessedENDF6.readline()
 			if (line == ''):
 				break
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 			if (MT == 0 and MF != 0):
 				line = ifile_preprocessedENDF6.readline()
-				(ZAv,AWRv,L0,L1,NKv,L2,MAT,MF,MT) = line_type1_info(line)
+				(ZAv,AWRv,L0,L1,NKv,L2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 			if (MAT != -1):
 				if (MF == 3):
 					if (MT == MTi):
@@ -197,12 +187,12 @@ def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedEN
 						ZA = ZAv
 						AWR = AWRv
 						line = ifile_preprocessedENDF6.readline()
-						data = eachlineinfo(line)
+						data = UtilsU.eachLineInfo(line)
 						QM = float(data[0]); QI =  float(data[1])
 						NR = int(data[4]); NP1 = int(data[5])
 						E1 = numpy.zeros(NP1); sig1 = numpy.zeros(NP1)
 						ifile_preprocessedENDF6.readline()
-						(E1, sig1) = line_type3_info(ifile_preprocessedENDF6,NP1,2)
+						(E1, sig1) = UtilsU.lineType3Info(ifile_preprocessedENDF6,NP1,2)
 			else:
 				break
 
@@ -215,7 +205,7 @@ def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedEN
 			
 	## The calculation from MT = 600 to 849 is performed when 
 	## MT = 103, ....., 107 are not given. These are performed in
-	## the subroutine "adddiscnth".
+	## the function "adddiscnth".
 
 	print('', file = ofile_outRMINDD)
 
@@ -223,7 +213,7 @@ def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedEN
 
 	if (iflp103 == 0):
 		E103 = numpy.zeros(NPt); sig103 = numpy.zeros(NPt)
-		sig103 = adddiscnth(iflMTpr, 103, Etu, NPt)
+		sig103 = adddiscnth(ifile_preprocessedENDF6,iflMTpr, 103, Etu, NPt)
 		if (iflMTpr == 1):
 			print('Discrete + Continuum (n, p) data represented', file = ofile_outRMINDD)
 			print("From discrete (n,p) .....")
@@ -234,7 +224,7 @@ def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedEN
 
 	if (iflp104 == 0):
 		E104 = numpy.zeros(NPt); sig104 = numpy.zeros(NPt)
-		sig104 = adddiscnth(iflMTpr, 104, Etu, NPt)
+		sig104 = adddiscnth(ifile_preprocessedENDF6,iflMTpr, 104, Etu, NPt)
 		if (iflMTpr == 1):
 			print('Discrete + Continuum (n, d) data represented', file = ofile_outRMINDD)
 			print("From discrete (n,d) .....")
@@ -245,7 +235,7 @@ def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedEN
 
 	if (iflp105 == 0):
 		E105 = numpy.zeros(NPt); sig105 = numpy.zeros(NPt)
-		sig105 = adddiscnth(iflMTpr, 105, Etu, NPt)
+		sig105 = adddiscnth(ifile_preprocessedENDF6,iflMTpr, 105, Etu, NPt)
 		if (iflMTpr == 1):
 			print('Discrete + Continuum (n, t) data represented', file = ofile_outRMINDD)
 			print("From discrete (n,t) .....")
@@ -256,7 +246,7 @@ def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedEN
 
 	if (iflp106 == 0):
 		E106 = numpy.zeros(NPt); sig106 = numpy.zeros(NPt)
-		sig106 = adddiscnth(iflMTpr, 106, Etu, NPt)
+		sig106 = adddiscnth(ifile_preprocessedENDF6,iflMTpr, 106, Etu, NPt)
 		if (iflMTpr == 1):
 			print('Discrete + Continuum (n, 3He) data represented', file = ofile_outRMINDD)
 			print("From discrete (n,3He) .....")
@@ -267,7 +257,7 @@ def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedEN
 
 	if (iflp107 == 0):
 		E107 = numpy.zeros(NPt); sig107 = numpy.zeros(NPt)
-		sig107 = adddiscnth(iflMTpr, 107, Etu, NPt)
+		sig107 = adddiscnth(ifile_preprocessedENDF6,iflMTpr, 107, Etu, NPt)
 		if (iflMTpr == 1):
 			print('Discrete + Continuum (n, a) data represented', file = ofile_outRMINDD)
 			print("From discrete (n,a) .....")
@@ -278,7 +268,7 @@ def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedEN
 	## from MF = 6, MT = 5 in order to compute the respective gas production 
 	## contributions from cross sections in MF = 3, MT = 5.
 
-	(NBTp,INTrp,Nyld,Eyld,Yld) = gtYMf6Mt5 (tnNBTp,tnINTrp,tnNyld,tnEyld,tnYld,tnZp,itnt)
+	(NBTp,INTrp,Nyld,Eyld,Yld,tnNBTp,tnINTrp,tnNyld,tnEyld,tnYld,tnZp,itnt) = gtYMf6Mt5(ifile_rawENDF6)
 
 	Eyldp = []; Eyldd = []; Eyldtr = []; Eyld3He = []; EyldHe = []; Yldp = []
 	Yldd = []; Yldtr = []; Yld3He = []; YldHe = []; NBTpp = []; NBTpd = []; NBTpt = []
@@ -301,21 +291,22 @@ def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedEN
 	NBTpt = numpy.append(NBTpt, NBTp[2][:])
 	NBTp3He = numpy.append(NBTp3He, NBTp[3][:])
 	NBTpal = numpy.append(NBTpal, NBTp[4][:])
-	
+
 	INTrpp = numpy.append(INTrpp, INTrp[0][:])
 	INTrpd = numpy.append(INTrpd, INTrp[1][:])
 	INTrpt = numpy.append(INTrpt, INTrp[2][:])
 	INTrp3He = numpy.append(INTrp3He, INTrp[3][:])
 	INTrpal = numpy.append(INTrpal, INTrp[4][:])
-	
+
 	print('', file = ofile_outRMINDD)
 	print('Multigroup activation cross sections asked in:', file = ofile_outRMINDD)
 	print('', file = ofile_outRMINDD)
-	
+
 	if (en_group_type == 0):
 		print( '0 -- User-defined energy groups', file = ofile_outRMINDD)
 		ifile = open('Energy-GroupLimits.txt', 'r')
 		Ngl = int(ifile.readline().split()[0])
+		Eg = numpy.zeros(Ngl)
 		for i in reversed(range(Ngl)):
 			Eg[i] = float(ifile.readline().split()[0])
 		ifile.close()
@@ -372,7 +363,7 @@ def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedEN
 	YldHeg = terpol(NBTpal,INTrpal,Nyld[4],EyldHe,YldHe,Ngl,Eg)
 
 	for nreac in range(42):
-		MTi = MTnum(nreac)
+		MTi = MTnum[nreac]
 		if (iflag[nreac] == 1):
 			NPtg = len(globals()[f'E{MTi}'])
 			if (MTi == 5):
@@ -391,7 +382,7 @@ def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedEN
 					gsd[i] = gsd[i] + Ylddg[i]*gsig[i]
 					gstr[i] = gstr[i] + Yldtrg[i]*gsig[i]
 					gs3He[i] = gs3He[i] + Yld3Heg[i]*gsig[i]
-					gsa[i] = gsa(i) + YldHeg[i]*gsig[i]
+					gsa[i] = gsa[i] + YldHeg[i]*gsig[i]
 					gsigt[i] = gsigt[i] + gsig[i]
 
 				## segregations of point cross sections
@@ -432,7 +423,7 @@ def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedEN
 				if (MTi==11 or MTi==32 or MTi==35 or MTi==104 or \
 				MTi==114 or MTi==115 or MTi==117):
 					for i in range(Ngl):
-						gsd[i] = gsd(i) + gsig[i]
+						gsd[i] = gsd[i] + gsig[i]
 						gsigt[i] = gsigt[i] + gsig[i]
 					for i in range(NPt):
 						sdpoint[i] = sdpoint[i] + sigparttot[i]
@@ -839,7 +830,7 @@ def groupmulti (input_n_spec,E1p,sig,NPtg,Eg,Ngl):
 			if (input_n_spec == 1):
 				flux1 = numpy.interp(t, Eg, fi)
 
-			bcs1 = numpy.interp(t+h, Etu, sig) * flux1
+			bcs1 = numpy.interp(t+h, E1p, sig) * flux1
 			deno1 = flux1
 
 			if (t+h < 0.1):
@@ -853,7 +844,7 @@ def groupmulti (input_n_spec,E1p,sig,NPtg,Eg,Ngl):
 			if (input_n_spec == 1):
 				flux2 = numpy.interp(t+h, Eg, fi)
 
-			bcs2 = numpy.interp(t+h, Etu, sig) * flux2
+			bcs2 = numpy.interp(t+h, E1p, sig) * flux2
 			deno2 = flux2
 
 			bcs = bcs + (h/2)*(bcs1 + bcs2)
@@ -870,6 +861,7 @@ def groupmulti (input_n_spec,E1p,sig,NPtg,Eg,Ngl):
 ## scheme in the range.
 	
 def terpol (NRin,Intrin,n1,E1,Y1,n2,E2):
+	Y2 = numpy.zeros(n2)
 	for i in range(n2):
 		for j in range(n1):
 			if (E2[i] == E1[j]):
@@ -914,6 +906,7 @@ def terpolin (intflg,x,x1,x2,y1,y2):
 ## Interpolation of Arrays via Particular Rule 
 
 def terpolAPR (iprule,n1,x1,y1,n2,x2):
+	y2 = numpy.zeros(n2)
 	for i in range(n2):
 		for j in range(n1):
 			if (x2[i] == x1[j]):
@@ -934,10 +927,15 @@ def terpolAPR (iprule,n1,x1,y1,n2,x2):
 # Collect the yields of five species of light charged particles
 # from File 6 MT = 5.
 	
-def gtYMf6Mt5():
-	Eyld = [[0]*200]*5; Yld = [[0]*200]*5
-	iZp = [0]*5; iAp = [0]*5; Nyld = [0]*5
-	NBTp = [[0]*20]*5; INTrp = [[0]*20]*5
+def gtYMf6Mt5(ifile_rawENDF6):
+	iZp = [0]*5; iAp = [0]*5
+
+	tnEyld = numpy.zeros((200,200)); tnYld = numpy.zeros((200,200))
+	tnNBTp = numpy.zeros((200,20)); tnINTrp = numpy.zeros((200,20))
+	tnNyld = [0]*200; tnZp = [0]*200
+
+	Eyld = numpy.zeros((5,200)); Yld = numpy.zeros((5,200))
+	Nyld = [0]*5; NBTp = numpy.zeros((5,20)); INTrp = numpy.zeros((5,20))
 
 	iZp[0] = 1001
 	iZp[1] = 1002
@@ -956,7 +954,7 @@ def gtYMf6Mt5():
 
 	while (True):
 		line = ifile.readline()
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if (MAT == -1):
 			ifl6mt5 = 0
@@ -964,14 +962,14 @@ def gtYMf6Mt5():
 		if (MT == 0):
 			if (MF == 6):
 				line = ifile.readline()
-				data = eachlineinfo(line)
+				data = UtilsU.eachLineInfo(line)
 				ZAv = float(data[0]); AWRv = float(data[1]); l1 = int(data[2])
 				LCT = int(data[3]); NKv = int(data[4]); l2 = int(data[5])
 				MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
 
 			if (MF < 6):
 				line = ifile.readline()
-				data = eachlineinfo(line)
+				data = UtilsU.eachLineInfo(line)
 				ZAv = float(data[0]); AWRv = float(data[1]); l1 = int(data[2])
 				LCT = int(data[3]); NKv = int(data[4]); l2 = int(data[5])
 				MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
@@ -981,34 +979,39 @@ def gtYMf6Mt5():
 				if (MT == 5):
 					ifl6mt5 = 1	
 					NK = NKv
+					itn = 0; itnt
 					for NSS in range (NK):
 						line = ifile.readline()
-						data = eachlineinfo(line)
+						data = UtilsU.eachLineInfo(line)
 						ZAP = float(data[0]); AWP = float(data[1]); LIP = int(data[2])
 						LAW = int(data[3]); NR6 = int(data[4]); NP6 = int(data[5])
 						MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
 
 						iflgp = 0
 						if(int(ZAP) == iZp[0] or int(ZAP) == iZp[1] or int(ZAP) == iZp[2] \
-						or int(ZAP) == iZp[3] or int(ZAP) == iZp[4]):
+						or int(ZAP) == iZp[3] or int(ZAP) == iZp[4] or int(ZAP/1000) > 2):
 							iflgp = 1
-						
-						if (int(ZAP) == iZp[0] and int(ceiling(AWP)) == iAp[0]):
-							ip = 0
-						if (int(ZAP) == iZp[1] and int(ceiling(AWP)) == iAp[1]):
+
+						if (int(ZAP) == iZp[0] and int(math.ceil(AWP)) == iAp[0]):
+							ip = 0	
+						if (int(ZAP) == iZp[1] and int(math.ceil(AWP)) == iAp[1]):
 							ip = 1
-						if (int(ZAP) == iZp[2] and int(ceiling(AWP)) == iAp[2]):
+						if (int(ZAP) == iZp[2] and int(math.ceil(AWP)) == iAp[2]):
 							ip = 2
-						if (int(ZAP) == iZp[3] and int(ceiling(AWP)) == iAp[4]):
+						if (int(ZAP) == iZp[3] and int(math.ceil(AWP)) == iAp[3]):
 							ip = 3
-						if (int(ZAP) == iZp[4] and int(ceiling(AWP)) == iAp[5]):
+						if (int(ZAP) == iZp[4] and int(math.ceil(AWP)) == iAp[4]):
 							ip = 4
+						if (int(ZAP/1000) > 2 and AWP > 4):
+							ip = 5
+							itn = itn + 1
+						print(ip)
 
 						if (iflgp == 0):
 							N = 0
 							while (N < NR6):
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								for i in range(0,6,2):
 									NBT = int(data[i])
 									INTr = int(data[i+1])
@@ -1016,34 +1019,54 @@ def gtYMf6Mt5():
 							N = 0
 							while (N < NP6):
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								for i in range(0,6,2):
 									E = float(data[i])
 									Y = float(data[i+1])
 									N += 1
 
 						if (iflgp == 1):
-							Nyld[ip] = NP6
-							N = 0
-							while (N < NR6):
-								line = ifile.readline()
-								data = eachlineinfo(line)
-								for i in range(0,6,2):
-									NBTp[ip][N] = int(data[i])
-									INTrp[ip][N] = int(data[i+1])
-									N += 1
-							N = 0
-							while (N < NP6):
-								line = ifile.readline()
-								data = eachlineinfo(line)
-								for i in range(0,6,2):
-									Eyld[ip][N] = float(data[i])
-									Yld[ip][N] = float(data[i+1])
-									N += 1
+							if (ip < 5):
+								Nyld[ip] = NP6
+								N = 0
+								while (N < NR6):
+									line = ifile.readline()
+									data = UtilsU.eachLineInfo(line)
+									for i in range(0,6,2):
+										NBTp[ip][N] = int(data[i])
+										INTrp[ip][N] = int(data[i+1])
+										N += 1
+								N = 0
+								while (N < NP6):
+									line = ifile.readline()
+									data = UtilsU.eachLineInfo(line)
+									for i in range(0,6,2):
+										Eyld[ip][N] = float(data[i])
+										Yld[ip][N] = float(data[i+1])
+										N += 1
+							if (ip >= 5):
+								tnZp[itn] = int(ZAP)
+								tnNyld[itn] = NP6
+								N = 0
+								while (N < NR6):
+									line = ifile.readline()
+									data = UtilsU.eachLineInfo(line)
+									for i in range(0,6,2):
+										tnNBTp[itn][N] = int(data[i])
+										tnINTrp[itn][N] = int(data[i+1])
+										N += 1
+								N = 0
+								while (N < NP6):
+									line = ifile.readline()
+									data = UtilsU.eachLineInfo(line)
+									for i in range(0,6,2):
+										tnEyld[itn][N] = float(data[i])
+										tnYld[itn][N] = float(data[i+1])
+										N += 1
 
 						if (LAW != 0):	# added this condition for calculating from JEFF-3.3
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = UtilsU.eachLineInfo(line)
 							c1 = float(data[0]); c2 = float(data[1]); l3 = int(data[2])
 							l4 = int(data[3]); NR6 = int(data[4]); NE6 = int(data[5])
 							MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
@@ -1051,14 +1074,14 @@ def gtYMf6Mt5():
 							N = 0
 							while (N < NR6):
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								for i in range(0,6,2):
 									NBT = int(data[i])
 									INTr = int(data[i+1])
 									N += 1
 							for i in range(NE6):
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								c1 = float(data[0]); En = float(data[1]); ND = int(data[2])
 								NA = int(data[3]); NW = int(data[4]); NEP = int(data[5])
 								MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
@@ -1067,16 +1090,16 @@ def gtYMf6Mt5():
 								J1 = 0
 								while (J1 < NW):
 									line = ifile.readline()
-									data = eachlineinfo(line)
+									data = UtilsU.eachLineInfo(line)
 									for k in range(6):
 										Bvall[J1] = float(data[k])
 										J1 += 1
-
+					itnt = itn
 			else:
 				break
 
-	return (NBTp,INTrp,Nyld,Eyld,Yld)
-	
+	return (NBTp,INTrp,Nyld,Eyld,Yld,tnNBTp,tnINTrp,tnNyld,tnEyld,tnYld,tnZp,itnt)
+
 #=======To find for availble MT=======*
 	
 	# The presence of a particular reaction cross section (MT in MF3) is
@@ -1106,28 +1129,28 @@ def file1(ifile_rawENDF6):
 	ifile = ifile_rawENDF6
 	ifile.readline()
 	line = ifile.readline()
-	data = eachlineinfo(line)
+	data = UtilsU.eachLineInfo(line)
 	ZA = float(data[0]); AWR = float(data[1])
 	LRP = int(data[2]); LFI = int(data[3]); NLIB = int(data[4])
 	NMOD = int(data[5]); MAT = int(data[6]); MF = int(data[7])
 	MT = int(data[8])
 
 	line = ifile.readline()
-	data = eachlineinfo(line)
+	data = UtilsU.eachLineInfo(line)
 	ELIS = float(data[0]); STA = float(data[1]);
 	LIS = int(data[2]); LISO = int(data[3]); num = int(data[4]);
 	NFOR = int(data[5]); MAT = int(data[6]); MF = int(data[7])
 	MT = int(data[8])
 
 	line = ifile.readline()
-	data = eachlineinfo(line)
+	data = UtilsU.eachLineInfo(line)
 	AWI = float(data[0]); EMAX = float(data[1])
 	LREL = int(data[2]); num = int(data[3]); NSUB = int(data[4]);
 	NVER = int(data[5]); MAT = int(data[6]); MF = int(data[7])
 	MT = int(data[8])
 
 	line = ifile.readline()
-	data = eachlineinfo(line)
+	data = UtilsU.eachLineInfo(line)
 	TEMP = float(data[0]); c2 = float(data[1])
 	LDRV = int(data[2]); num = int(data[3]); NWD = int(data[4])
 	NXC = int(data[5]); MAT = int(data[6]); MF = int(data[7])
@@ -1141,7 +1164,7 @@ def file1(ifile_rawENDF6):
 
 	for i in range(NXC):
 		line = ifile.readline()
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		blnk = data[0]; blnk = data[1]
 		MFs[i] = int(data[2]); MTs[i] = int(data[3])
 		NCn = int(data[4]); MODn = int(data[5]); MAT = int(data[6])
@@ -1183,11 +1206,11 @@ def adddiscnth(ifile_preprocessedENDF6,iflMTpr,MTnth,Etu,NPt):
 			line = ifile_preprocessedENDF6.readline()
 			if (line == ''):
 				break
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 			if (MT == 0 and MF != 0):
 				line = ifile_preprocessedENDF6.readline()
-				(ZAv,AWRv,L0,L1,NKv,L2,MAT,MF,MT) = line_type1_info(line)
+				(ZAv,AWRv,L0,L1,NKv,L2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 			if (MAT != -1):
 				if (MF == 3):
 					if (MT == MTi or MT == MTimax):
@@ -1199,12 +1222,12 @@ def adddiscnth(ifile_preprocessedENDF6,iflMTpr,MTnth,Etu,NPt):
 						ZA = ZAv
 						AWR = AWRv
 						ine = ifile_preprocessedENDF6.readline()
-						data = eachlineinfo(line)
+						data = UtilsU.eachLineInfo(line)
 						QM = float(data[0]); QI =  float(data[1])
 						NR = int(data[4]); NP1 = int(data[5])
 						E1 = numpy.zeros(NP1); sig1 = numpy.zeros(NP1)
 						ifile_preprocessedENDF6.readline()
-						(E1, sig1) = line_type3_info(ifile_preprocessedENDF6,NP1,2)
+						(E1, sig1) = UtilsU.lineType3Info(ifile_preprocessedENDF6,NP1,2)
 						MTi = MTi + 1
 			else:
 				break
