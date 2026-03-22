@@ -5367,7 +5367,8 @@ It calls reaction-specific subroutines and their required multigrouping accordin
 According to the input options point and multigrouped cross sections and other output data gets printed
 as per the call.
 '''
-def controlAllReactionsHeatingDPA (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,nra,nreac,NPt,Etu,mdisp,Ed,bad,cad,mgyn,igtype):
+def controlAllReactionsHeatingDPA (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,nra,nreac,NPt,Etu,\
+mdisp,Ed,bad,cad,mgyn,igtype):
 	## call reactions
 	## binary variables required in case  nra[i]=7
 	irct1y=0; irct2y=0; irct3y=0; irct4y=0; irct5y=0; irct6y=0

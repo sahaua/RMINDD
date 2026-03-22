@@ -1,5 +1,6 @@
 ## Input and data for module EngdepU of RMINDD
 
+Module_number = 1
 Module_name = "EngdepU"
 
 Element_isotope = 
@@ -24,6 +25,7 @@ MTs_to_multigroup =
 
 ## Input and data for module RecedU of RMINDD
 
+Module_number = 2
 Module_name = "RecedU"
 
 Element_isotope = 
@@ -36,9 +38,21 @@ Num_group_limits =
 Num_fine_en_points = 
 Energy_group_type_index = 
 
+
+## Input and data for module TransmU of RMINDD
+
+Module_number = 3
+Module_name = "TransmU"
+
+Element_isotope = 
+Raw_ENDF6_file = 
+Preprocessed_ENDF6_file = 
+MAT_num = 
+
 ## Input and data for module CombinU of RMINDD
 ## CombinU requires output files from EngdepU for its calculations
 
+Module_number = 4
 Module_name = "CombinU"
 
 Files_directory = 
@@ -61,8 +75,4 @@ Ed_below_no_displacement =
 Atom_dpaXS_type =  		## "MD-based", "NRT-based", "Both"
 ## there should be as many damage efficiency file as the number of target elements
 Damage_efficiency_file = 
-<<<<<<< HEAD
-=======
-
->>>>>>> f5cb170b3778b03f0dd2d94b01cef22c303f78ad
 Damage_efficiency_file = 

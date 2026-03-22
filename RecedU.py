@@ -200,7 +200,8 @@ def ALLSUM (num_group_limits,partial_reac_tosum):
 	# After creating this finer array it also calls the reaction specific
 	# subroutines according to the input.
 
-def FINE_ENERGY_CALL_REAC (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,igtype,num_group_limits,nbpoints,num_reac_array):
+def FINE_ENERGY_CALL_REAC (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,igtype,\
+num_group_limits,nbpoints,num_reac_array):
 
 	nre = num_group_limits - 1
 	nbge = num_group_limits + (nbpoints*nre)

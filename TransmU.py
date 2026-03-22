@@ -15,13 +15,13 @@ import numpy
 import math
 import os
 
-def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6, NPt, Etu, dict_input_file_variables):
+def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6, NPt, Etu, this_module):
 
 	(eliso, en_group_type, input_n_spec, transmgas_group_file, transmnucl_group_file, \
-	transmgas_point_file, transmnucl_MF5_point_file, transmnucl_net_group_file, NPt, Etu) = (dict_input_file_variables['element_isotope_name'], \
-	dict_input_file_variables['en_group_type'], dict_input_file_variables['input_n_spec'], dict_input_file_variables['transmgas_group_file'], \
-	dict_input_file_variables['transmnucl_group_file'], dict_input_file_variables['transmgas_point_file'], \
-	dict_input_file_variables['transmnucl_MF5_point_file'], dict_input_file_variables['transmnucl_net_group_file'])
+	transmgas_point_file, transmnucl_MF5_point_file, transmnucl_net_group_file, NPt, Etu) = (this_module['element_isotope_name'], \
+	this_module['en_group_type'], this_module['input_n_spec'], this_module['transmgas_group_file'], \
+	this_module['transmnucl_group_file'], this_module['transmgas_point_file'], \
+	this_module['transmnucl_MF5_point_file'], this_module['transmnucl_net_group_file'])
 
 ## Calculation of gas production and total activation cross section
 ## due to charged particle production reactions and (n,xn) and (n,g)
@@ -149,9 +149,9 @@ def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedEN
 	
 		if (iflag[nreac] == 1):
 			if (MTi in [203, 204, 205, 206, 207]):
-				dict_input_file_variables[f'E{MTi}'] = []; dict_input_file_variables[f'sig{MTi}'] = []
-				dict_input_file_variables[f'E{MTi}'] = numpy.append(dict_input_file_variables[f'E{MTi}'], E1)
-				dict_input_file_variables[f'sig{MTi}'] = numpy.append(dict_input_file_variables[f'sig{MTi}'], sig1)
+				globals()[f'E{MTi}'] = []; globals()[f'sig{MTi}'] = []
+				globals()[f'E{MTi}'] = numpy.append(globals()[f'E{MTi}'], E1)
+				globals()[f'sig{MTi}'] = numpy.append(globals()[f'sig{MTi}'], sig1)
 
 	## Calculation of gas production and activation from individual
 	## CPO and other reactions; nreac = 1 to nrab(=37) => these MTs.
@@ -209,9 +209,9 @@ def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedEN
 		if (iflag[nreac] == 1):
 			print('', file = ofile_outRMINDD)
 			print(f'Activation and/or Gas production MT = {MTi} given', file = ofile_outRMINDD)
-			dict_input_file_variables[f'E{MTi}'] = []; dict_input_file_variables[f'sig{MTi}'] = []
-			dict_input_file_variables[f'E{MTi}'] = numpy.append(dict_input_file_variables[f'E{MTi}'], E1)
-			dict_input_file_variables[f'sig{MTi}'] = numpy.append(dict_input_file_variables[f'sig{MTi}'], sig1)
+			globals()[f'E{MTi}'] = []; globals()[f'sig{MTi}'] = []
+			globals()[f'E{MTi}'] = numpy.append(globals()[f'E{MTi}'], E1)
+			globals()[f'sig{MTi}'] = numpy.append(globals()[f'sig{MTi}'], sig1)
 			
 	## The calculation from MT = 600 to 849 is performed when 
 	## MT = 103, ....., 107 are not given. These are performed in
@@ -374,14 +374,14 @@ def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedEN
 	for nreac in range(42):
 		MTi = MTnum(nreac)
 		if (iflag[nreac] == 1):
-			NPtg = len(dict_input_file_variables[f'E{MTi}'])
+			NPtg = len(globals()[f'E{MTi}'])
 			if (MTi == 5):
-				sig5tot = terpolAPR(2,NPtg,dict_input_file_variables[f'E{MTi}'],dict_input_file_variables[f'sig{MTi}'],NPt,Etu)
+				sig5tot = terpolAPR(2,NPtg,globals()[f'E{MTi}'],globals()[f'sig{MTi}'],NPt,Etu)
 			else:
-				sigparttot = terpolAPR(2,NPtg,dict_input_file_variables[f'E{MTi}'],dict_input_file_variables[f'sig{MTi}'],NPt,Etu)
+				sigparttot = terpolAPR(2,NPtg,globals()[f'E{MTi}'],globals()[f'sig{MTi}'],NPt,Etu)
 
 			## Cross section gets multigrouped based on n-spectrum here .....
-			gsig = groupmulti (input_n_spec,dict_input_file_variables[f'E{MTi}'],dict_input_file_variables[f'sig{MTi}'],NPtg,Eg,Ngl) 
+			gsig = groupmulti (input_n_spec,globals()[f'E{MTi}'],globals()[f'sig{MTi}'],NPtg,Eg,Ngl) 
 
 			## cross sections from lumped MT = 5 data
 			if (MTi == 5):
