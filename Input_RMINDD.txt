@@ -52,8 +52,7 @@ MAT_num =
 Transmgas_group_file = 
 Transmnucl_group_file = 
 Transmgas_point_file = 
-Transmnucl_MF5_point_file = 
-Transmnucl_net_group_file = 
+Transmnucl_point_file = 
 
 
 ## Input and data for module CombinU of RMINDD

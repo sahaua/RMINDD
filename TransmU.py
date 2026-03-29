@@ -18,10 +18,9 @@ import UtilsU
 def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6, NPt, Etu, this_module):
 
 	(eliso, en_group_type, input_n_spec, transmgas_group_file, transmnucl_group_file, \
-	transmgas_point_file, transmnucl_MF5_point_file, transmnucl_net_group_file) = (this_module['element_isotope_name'], \
+	transmgas_point_file, transmnucl_point_file) = (this_module['element_isotope_name'], \
 	this_module['en_group_type'], this_module['input_n_spec'], this_module['transmgas_group_file'], \
-	this_module['transmnucl_group_file'], this_module['transmgas_point_file'], \
-	this_module['transmnucl_MF5_point_file'], this_module['transmnucl_net_group_file'])
+	this_module['transmnucl_group_file'], this_module['transmgas_point_file'], this_module['transmnucl_point_file'])
 
 ## Calculation of gas production and total activation cross section
 ## due to charged particle production reactions and (n,xn) and (n,g)
@@ -39,14 +38,10 @@ def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedEN
 	ofile_transmgas_group = open(transmgas_group_file, 'w')
 	ofile_transmnucl_group = open(transmnucl_group_file, 'w')
 	ofile_transmgas_point = open(transmgas_point_file, 'w')
-	ofile_transmnucl_MF5_point = open(transmnucl_MF5_point_file, 'w')
-	ofile_transmnucl_net_group = open(transmnucl_net_group_file, 'w')
+	ofile_transmnucl_point = open(transmnucl_point_file, 'w')
 
 	print('E/(n,xp)/(n,xd)/(n,xt)/(n,x3He)/(n,xa)/(n,act.)', file = ofile_transmgas_group)
-	print('Energy(eV) - Cross section(barns)', file = ofile_transmnucl_group)
 	print('E/(n,xp)/(n,xd)/(n,xt)/(n,x3He)/(n,xa)/(n,act.)', file = ofile_transmgas_point)
-	print('Energy(eV) - Cross section(barns)', file = ofile_transmnucl_MF5_point)
-	print('Energy (eV) / Cross-section (barns)', file = ofile_transmnucl_net_group)
 
 	nrab = 37
 	MTnum = [0]*42; iflag = [0]*42
@@ -77,8 +72,8 @@ def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedEN
 				L1 = int(data[3]); NKv = int(data[4]); L2 = int(data[5])
 				MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
 
-				Ztarget = int(ZAv/1000)
-				Atarget =  numpy.mod(int(ZAv),1000)
+				Ztarget = ZAv//1000
+				Atarget =  int(numpy.mod(int(ZAv),1000))
 		else:
 			break
 
@@ -501,146 +496,146 @@ def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedEN
 			## get the transmuted nuclide production cross sections from explicit activation reactions
 			if (MTi != 5):
 				if (MTi==11 or MTi==33 or MTi==42): 
-					Zvaltrack[0] = Ztarget-1
-					Avaltrack[0] = Atarget-3
+					Zvaltrack[0] = int(Ztarget-1)
+					Avaltrack[0] = int(Atarget-3)
 					cntrack[0] = cntrack[0]+1
 					for k in range(Ngl):
 						sigtrack[k][0] = sigtrack[k][0] + gsig[k]
 				if (MTi == 16):
-					Zvaltrack[1] = Ztarget
-					Avaltrack[1] = Atarget-1
+					Zvaltrack[1] = int(Ztarget)
+					Avaltrack[1] = int(Atarget-1)
 					cntrack[1] = cntrack[1]+1
 					for k in range(Ngl):
 						sigtrack[k][1] = sigtrack[k][1] + gsig[k]
 				if (MTi == 17):
-					Zvaltrack[2] = Ztarget
-					Avaltrack[2] = Atarget-2
+					Zvaltrack[2] = int(Ztarget)
+					Avaltrack[2] = int(Atarget-2)
 					cntrack[2] = cntrack[2]+1
 					for k in range(Ngl):
 						sigtrack[k][2] = sigtrack[k][2] + gsig[k]
 				if (MTi == 22):
-					Zvaltrack[3] = Ztarget-2
-					Avaltrack[3] = Atarget-4
+					Zvaltrack[3] = int(Ztarget-2)
+					Avaltrack[3] = int(Atarget-4)
 					cntrack[3] = cntrack[3]+1
 					for k in range(Ngl):
 						sigtrack[k][3] = sigtrack[k][3] + gsig[k]
 				if (MTi == 23):
-					Zvaltrack[4] = Ztarget-6
-					Avaltrack[4] = Atarget-12
+					Zvaltrack[4] = int(Ztarget-6)
+					Avaltrack[4] = int(Atarget-12)
 					cntrack[4] = cntrack[4]+1
 					for k in range(Ngl):
 						sigtrack[k][4] = sigtrack[k][4] + gsig[k]
 				if (MTi == 24):
-					Zvaltrack[5] = Ztarget-2
-					Avaltrack[5] = Atarget-5
+					Zvaltrack[5] = int(Ztarget-2)
+					Avaltrack[5] = int(Atarget-5)
 					cntrack[5] = cntrack[5]+1
 					for k in range(Ngl):
 						sigtrack[k][5] = sigtrack[k][5] + gsig[k]
 				if (MTi == 25):
-					Zvaltrack[6] = Ztarget-2
-					Avaltrack[6] = Atarget-6
+					Zvaltrack[6] = int(Ztarget-2)
+					Avaltrack[6] = int(Atarget-6)
 					cntrack[6] = cntrack[6]+1
 					for k in range(Ngl):
 						sigtrack[k][6] = sigtrack[k][6] + gsig[k]
 				if (MTi == 28 or MTi == 104):
-					Zvaltrack[7] = Ztarget-1
-					Avaltrack[7] = Atarget-1
+					Zvaltrack[7] = int(Ztarget-1)
+					Avaltrack[7] = int(Atarget-1)
 					cntrack[7] = cntrack[7]+1
 					for k in range(Ngl):
 						sigtrack[k][7] = sigtrack[k][7] + gsig[k]
 				if (MTi == 29):
-					Zvaltrack[8] = Ztarget-1
-					Avaltrack[8] = Atarget-1
+					Zvaltrack[8] = int(Ztarget-1)
+					Avaltrack[8] = int(Atarget-1)
 					cntrack[8] = cntrack[8]+1
 					for k in range(Ngl):
 						sigtrack[k][8] = sigtrack[k][8] + gsig[k]
 				if (MTi == 30):
-					Zvaltrack[9] = Ztarget-4
-					Avaltrack[9] = Atarget-9
+					Zvaltrack[9] = int(Ztarget-4)
+					Avaltrack[9] = int(Atarget-9)
 					cntrack[9] = cntrack[9]+1
 					for k in range(Ngl):
 						sigtrack[k][9] = sigtrack[k][9] + gsig[k]
 				if (MTi == 32 or MTi == 41 or MTi == 105):
-					Zvaltrack[10] = Ztarget-1
-					Avaltrack[10] = Atarget-2
+					Zvaltrack[10] = int(Ztarget-1)
+					Avaltrack[10] = int(Atarget-2)
 					cntrack[10] = cntrack[10]+1
 					for k in range(Ngl):
 						sigtrack[k][10] = sigtrack[k][10] + gsig[k]
 				if (MTi == 34 or MTi == 107 or MTi == 116):
-					Zvaltrack[11] = Ztarget-2
-					Avaltrack[11] = Atarget-3
+					Zvaltrack[11] = int(Ztarget-2)
+					Avaltrack[11] = int(Atarget-3)
 					cntrack[11] = cntrack[11]+1
 					for k in range(Ngl):
 						sigtrack[k][11] = sigtrack[k][11] + gsig[k]
 				if (MTi == 35 or MTi == 113):
-					Zvaltrack[12] = Ztarget-5
-					Avaltrack[12] = Atarget-10
+					Zvaltrack[12] = int(Ztarget-5)
+					Avaltrack[12] = int(Atarget-10)
 					cntrack[12] = cntrack[12]+1
 					for k in range(Ngl):
 						sigtrack[k][12] = sigtrack[k][12] + gsig[k]
 				if (MTi == 36):
-					Zvaltrack[13] = Ztarget-5
-					Avaltrack[13] = Atarget-11
+					Zvaltrack[13] = int(Ztarget-5)
+					Avaltrack[13] = int(Atarget-11)
 					cntrack[13] = cntrack[13]+1
 					for k in range(Ngl):
 						sigtrack[k][13] = sigtrack[k][13] + gsig[k]
 				if (MTi == 37):
-					Zvaltrack[14] = Ztarget
-					Avaltrack[14] = Atarget-3
+					Zvaltrack[14] = int(Ztarget)
+					Avaltrack[14] = int(Atarget-3)
 					cntrack[14] = cntrack[14]+1
 					for k in range(Ngl):
 						sigtrack[k][14] = sigtrack[k][14] + gsig[k]
 				if (MTi == 44 or MTi == 106 or MTi == 115):
-					Zvaltrack[15] = Ztarget-2
-					Avaltrack[15] = Atarget-2
+					Zvaltrack[15] = int(Ztarget-2)
+					Avaltrack[15] = int(Atarget-2)
 					cntrack[15] = cntrack[15]+1
 					for k in range(Ngl):
 						sigtrack[k][15] = sigtrack[k][15] + gsig[k]
 				if (MTi == 45 or MTi == 117):
-					Zvaltrack[16] = Ztarget-3
-					Avaltrack[16] = Atarget-5
+					Zvaltrack[16] = int(Ztarget-3)
+					Avaltrack[16] = int(Atarget-5)
 					cntrack[16] = cntrack[16]+1
 					for k in range(Ngl):
 						sigtrack[k][16] = sigtrack[k][16] + gsig[k]
 				if (MTi == 102):
-					Zvaltrack[17] = Ztarget
-					Avaltrack[17] = Atarget+1
+					Zvaltrack[17] = int(Ztarget)
+					Avaltrack[17] = int(Atarget+1)
 					cntrack[17] = cntrack[17]+1
 					for k in range(Ngl):
 						sigtrack[k][17] = sigtrack[k][17] + gsig[k]
 				if (MTi == 103):
-					Zvaltrack[18] = Ztarget-1
-					Avaltrack[18] = Atarget
+					Zvaltrack[18] = int(Ztarget-1)
+					Avaltrack[18] = int(Atarget)
 					cntrack[18] = cntrack[18]+1
 					for k in range(Ngl):
 						sigtrack[k][18] = sigtrack[k][18] + gsig[k]
 				if (MTi == 108):
-					Zvaltrack[19] = Ztarget-4
-					Avaltrack[19] = Atarget-7
+					Zvaltrack[19] = int(Ztarget-4)
+					Avaltrack[19] = int(Atarget-7)
 					cntrack[19] = cntrack[19]+1
 					for k in range(Ngl):
 						sigtrack[k][19] = sigtrack[k][19] + gsig[k]
 				if (MTi == 109):
-					Zvaltrack[20] = Ztarget-6
-					Avaltrack[20] = Atarget-11
+					Zvaltrack[20] = int(Ztarget-6)
+					Avaltrack[20] = int(Atarget-11)
 					cntrack[20] = cntrack[20]+1
 					for k in range(Ngl):
 						sigtrack[k][20] = sigtrack[k][20] + gsig[k]
 				if (MTi == 111):
-					Zvaltrack[21] = Ztarget-2
-					Avaltrack[21] = Atarget-1
+					Zvaltrack[21] = int(Ztarget-2)
+					Avaltrack[21] = int(Atarget-1)
 					cntrack[21] = cntrack[21]+1
 					for k in range(Ngl):
 						sigtrack[k][21] = sigtrack[k][21] + gsig[k]
 				if (MTi == 112):
-					Zvaltrack[22] = Ztarget-3
-					Avaltrack[22] = Atarget-4
+					Zvaltrack[22] = int(Ztarget-3)
+					Avaltrack[22] = int(Atarget-4)
 					cntrack[22] = cntrack[22]+1
 					for k in range(Ngl):
 						sigtrack[k][22] = sigtrack[k][22] + gsig[k]
 				if (MTi == 114):
-					Zvaltrack[23] = Ztarget-5
-					Avaltrack[23] = Atarget-9
+					Zvaltrack[23] = int(Ztarget-5)
+					Avaltrack[23] = int(Atarget-9)
 					cntrack[23] = cntrack[23]+1
 					for k in range(Ngl):
 						sigtrack[k][23] = sigtrack[k][23] + gsig[k]
@@ -663,9 +658,22 @@ def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedEN
 	## Find and Print the point and multigrouped cross sections of Transmuted Nuclides
 
 	## From only MF6MT5
+
+	print('Transmuted nuclide production cross sections from MF6 MT5.', file = ofile_transmnucl_point)
+	print('Point cross sections', file = ofile_transmnucl_point)
+	print(f'Total number of transmuted nuclide listed in MF6 MT5 is {total_transmuted_nuclide_MT5}', file = ofile_transmnucl_point)
+	print('-------------------------------------------------------------------------------------------', file = ofile_transmnucl_point)
+	print('Energy(eV) / Cross section(barns)', file = ofile_transmnucl_point)
+
+	print('Transmuted nuclide production cross sections from MF6 MT5.', file = ofile_transmnucl_group)
+	print('Multigrouped cross sections', file = ofile_transmnucl_group)
+	print(f'Total number of transmuted nuclide listed in MF6 MT5 is {total_transmuted_nuclide_MT5}', file = ofile_transmnucl_group)
+	print('-------------------------------------------------------------------------------------------', file = ofile_transmnucl_group)
+	print('Energy(eV) / Cross section(barns)', file = ofile_transmnucl_group)
+
 	for itn in range(total_transmuted_nuclide_MT5):
-		transmuted_nuclide_Z = tnZp[itn]/1000
-		transmuted_nuclide_A =  math.fmod(tnZp[itn],1000)
+		transmuted_nuclide_Z = int(tnZp[itn]/1000)
+		transmuted_nuclide_A =  int(math.fmod(tnZp[itn],1000))
 
 		if (transmuted_nuclide_Z != 0 and transmuted_nuclide_A != 0):
 			tnYldg = terpol(tnNBTp[itn][0:19],tnINTrp[itn][0:19],tnNyld[itn],tnEyld[itn][0:199],tnYld[itn][0:199],Ngl,Eg)
@@ -678,6 +686,7 @@ def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedEN
 					for k in range(Ngl):
 						sigtrack[k][i] = sigtrack[k][i] + tnYldg[k]*gsig5[k]
 					break
+
 			if (iflsametrnsN == 0):
 				for i in range(230):
 					if (Zvaltrack[i]==0 and Avaltrack[i]==0):
@@ -687,8 +696,10 @@ def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedEN
 						for k in range(Ngl):
 							sigtrack[k][i] = sigtrack[k][i] + tnYldg[k]*gsig5[k]
 						break
-						
-			print(itn,eliso,transmuted_nuclide_Z,transmuted_nuclide_A, file = ofile_transmnucl_group)
+
+			## multigrouped cross sections
+
+			print(itn+1,eliso,transmuted_nuclide_Z,transmuted_nuclide_A, file = ofile_transmnucl_group)
 			for k in range(Ngl):
 				print(Eg[k], tnYldg[k]*gsig5[k], file = ofile_transmnucl_group)
 			print('-----------------', file = ofile_transmnucl_group)
@@ -696,62 +707,47 @@ def ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedEN
 			## point cross sections
 			tnYldg = terpol(tnNBTp[itn][0:19],tnINTrp[itn][0:19],tnNyld[itn], \
 					tnEyld[itn][0:199],tnYld[itn][0:199],NPt,Etu)
-			print(itn+1, eliso, transmuted_nuclide_Z, transmuted_nuclide_A, file = ofile_transmnucl_MF5_point)
+			print(itn+1, eliso, transmuted_nuclide_Z, transmuted_nuclide_A, file = ofile_transmnucl_point)
 			for k in range(NPt):
 				if (tnYldg[k] != 0):
 					kstart = k-1
 					break
 			for  k in range(kstart, NPt):
-				print(Etu[k], tnYldg[k]*sig5tot[k], file = ofile_transmnucl_MF5_point)
-			print('------------------', file = ofile_transmnucl_MF5_point)
+				print(Etu[k], tnYldg[k]*sig5tot[k], file = ofile_transmnucl_point)
+			print('------------------', file = ofile_transmnucl_point)
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 	## Find Net Number of Transmuted Nuclides
+
 	for i in reversed(range(230)):
-		if (Zvaltrack[i] != 0 and Avaltrack[i] != 0 and cntrack[i] != 0):
+		if (int(Zvaltrack[i]) != 0 and int(Avaltrack[i]) != 0 and cntrack[i] != 0):
 			itrnstot = i+1
 			break
 
+	print('Overall transmuted nuclide production cross sections.', file = ofile_transmnucl_group)
+	print('Multigrouped cross sections', file = ofile_transmnucl_group)
+	print(f'Overall number of transmuted nuclide (explicit+inexplicit, accounting repetitions) is {itrnstot}', file = ofile_transmnucl_group)
+	print('----------------------------------------------------------------------------------------------------', file = ofile_transmnucl_group)
+
 	for i in range(itrnstot):
-		print( i+1, eliso, Zvaltrack[i], Avaltrack[i], file = ofile_transmnucl_net_group)
+		print( i+1, eliso, int(Zvaltrack[i]), int(Avaltrack[i]), file = ofile_transmnucl_group)
 		for k in range(Ngl):
-			print(Eg[k], sigtrack[k][i], file = ofile_transmnucl_net_group)
-		print('------------------', file = ofile_transmnucl_net_group)
+			print(Eg[k], sigtrack[k][i], file = ofile_transmnucl_group)
+		print('------------------', file = ofile_transmnucl_group)
 
-	print('List of Transmuted Nuclides Produced and Number of Times Each is Found', file = ofile_transmnucl_net_group)
-	print('Sl. No.Z/A/Counts', file = ofile_transmnucl_net_group)
+	print('List of Transmuted Nuclides Produced and Number of Times Each is Found', file = ofile_transmnucl_group)
+	print('Sl. No.Z/A/Counts', file = ofile_transmnucl_group)
 
 	for i in range(itrnstot):
-		print(i+1, Zvaltrack[i], Avaltrack[i], cntrack[i], file = ofile_transmnucl_net_group)
+		print(i+1, int(Zvaltrack[i]), int(Avaltrack[i]), cntrack[i], file = ofile_transmnucl_group)
 	print('------------------')
 
-	## Find and Print the Point Cross Sections (Energies corresponding
-	## to the MF=3 MT=1) of Transmuted Nuclides
-
-	for itn in range(total_transmuted_nuclide_MT5):
-		transmuted_nuclide_Z = tnZp[itn]/1000
-		transmuted_nuclide_A =  math.fmod(tnZp[itn],1000)
-		if (transmuted_nuclide_Z != 0 and transmuted_nuclide_A != 0):
-			tnYldg = terpol(tnNBTp[itn][0:19],tnINTrp[itn][0:19],tnNyld[itn], \
-				tnEyld[itn][0:199],tnYld[itn][0:199],NPt,Etu)
-			print(itn+1, eliso, transmuted_nuclide_Z, transmuted_nuclide_A, file = ofile_transmnucl_MF5_point)
-			for k in range(NPt):
-				if (tnYldg[k] != 0):
-					kstart = k-1
-					break
-			for  k in range(kstart, NPt):
-				print(Etu[k], tnYldg[k]*sig5tot[k], file = ofile_transmnucl_MF5_point)
-			print('------------------', file = ofile_transmnucl_MF5_point)
-			
-##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	
 	ofile_transmgas_group.close()
 	ofile_transmnucl_group.close()
 	ofile_transmgas_point.close()
-	ofile_transmnucl_MF5_point.close()
-	ofile_transmnucl_net_group.close()
-		
+	ofile_transmnucl_point.close()
+
 ##=======================================================================
 
 

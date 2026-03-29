@@ -242,11 +242,8 @@ def readCheckInputFile(inpRMINDD, ofile_outRMINDD):
 		if (words[0] == 'Transmgas_point_file'):
 			dict_input_file_variables[module_number]['transmgas_point_file'] = words[2]
 
-		if (words[0] == 'Transmnucl_MF5_point_file'):
-			dict_input_file_variables[module_number]['transmnucl_MF5_point_file'] = words[2]
-
-		if (words[0] == 'Transmnucl_net_group_file'):
-			dict_input_file_variables[module_number]['transmnucl_net_group_file'] = words[2]
+		if (words[0] == 'Transmnucl_point_file'):
+			dict_input_file_variables[module_number]['transmnucl_point_file'] = words[2]
 
 	ifile_inpRMINDD.close()
 
