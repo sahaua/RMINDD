@@ -790,47 +790,8 @@ def SPKAEL1 (xgaussq,fmuE,ret,nbge,A,Z,En,y):
 				break
 	return(val2)
 
-#=======Uniue energy Array=========*
 
-# Making unique energy array from MF3 MT1
-	
-def UQCE():
-	# Et=Energy array in MT=1, Etu=unique of Et
-	# extraction of total energy points
-	
-	ifile104 = open (preprocessed_ENDF6_file, 'r')
-	while True:
-		line = ifile104.readline()  
-		data = UtilsU.eachLineInfo(line)
-		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
-		if (MAT != -1):
-			if (MF == 3):
-				if (MT == 1):
-					line = ifile104.readline() 
-					data = UtilsU.eachLineInfo(line)
-					QM = float(data[0]); QI =  float(data[1]); NR = int(data[4]); NPt = int(data[5])
-					Et = [0]*NPt
-					LR = int(ifile104.readline().split()[1])
-					temporary1 = [0]*NPt
-					temporary2 = [0]*NPt
-					(temporary1,temporary2) = UtilsU.lineType3Info(ifile104,NPt,2)
-					for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
-						Et[N] = value1
-						s = value2
-		else:
-			break
-	ifile104.close()
-
-	# make unique common energy
-	
-	Etu = numpy.array(Et)
-	Etu = numpy.unique(Etu)
-	NPt = len(Etu)
-	
-	return(Etu, NPt)
-#---------------------------------------------------------------------------
-
-# Often unterpolation function
+## Often used interpolation function
 
 def crstd(x,x1,x2,y1,y2):
 	if((x2-x1) != 0):
@@ -2198,7 +2159,7 @@ def PKAS_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,lpr,re
 				if (sret[i] != 0):
 					for k in range (65):
 						alc[k] = alfull[i][k]
-					val2 = spkath(alc,65,ret,nbge,A,ret[i],QI,beta[lpr])
+					val2 = SPKATH(alc,65,ret,nbge,A,ret[i],QI,beta[lpr])
 					for ia in range (nbge):
 						dsgmdT[i][ia] = abs(val2[ia])
 
@@ -2279,7 +2240,7 @@ def PKAS_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,lpr,re
 					if (cbe[lpr] < availE):
 						Ea  = cbe[lpr]
 					f1 = Estar
-					f2 = 2*sqrt(beta[lpr]*Estar*Ea)
+					f2 = 2*numpy.sqrt(beta[lpr]*Estar*Ea)
 					f3 = beta[lpr]*Ea
 					tmax = n3*(f1+f2+f3)
 					tmin = n3*(f1-f2+f3)
@@ -3112,7 +3073,7 @@ def PKAS_ng (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,r
 							Yk12[NK][N] = Y12[N]
 					if (NK > 1):
 						for i in range (NK):
-							line = ifile501.readline()
+							line = ifile.readline()
 							(EGk[i],ESk[i],LP[i],LF,NRk12[i],NPn12[i],MAT,MF,MT) = UtilsU.lineType2Info(line)
 							temporary1 = [0]*NRk12[i]
 							temporary2 = [0]*NRk12[i]
@@ -3154,7 +3115,8 @@ def PKAS_ng (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,r
 			break
 
 	ifl15 = 0
-	ifile = open (raw_ENDF6_file,'r')
+	ifile_rawENDF6.seek(0, 0)
+	ifile = ifile_rawENDF6
 	if (ifl6 == 0):
 		while True:
 			line = ifile.readline()
@@ -3253,7 +3215,8 @@ def PKAS_ng (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,r
 	tm = emc2*A1
 	rtm = 1/tm  
 
-	(Etu, NPt) = UQCE()
+	## unique energy array and number of energy points
+	(NPt, Etu) = UtilsU.uqce(ofile_outRMINDD, ifile_preprocessedENDF6)
 	siget = trptuqce(E,sig,Etu)
 
 	#allocate(Etu(NPt),siget(NPt))
@@ -3310,15 +3273,15 @@ def PKAS_ng (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,r
 					EGkp[i][j] = EGk[i] + (AWR*ret[j]/(AWR+1))
 				else:
 					EGkp[i][j] = EGk[i]
-		
+
 		print('', file = ofile_outRMINDD)
 		print('Total number of emitted gamma sections', file = ofile_outRMINDD)
 		print(NKd,' discrete and',NK-NKd,' continuum', file = ofile_outRMINDD)
-		
+
 	# For each neutron energy, Total yield over all NK contributions
 	# must be normalized to Y12tot. Total yields are given only
 	# when NK > 1
-		
+
 	if (ifl12 == 1 and NK > 1):
 		for j in range (nbge):
 			sY12 = 0
@@ -3326,7 +3289,7 @@ def PKAS_ng (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,r
 				sY12 = sY12 + Yk12tot[i][j]
 			for i in range (NK):
 				Yk12tot[i][j] = Yk12tot[i][j]*Y12tot[j]/sY12
-		 		
+
  	# AVERAGE OF (Egamma)SQUARE FROM FILE 6 AND FILE 15
 
 
@@ -3373,7 +3336,7 @@ def PKAS_ng (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,r
 								g15t[i][k] = TERPOLIN(iplaw,x,x1,x2,y11,y22)
 						ntm[i] = NPg15[j]
 						break
-		
+
 		for i in range (nbge):
 			if (Yk12tot[NK][i] != 0):
 				for j in range (int(ntm[i])):
@@ -3427,7 +3390,7 @@ def PKAS_ng (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,r
 					ntm[i] = NPg6[j]
 					ntmd[i] = ND6[j]
 					break
-		
+
 		for i in range (nbge):
 			ncontd[i] = ntm[i]-ntmd[i]
 			ndisc = ntmd[i]
@@ -3552,20 +3515,20 @@ def FILE1 (ifile_rawENDF6):
 	MFs = [0]*1000; MTs = [0]*1000 
 		# maximum of NXC = 350 (ENDF-102), 
 		# but deviates for Mn55 ENDF/B-VII.1, so changed to 1000 
-	ifile = open(raw_ENDF6_file,'r')
-	ifile.readline()
-	line = ifile.readline()
+	ifile_rawENDF6.seek(0, 0)
+	ifile_rawENDF6.readline()
+	line = ifile_rawENDF6.readline()
 	(ZA,AWR,LRP,LFI,NLIB,NMOD,MAT,MF,MT) = UtilsU.lineType1Info(line)
-	line = ifile.readline()
+	line = ifile_rawENDF6.readline()
 	(ELIS,STA,LIS,LISO,num,NFOR,MAT,MF,MT) = UtilsU.lineType1Info(line)
-	line = ifile.readline()
+	line = ifile_rawENDF6.readline()
 	(AWI,EMAX,LREL,num,NSUB,NVER,MAT,MF,MT) = UtilsU.lineType1Info(line)
-	line = ifile.readline()
+	line = ifile_rawENDF6.readline()
 	(TEMP,c2,LDRV,num,NWD,NXC,MAT,MF,MT) = UtilsU.lineType1Info(line)
 	for i in range (NWD):
-		ifile.readline()
+		ifile_rawENDF6.readline()
 	for i in range (NXC):
-		line = ifile.readline()
+		line = ifile_rawENDF6.readline()
 		data = UtilsU.eachLineInfo(line)
 		blnk = data[0]; blnk = data[1]
 		MFs[i] = int(data[2]); MTs[i] = int(data[3])
