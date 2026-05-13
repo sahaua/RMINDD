@@ -1,247 +1,187 @@
-## >> Code: RMINDD - (Radiation-Matter Interaction and Damage calculation using Nuclear Data)
-## >> Perform: Calcuation of metrics of neutron radiation damage in an isotope of a material using ENDF-6 files
-## >> Author: Uttiyoarnab Saha
-## >> Version and Date: 1.0 and 01/07/2022
-## >> Last modified: 01/07/2022, Kolkata
-## >> Update: 01/07/2022
-## >> Major changes: 
-##
-## =========================================================================================
+''' 
+>> Code: RMINDD - (Radiation-Matter Interaction and Damage calculation using Nuclear Data)
+>> Perform: Calcuation of metrics of neutron radiation damage in a material using ENDF-6 files
+>> Author: Uttiyoarnab Saha
+>> Version and Date: 1.0 and 01/07/2022
+>> Last modified: 01/07/2022, Kolkata
+>> Update: 01/07/2022
+>> Major changes: 
+
+=========================================================================================
+'''
 
 import numpy, datetime, sys
 from time import process_time
+
 ## import calculation modules
-import RecedU, EngdepU #use TransmU
+import UtilsU, ReadU, RecedU, EngdepU, CombinU, TransmU
+
+def printIndexesforReactions (ofile_outRMINDD):
+	print("1 = n,g" , file = ofile_outRMINDD)
+	print("2 = n,n" , file = ofile_outRMINDD)
+	print("3 = n,n'" , file = ofile_outRMINDD)
+	print("4 = n,xn" , file = ofile_outRMINDD)
+	print("5 = n,particle", file = ofile_outRMINDD)
+	print("6 = n,anything", file = ofile_outRMINDD)
+	print("7 = total", file = ofile_outRMINDD)
+	print('', file = ofile_outRMINDD)
+
+	print('------------------------------------------------', file = ofile_outRMINDD)
+	print('', file = ofile_outRMINDD)
+
+start_time = process_time()
 
 day_execution = datetime.date.today()
 time_execution = datetime.datetime.now().strftime('%H:%M:%S')
 
-outRMINDD = "Output_RMINDD.txt"
+## command line input for input & output files name
+inpRMINDD = sys.argv[1]
+outRMINDD = sys.argv[2]
+
 ofile_outRMINDD = open (outRMINDD, 'a')
 
 print('~~~~ RMINDD ~~~~', file = ofile_outRMINDD)
 print(day_execution, ' ', time_execution, '\n', file = ofile_outRMINDD)
 
-## command line input for input file name
-inpRMINDD = sys.argv[1]
+## all data read in from the input file
+dict_input_file_variables = ReadU.readCheckInputFile(inpRMINDD, ofile_outRMINDD)
 
-ifile_inpRMINDD = open (inpRMINDD, 'r')
+num_of_module_calls = len(dict_input_file_variables)
 
-ntasks = int(ifile_inpRMINDD.readline().split()[0])
+for i in range(num_of_module_calls):
+	mod_num = i + 1
+	some_module = dict_input_file_variables[mod_num]
+	print('Outputs for module call = ', mod_num, ' ....', file = ofile_outRMINDD)
 
-if (ntasks < 1 or ntasks > 3):
-	print('**** Give Valid Value for Number of Tasks ****')
+	'''
+	The purpose of EngdepU is to compute dpa and heating cross sections due to
+	interactions by neutrons in the isotope of a material. It also produces basic
+	cross sections and recoil energies. Both point and multigrouped dpa and heating
+	can be obtained.
+	'''
+	if (some_module['module_name'] == "EngdepU"):
+		print('~~ RMINDD-EngdepU ~~')
+		print('~~ RMINDD-EngdepU ~~', file = ofile_outRMINDD)
+		print(':Messages for you:', file = ofile_outRMINDD)
+		print('--------------------', file = ofile_outRMINDD)
+		print('', file = ofile_outRMINDD)
 
-if (1 <= ntasks and ntasks <= 3):
-	start_time = process_time()
-	for itasks in range (ntasks):
-		cmetric = ifile_inpRMINDD.readline().split()[0]
+		printIndexesforReactions(ofile_outRMINDD)
 
-	# Perform tasks based on the results required from the relevant module
-	# First one is for energy deposition to estimate dpa and heating
-		if (cmetric == 'EngdepU'):
+		print('The computed dpa and heating cross sections can', file = ofile_outRMINDD)
+		print('be found in files:', file = ofile_outRMINDD)
+		print(f'{some_module['output_filenames']}ndpa--.txt and {some_module['output_filenames']}nheat--.txt and', file = ofile_outRMINDD)
+		print(f'{some_module['output_filenames']}ndpagrouped--.txt and {some_module['output_filenames']}nheatgrouped--.txt' , file = ofile_outRMINDD)
+		print('for each reaction', file = ofile_outRMINDD)
+		print('', file = ofile_outRMINDD)
+		print('Total from CPO reactions is in: ....3001.txt', file = ofile_outRMINDD)
+		print('Total from (n, xn) reactions is in: ....1601.txt', file = ofile_outRMINDD)
+		print('Total from (n, anything) inexplicit reaction data is in: ....5001.txt', file = ofile_outRMINDD)
 
-			ifile52 = open ("tape01", 'r')
+		ifile_rawENDF6 = open(some_module['raw_ENDF6_file'], 'r')
+		ifile_preprocessedENDF6 = open(some_module['preprocessed_ENDF6_file'], 'r')
 
-			print( '~~ RMINDD-EngdepU ~~')
-			print( '~~ RMINDD-EngdepU ~~', file = ofile_outRMINDD)
-			print( ':Messages for you:', file = ofile_outRMINDD)
-			print('--------------------', file = ofile_outRMINDD)
-			print('', file = ofile_outRMINDD)
-		
-			ifile52.readline()
-			data = ifile52.readline().split()
-			#mat = data[6]
-			if (len(data) == 7):
-				mat = data[5][-4:]				# read mat number in ENDF = 52
-			#if (len(data) == 8):
-			#	mat = data[5][-4:]				# read mat number in ENDF = 52
-			if (len(data) == 8):
-				mat = data[6]				# read mat number in ENDF = 52
+		## unique energy array and number of energy points
+		(NPt, Etu) = UtilsU.uqce(ofile_outRMINDD, ifile_preprocessedENDF6)
 
-			for i in range(3):
-				ifile52.readline()
-			data = ifile52.readline().split()
-			iso = data[0] + data[1]
-			ifile52.close()
-	
-			print( 'Evaluation on tape01', file = ofile_outRMINDD)
-			print( iso, file = ofile_outRMINDD)
-			print('', file = ofile_outRMINDD)
-			matg = ifile_inpRMINDD.readline().split()[0] 			# given mat number in input = 50
-			
-			# Check if given mat number matches with ENDF mat number
-			
-			##
-			print(mat, matg, file = ofile_outRMINDD)
-			
-			if (mat != matg):
-				print( 'Error', file = ofile_outRMINDD)
-				print( 'Material does not exist on tape01', file = ofile_outRMINDD)
-				print('', file = ofile_outRMINDD)
-				break
-			
-			nreac = int(ifile_inpRMINDD.readline().split()[0])   		# given number of reactions in input = 50
-			nra = [0]*nreac
-			data = ifile_inpRMINDD.readline().split()
-			for i in range(nreac):
-				nra[i] = int(data[i])
-			data = ifile_inpRMINDD.readline().split()
-			mdisp = int(data[0]); Ed = float(data[1]); bad = float(data[2]); cad = float(data[3]) 	#  dpa model, displ. energy, arc dpa parameters(2)
-			data = ifile_inpRMINDD.readline().split()
-			mgyn = int(data[0]); insp = int(data[1]) 					# multigrouping yes=1 or no=0 and given input spectrum yes = 1, no = 0
-			if (mgyn == 1):
-				igtype = int(ifile_inpRMINDD.readline().split()[0]) 		# type of group
-				NpMTtg = int(ifile_inpRMINDD.readline().split()[0]) 		# number of partial MTs to group
-									
-				# applies only for total, (n, xn), total (n, CPO) in nra
-				if (NpMTtg > 0):					# store partial MTs to group
-					nMTprtg = [0]*NpMTtg
-					data = ifile_inpRMINDD.readline().split()
-					for i in range(NpMTtg):
-						nMTprtg[i] = int(data[i])
+		EngdepU.controlAllReactionsHeatingDPA (ofile_outRMINDD, ifile_rawENDF6, ifile_preprocessedENDF6, \
+		some_module['input_n_spec'], some_module['num_reac_array'], some_module['num_reac'], NPt, Etu, \
+		some_module['atom_displ_model'], some_module['threshold_Ed'], some_module['b_arcdpa'], some_module['c_arcdpa'], \
+		some_module['multigroup'], some_module['en_group_type'], some_module['output_filenames'])
 
-			# Check if nreac is within 1 and 7 and proceed in main calculatiun (uqce), else print error
-			if (1 <= nreac and nreac <= 7):
-			
-				EngdepU.uqce (ofile_outRMINDD,insp,nra,nreac,mdisp,Ed,bad,cad,mgyn,igtype)
-			#call extractdata(nra(i))
-			#call filerecds()
-				if (NpMTtg > 0):
-					print( 'Multigroup partial reactions .....')
-					for i in range (NpMTtg):
-						print( 'MT = ',nMTprtg[i])
-						#call groupmulti (insp,nMTprtg(i),igtype,1)
-						#call groupmulti (insp,nMTprtg(i),igtype,2)
-			else:
-				print( 'Error', file = ofile_outRMINDD)
-				print( 'wrong reaction index; please follow the list', file = ofile_outRMINDD)
-				print( "1 = n,g" , file = ofile_outRMINDD)
-				print( "2 = n,n" , file = ofile_outRMINDD)
-				print( "3 = n,n'" , file = ofile_outRMINDD)
-				print( "4 = n,xn" , file = ofile_outRMINDD)
-				print( "5 = n,particle", file = ofile_outRMINDD)
-				print( "6 = n,anything", file = ofile_outRMINDD)
-				print( "7 = total", file = ofile_outRMINDD)
-				print('', file = ofile_outRMINDD)
-			
-			print('------------------------------------------------', file = ofile_outRMINDD)
-			print('', file = ofile_outRMINDD)
-			print('The computed dpa and heating cross sections can', file = ofile_outRMINDD)
-			print('be found in files:', file = ofile_outRMINDD)
-			print('ndpa--.txt and nheat--.txt and', file = ofile_outRMINDD)
-			print('ndpagrouped--.txt and nheatgrouped--.txt' , file = ofile_outRMINDD)
-			print('for each reaction', file = ofile_outRMINDD)
-			print('', file = ofile_outRMINDD)
-			print('Total from CPO reactions is in: ....3001.txt', file = ofile_outRMINDD)
-			print('Total from (n, xn) reactions is in: ....1601.txt', file = ofile_outRMINDD)
-			print('Total from (n, anything) reactions is in: ....5001.txt', file = ofile_outRMINDD)
-			
-			stop_time = process_time()
-			total_time = stop_time - start_time
-			print('', file = ofile_outRMINDD)
-			print( 'Total time taken:', file = ofile_outRMINDD)
-			print(total_time, file = ofile_outRMINDD)
+		ifile_preprocessedENDF6.close()
+		ifile_rawENDF6.close()
 
-		# Second one is to calculate recoil energy distribution
+		if (some_module['num_MT_multigroup'] > 0):
+			print( 'Multigroup partial reactions .....')
+			for i in range (some_module['num_MT_multigroup']):
+				print( 'MT = ', some_module['num_MT_group_array'][i])
 
-		if (cmetric == 'RecedU'):
 
-			ifile102 = open("tape01", 'r')
+	'''
+	The purpose of RecedU is to produce the PKA spectra induced by reactions of energetic
+	neutrons with the isotopes of material. The PKA spectra are produced in a energy 
+	group-to-group matrix format. Reaction-wise data, partial sums as well as total PKA
+	spectra can be produced.
+	'''
+	if (some_module['module_name'] == "RecedU"):
+		print('~~ RMINDD-RecedU ~~')
+		print('~~ RMINDD-RecedU ~~', file = ofile_outRMINDD)
+		print(':Messages for you:', file = ofile_outRMINDD)
+		print('--------------------', file = ofile_outRMINDD)
+		print('', file = ofile_outRMINDD)
 
-			print( '~~ RMINDD-RecedU ~~')
-			print( ':Messages for you:', file = ofile_outRMINDD)
-			print('--------------------', file = ofile_outRMINDD)
-			print('', file = ofile_outRMINDD)
-	  
-			ifile102.readline()
-			mat = ifile102.readline().split()[5][-4:] 				# read mat number in ENDF = 52
-			matg = ifile_inpRMINDD.readline().split()[0] 			# given mat number in input = 50
-			
-			for i in range(3):
-				ifile102.readline()
-			data = ifile102.readline().split()
-			iso = data[0] + data[1]
-			ifile102.close()
-			
-			print( 'Evaluation on tape01', file = ofile_outRMINDD)
-			print( iso, file = ofile_outRMINDD)
-			print('', file = ofile_outRMINDD)
-			
-			# Check if given mat number matches with ENDF mat number
-			
-			##
-			print(mat, matg, file = ofile_outRMINDD)
-			
-			if (mat != matg):
-				print( 'Error', file = ofile_outRMINDD)
-				print( 'Material does not exist on tape01', file = ofile_outRMINDD)
-				print('', file = ofile_outRMINDD)
-				break
+		printIndexesforReactions(ofile_outRMINDD)
 
-			# nrct = Number of reactions to calculate
-			# nrcta = Array of reaction indices for which to calculate [1=elastic,
-			# 2=inelastic, 3=remaining particle thresholds, 4=(n,xn), 5=(n,g), 
-			# 6=(n,anything-transmuted nuclei), 7=sum (total)]
-			# nrg = Number of energy group limits
-			# nbpoints = Number of energy points to add inside each group
-			# igtype = which group? 
-			# 1 = VITAMIN-J 175, 2 = 26 group, 3 = 33 group, 4 = 238 group,
-			# 5 = 198 group,6 = 709 group, 7 = 640 group, 8 = 100 group,
-			# 9 = 47 group, 10 = DLC-2 100 group, 11 = 229 group, 12 = 229 group.
+		print('The computed PKA spectra can be found in files:', file = ofile_outRMINDD)
+		print('PKA-MATRICES.txt -- each reaction', file = ofile_outRMINDD)
+		print('n-allPKAspectra.txt -- sum total', file = ofile_outRMINDD)
 
-		
-			eliso = ifile_inpRMINDD.readline().strip('\n')
-			nrct = int(ifile_inpRMINDD.readline().split()[0])
-			if (nrct > 0):
-				nrcta = [0]*nrct
-				line = ifile_inpRMINDD.readline()
-				for i in range(nrct):
-					nrcta[i] = int(line.split()[i])
-			if (nrct > 1):
-				for value in nrcta:
-					if (value == 7):
-						print("Please do only partials or only total. In total all partials will also be done.")
-						break
-			line = ifile_inpRMINDD.readline()
-			igtype = int(line.split()[0])
-			nrg  = int(line.split()[1])
-			nbpoints = int(line.split()[2])
-			nre = nrg - 1
-			insp = int(ifile_inpRMINDD.readline().split()[0])
-			num_partial_reac_tosum = int(ifile_inpRMINDD.readline().split()[0])
-			if (num_partial_reac_tosum > 0):
-				partial_reac_tosum = [0]*num_partial_reac_tosum
-				line = ifile_inpRMINDD.readline()
-				for i in range(num_partial_reac_tosum):
-					partial_reac_tosum[i] = int(line.split()[i])
-			
-			if (1 <= nrct and nrct <= 6):
-				for i in range (nrct):
-					RecedU.FINE_ENERGY_CALL_REAC(ofile_outRMINDD,insp,eliso,igtype,nrg,nbpoints,nrcta[i],nrcta)
+		ifile_rawENDF6 = open(some_module['raw_ENDF6_file'], 'r')
+		ifile_preprocessedENDF6 = open(some_module['preprocessed_ENDF6_file'], 'r')
 
-			if (num_partial_reac_tosum > 0):
-				ofile1001 = open('n-sum-partialsPKAspectra.txt', 'a')
-				print(eliso, file = ofile1001)
-				dsdt = numpy.zeros((nre,nre))
-				dsdt = RecedU.ALLSUM (nrg,partial_reac_tosum)
-				print('The sum of recoil nuclei energy spectra for given partial reactions', file = ofile1001)
-				for it in range (nre):
-					print (['{:.6E}'.format(dsdt[it][jt]) for jt in range (nre)], file = ofile1001)
-				ofile1001.close()
-			
-			print('------------------------------------------------', file = ofile_outRMINDD)
-			print('', file = ofile_outRMINDD)
-			print('The computed PKA spectra can be found in files:', file = ofile_outRMINDD)
-			print('PKA-MATRICES.txt -- each reaction', file = ofile_outRMINDD)
-			print('n-allPKAspectra.txt -- sum total', file = ofile_outRMINDD)
-		
-			stop_time = process_time()
-			total_time = stop_time - start_time
-			print('', file = ofile_outRMINDD)
-			print( 'Total time taken:', file = ofile_outRMINDD)
-			print(total_time, file = ofile_outRMINDD)
+		## unique energy array and number of energy points
+		(NPt, Etu) = UtilsU.uqce(ofile_outRMINDD, ifile_preprocessedENDF6)
+
+		RecedU.FINE_ENERGY_CALL_REAC (ofile_outRMINDD, ifile_rawENDF6, ifile_preprocessedENDF6, some_module['input_n_spec'], \
+		some_module['element_isotope_name'], some_module['en_group_type'], some_module['num_group_limits'], \
+		some_module['num_fine_en_points'], some_module['num_reac_array'])
+
+		ifile_preprocessedENDF6.close()
+		ifile_rawENDF6.close()
+
+		if (some_module['num_partial_reac_tosum'] > 0):
+			ofile1001 = open('n-sum-partialsPKAspectra.txt', 'a')
+			print(some_module['element_isotope_name'], file = ofile1001)
+			dsdt = numpy.zeros((some_module['num_group_limits']-1, some_module['num_group_limits']-1))
+			dsdt = RecedU.ALLSUM (some_module['num_group_limits'], some_module['partial_reac_tosum'])
+			print('The sum of recoil nuclei energy spectra for given partial reactions', file = ofile1001)
+			for it in range (some_module['num_group_limits']-1):
+				print (['{:.6E}'.format(dsdt[it][jt]) for jt in range (some_module['num_group_limits']-1)], file = ofile1001)
+			ofile1001.close()
+
+	'''
+	The purpose of TransmU is to find the neutron induced gas and transmutation nuclide production cross sections in the
+	given isotope of the target element.
+	'''
+	if (some_module['module_name'] == "TransmU"):
+		print('~~ RMINDD-TransmU ~~')
+		print('~~ RMINDD-TransmU ~~', file = ofile_outRMINDD)
+		print(':Messages for you:', file = ofile_outRMINDD)
+		print('--------------------', file = ofile_outRMINDD)
+		print('', file = ofile_outRMINDD)
+
+		ifile_rawENDF6 = open(some_module['raw_ENDF6_file'], 'r')
+		ifile_preprocessedENDF6 = open(some_module['preprocessed_ENDF6_file'], 'r')
+
+		## unique energy array and number of energy points
+		(NPt, Etu) = UtilsU.uqce(ofile_outRMINDD, ifile_preprocessedENDF6)
+
+		TransmU.ActivationGasProduction (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,some_module)
+
+		ifile_preprocessedENDF6.close()
+		ifile_rawENDF6.close()
+
+	''' 
+	The purpose of CombinU is to find neutron induced dpa cross sections in the
+	multi-element target material. It should be run only after having the required quantities
+	for each isotope in the target material calculated using the EngdepU module.
+	'''
+	if (some_module['module_name'] == "CombinU"):
+		print( '~~ RMINDD-CombinU ~~')
+		print( '~~ RMINDD-CombinU ~~', file = ofile_outRMINDD)
+		print( ':Messages for you:', file = ofile_outRMINDD)
+		print('--------------------', file = ofile_outRMINDD)
+		print('', file = ofile_outRMINDD)
+
+		CombinU.combineXSMultiElementTarget (ofile_outRMINDD, some_module)
+
+	## end of looping over as many modules given in input.
+
+stop_time = process_time()
+total_time = stop_time - start_time
+print('', file = ofile_outRMINDD)
+print( 'Total time taken:', file = ofile_outRMINDD)
+print(total_time, file = ofile_outRMINDD)
 
 ofile_outRMINDD.close()
-
-ifile_inpRMINDD.close()
