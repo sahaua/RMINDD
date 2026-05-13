@@ -1,12 +1,15 @@
-## >> Code: RMINDD.py, module file: EngdepU.py
-## >> Perform: Heating and dpa estimation due to energy deposition in neutron reaction using basic ENDF-6 files
-## >> Author: Uttiyoarnab Saha
-## >> Version and Date: 1.0 and 25/03/2021
-## >> Last modified: 25/03/2021, Kolkata
-## >> Update: 25/03/2021
-## >> Major changes:
-##
-## ======================================================================================================
+''' 
+Code: RMINDD - (Radiation Matter Interaction and Damage calculation using Nuclear Data)
+Perform: Calcuation of metrics of neutron radiation damage in a material using ENDF-6 files
+Module: EngdepU.py -- finds dpa and heating cross sections
+Author: Uttiyoarnab Saha
+Version and Date: 1.0 and 01/07/2022
+Last modified: 01/07/2022, Kolkata
+Update: 01/07/2022
+Major changes: 
+
+=========================================================================================
+'''
 
 import numpy
 import math
@@ -29,117 +32,6 @@ def linerInterpolation(x,x1,x2,y1,y2):
 def interpolateXSToUniqueEnergyArray (E,s1,Etu):
 	s2 = numpy.interp(Etu, E, s1)
 	return(s2)
-
-#========The data in each line are explicitly extracted=======*
-
-def eachlineinfo(line):
-	data = [0]*9
-	for i in range(6):
-		s = ''						# 6 data each of 11 places
-		for char in range(i*11,(i+1)*11):
-			s = s + line[char]
-		data[i] = s.lstrip(' ')
-
-	s = ''
-	for char in range(66,70):			# MAT data of 4 places
-		s = s + line[char]
-	data[6] = s.lstrip(' ')
-	# this is done because some ENDF-6 files only give a blank space here in the first line (creates problem)
-	if ((data[6]) == ''):
-		data[6] = 1
-
-	s = ''
-	for char in range(70,72):			# MF data of 2 places
-		s = s + line[char]
-	data[7] = s.lstrip(' ')
-
-	s = ''
-	for char in range(72,75):			# MT data of 3 places
-		s = s + line[char]
-	data[8] = s.lstrip(' ')
-
-	for i in range(6):
-		putE = 1
-		for x in data[i]:
-			if (x == 'E' or x == 'e'):
-				putE = 0
-				break
-		if (putE == 1):
-			data[i] = "E-".join(data[i].split('-'))
-			data[i] = "E+".join(data[i].split('+'))
-			data[i] = data[i].lstrip('E')
-
-	return(data)
-
-#========The data in lines of different types are explicitly extracted=======*
-
-def line_type1_info(line):
-	data = eachlineinfo(line)
-	dataV1 = 0; dataV2 = 0; dataV3 = 0; dataV4 = 0; dataV5 = 0; dataV6 = 0
-	dataV7 = 0; dataV8 = 0; dataV9 = 0
-	iflspace = 0
-	for element in data:
-		if (element == ''):
-			iflspace = 1
-			break
-	if (iflspace == 0):
-		dataV1 = float(data[0]); dataV2 = float(data[1]); dataV3 = int(data[2])
-		dataV4 = int(data[3]); dataV5 = int(data[4]); dataV6 = int(data[5])
-		dataV7 = int(data[6]); dataV8 = int(data[7]); dataV9 = int(data[8])
-	return(dataV1,dataV2,dataV3,dataV4,dataV5,dataV6,dataV7,dataV8,dataV9)
-
-def line_type2_info(line):
-	data = eachlineinfo(line)
-	dataV1 = float(data[0]); dataV2 = float(data[1]); dataV3 = int(data[2])
-	dataV4 = int(data[3]); dataV5 = int(data[4]); dataV6 = int(data[5])
-	dataV7 = int(data[6]); dataV8 = int(data[7]); dataV9 = int(data[8])
-	return(dataV1,dataV2,dataV3,dataV4,dataV5,dataV6,dataV7,dataV8,dataV9)
-
-def line_type3_info(filehandle,numdata,numvariables):
-	# numvariables (1 / 2) denotes no. of variables the given data has to be read into
-	if (numvariables == 2):
-		xdata = [0]*numdata
-		ydata = [0]*numdata
-	if (numvariables == 1):
-		xdata = [0]*numdata
-
-	i = 0
-	if (numvariables == 2):
-		while (i < numdata):
-			line = filehandle.readline()
-			data = eachlineinfo(line)
-			# run_limit variable is introduced because in some files 
-			#(e.g. ENDF/B-VIII.0, Si28
-			#  1.000000+0 1.000000+0          0          2          1          21425 6 51
-			#	2          2          0          0          0          01425 6 51)
-			# extra data (more than 2) are given in the interpolation ranges specification line!
-			run_limit = 6
-			if (2*numdata <= run_limit):
-				run_limit = 2*numdata
-			for j in range(0,run_limit,2):
-				if (data[j] != ''):
-					xdata[i] = float(data[j])
-					ydata[i] = float(data[j+1])
-					i += 1
-				else:
-					i += 1
-					break
-	if (numvariables == 1):
-		while (i < numdata):
-			line = filehandle.readline()
-			data = eachlineinfo(line)
-			for j in range(6):
-				if (data[j] != ''):
-					xdata[i] = float(data[j])
-					i += 1
-				else:
-					i += 1
-					break
-
-	if (numvariables == 2):
-		return(xdata, ydata)
-	if (numvariables == 1):
-		return(xdata)
 
 #=======Gauss-Legendre Quadrature Points and Weights=======*
 	
@@ -891,7 +783,7 @@ def Tintegheat1(A2,E,Q,bta,n3,f1,f2,f3):
 	
 # Collect the yields of five species of light charged particles
 # from File 6 MT = 5.
-	
+
 def gtYMf6Mt5():
 	Eyld = [[0]*200]*5; Yld = [[0]*200]*5
 	iZp = [0]*5; iAp = [0]*5; Nyld = [0]*5
@@ -908,12 +800,13 @@ def gtYMf6Mt5():
 	iAp[2] = 3
 	iAp[3] = 3
 	iAp[4] = 4
-		
-	ifile = open('tape01', 'r')
-	
+
+	ifile_rawENDF6.seek(0, 0)
+	ifile = ifile_rawENDF6
+
 	while (True):
 		line = ifile.readline()
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if (MAT == -1):
 			ifl6mt5 = 0
@@ -921,14 +814,14 @@ def gtYMf6Mt5():
 		if (MT == 0):
 			if (MF == 6):
 				line = ifile.readline()
-				data = eachlineinfo(line)
+				data = UtilsU.eachLineInfo(line)
 				ZAv = float(data[0]); AWRv = float(data[1]); l1 = int(data[2])
 				LCT = int(data[3]); NKv = int(data[4]); l2 = int(data[5])
 				MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
 
 			if (MF < 6):
 				line = ifile.readline()
-				data = eachlineinfo(line)
+				data = UtilsU.eachLineInfo(line)
 				ZAv = float(data[0]); AWRv = float(data[1]); l1 = int(data[2])
 				LCT = int(data[3]); NKv = int(data[4]); l2 = int(data[5])
 				MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
@@ -940,7 +833,7 @@ def gtYMf6Mt5():
 					NK = NKv
 					for NSS in range (NK):
 						line = ifile.readline()
-						data = eachlineinfo(line)
+						data = UtilsU.eachLineInfo(line)
 						ZAP = float(data[0]); AWP = float(data[1]); LIP = int(data[2])
 						LAW = int(data[3]); NR6 = int(data[4]); NP6 = int(data[5])
 						MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
@@ -950,22 +843,22 @@ def gtYMf6Mt5():
 						or int(ZAP) == iZp[3] or int(ZAP) == iZp[4]):
 							iflgp = 1
 						
-						if (int(ZAP) == iZp[0] and int(ceiling(AWP)) == iAp[0]):
+						if (int(ZAP) == iZp[0] and int(math.ceil(AWP)) == iAp[0]):
 							ip = 0
-						if (int(ZAP) == iZp[1] and int(ceiling(AWP)) == iAp[1]):
+						if (int(ZAP) == iZp[1] and int(math.ceil(AWP)) == iAp[1]):
 							ip = 1
-						if (int(ZAP) == iZp[2] and int(ceiling(AWP)) == iAp[2]):
+						if (int(ZAP) == iZp[2] and int(math.ceil(AWP)) == iAp[2]):
 							ip = 2
-						if (int(ZAP) == iZp[3] and int(ceiling(AWP)) == iAp[4]):
+						if (int(ZAP) == iZp[3] and int(math.ceil(AWP)) == iAp[3]):
 							ip = 3
-						if (int(ZAP) == iZp[4] and int(ceiling(AWP)) == iAp[5]):
+						if (int(ZAP) == iZp[4] and int(math.ceil(AWP)) == iAp[4]):
 							ip = 4
 		
 						if (iflgp == 0):
 							N = 0
 							while (N < NR6):
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								for i in range(0,6,2):
 									NBT = int(data[i])
 									INTr = int(data[i+1])
@@ -973,7 +866,7 @@ def gtYMf6Mt5():
 							N = 0
 							while (N < NP6):
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								for i in range(0,6,2):
 									E = float(data[i])
 									Y = float(data[i+1])
@@ -984,7 +877,7 @@ def gtYMf6Mt5():
 							N = 0
 							while (N < NR6):
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								for i in range(0,6,2):
 									NBTp[ip][N] = int(data[i])
 									INTrp[ip][N] = int(data[i+1])
@@ -992,7 +885,7 @@ def gtYMf6Mt5():
 							N = 0
 							while (N < NP6):
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								for i in range(0,6,2):
 									Eyld[ip][N] = float(data[i])
 									Yld[ip][N] = float(data[i+1])
@@ -1000,7 +893,7 @@ def gtYMf6Mt5():
 
 						if (LAW != 0):	# added this condition for calculating from JEFF-3.3
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = UtilsU.eachLineInfo(line)
 							c1 = float(data[0]); c2 = float(data[1]); l3 = int(data[2])
 							l4 = int(data[3]); NR6 = int(data[4]); NE6 = int(data[5])
 							MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
@@ -1008,14 +901,14 @@ def gtYMf6Mt5():
 							N = 0
 							while (N < NR6):
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								for i in range(0,6,2):
 									NBT = int(data[i])
 									INTr = int(data[i+1])
 									N += 1
 							for i in range(NE6):
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								c1 = float(data[0]); En = float(data[1]); ND = int(data[2])
 								NA = int(data[3]); NW = int(data[4]); NEP = int(data[5])
 								MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
@@ -1024,15 +917,13 @@ def gtYMf6Mt5():
 								J1 = 0
 								while (J1 < NW):
 									line = ifile.readline()
-									data = eachlineinfo(line)
+									data = UtilsU.eachLineInfo(line)
 									for k in range(6):
 										Bvall[J1] = float(data[k])
 										J1 += 1
 
 			else:
 				break
-
-	ifile.close()
 
 	return (NBTp,INTrp,Nyld,Eyld,Yld)
 
@@ -1041,7 +932,7 @@ def gtYMf6Mt5():
 	## Calculation of neutron dpa and heating cross sections due to
 	## charged particle out reactions of neutrons.
 	
-def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
+def n_CPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu,out_filenames):
 	sdpat = numpy.zeros(NPt); snhtt = numpy.zeros(NPt)
 	signcpol = numpy.zeros(NPt); tot_energy_products1 = numpy.zeros(NPt); num_of_displ1 = numpy.zeros(NPt)
 	# for energy-balance heating
@@ -1127,18 +1018,19 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 
 	iflpresent = 0 		# flag for the presence of cross sections MF=3. 
 
-	ifile = open ('tape02', 'r')
+	ifile_preprocessedENDF6.seek(0, 0)
+	ifile = ifile_preprocessedENDF6
 
 	## extraction of cross sections
 	while True:
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if ( MT == 0 and MF != 0):
 			line = ifile.readline()
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			iflspace = 0
 			for element in data:
 				if (element == ''):
@@ -1161,7 +1053,7 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 					ZA = ZAv
 					AWR = AWRv
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					QM = float(data[0]); QI =  float(data[1]); LR = int(data[3])
 					NR = int(data[4]); NP = int(data[5])
 					ifile.readline()
@@ -1172,20 +1064,18 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 						shall_EB = [0]*NPt
 						tot_energy_n_photons = [0]*NPt
 						dn4_neutrons = [0]*NPt; dn5_photons = [0]*NPt
-						(Eall1, sall1) = line_type3_info(ifile,NP,2)
+						(Eall1, sall1) = UtilsU.lineType3Info(ifile,NP,2)
 					if (NP <= NPt):
 						Eall = [0]*NP; sall = [0]*NP; sdall = [0]*NP
 						shall = [0]*NP; num_of_displ = [0]*NP; tot_energy_products = [0]*NP
 						shall_EB = [0]*NP
 						tot_energy_n_photons = [0]*NP
 						dn4_neutrons = [0]*NP; dn5_photons = [0]*NP
-						(Eall, sall) = line_type3_info(ifile,NP,2)
+						(Eall, sall) = UtilsU.lineType3Info(ifile,NP,2)
 					if (ifdthl == 1):
 						alfull = [[0]*65]*NP; alc = [0]*65
 		else:
 			break
-
-	ifile.close()
 
 	print('', file = ofile_outRMINDD)
 	print('Number of energy points given is ',NP, file = ofile_outRMINDD)
@@ -1206,16 +1096,17 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 		ifspad4muf = 0 # flag for secondary particle angular data in 'mu,f' form
 
 		if (MTi >= int(MTdthl[0])):
-			ifile = open ('tape01', 'r')
+			ifile_rawENDF6.seek(0, 0)
+			ifile = ifile_rawENDF6
 			while True:
 				line = ifile.readline()
 				if (line == ''):
 					break
-				data = eachlineinfo(line)
+				data = UtilsU.eachLineInfo(line)
 				MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 				if (MF==3 and MT==0 ):
 					line = ifile.readline()
-					(ZA,AWR,l1,LTT,NK,l2,MAT,MF,MT) = line_type1_info(line)
+					(ZA,AWR,l1,LTT,NK,l2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 				if (MAT != -1):
 					if (MF == 4):
 						if (MT == MTi):
@@ -1224,20 +1115,20 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 							if (LTT == 3 or LTT == 1):
 								ifspad4al = 1
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								NE1 = int(data[5])
 								## Legendre polynomial coefficients
 								ifile.readline()
 								al4 = [[0]*65]*NE1; EL = [0]*NE1
 								for i in range (NE1):
 									line = ifile.readline()
-									data = eachlineinfo(line)
+									data = UtilsU.eachLineInfo(line)
 									T = float(data[0]); EL[i] = float(data[1]); NL4 = int(data[4])
 									NL4 = NL4 + 1
 									al4[i][0] = 1
 									al4[i][1:-1] = 0.0
 									temporary = [0]*NL4
-									temporary = line_type3_info (ifile,NL4-1,1)
+									temporary = UtilsU.lineType3Info (ifile,NL4-1,1)
 									for j, value in enumerate (temporary, 1):
 										al4[i][j] = value
 
@@ -1251,18 +1142,17 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 								fmuE = numpy.zeros((NP,64)); fpr = [0]*64
 								for i in range (NE2):
 									line = ifile.readline()
-									data = eachlineinfo(line)
+									data = UtilsU.eachLineInfo(line)
 									T = float(data[0]); Enf[i] = float(data[1]) 
 									NPr[i] = int(ifile.readline().split()[0])
 									temporary1 = [0]*NPr[i]
 									temporary2 = [0]*NPr[i]
-									(temporary1,temporary2) = line_type3_info(ifile,NPr[i],2)
+									(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NPr[i],2)
 									for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 										cdata4[i][j] = value1
 										fdata4[i][j] = value2
 				else:
 					break
-			ifile.close()
 
 		# Data from File 6
 
@@ -1277,24 +1167,25 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 		iflcom = 0 # secondary energy and angle in c.o.m. system
 		iflcomlab = 0 # secondary energy and angle in c.o.m (A<=4), lab. (A>4)
 
-		ifile = open ('tape01', 'r')
+		ifile_rawENDF6.seek(0, 0)
+		ifile = ifile_rawENDF6
 
 		while True:
 			line = ifile.readline()
 			if (line == ''):
 				break
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 			if (MT == 0):
 				line = ifile.readline()
-				data = eachlineinfo(line)
+				data = UtilsU.eachLineInfo(line)
 				iflspace = 0
 				for element in data:
 					if (element == ''):
 						iflspace = 1
 						break
 				if (iflspace == 0):
-					(ZAv,AWRv,l1,LCT,NKv,l2,MAT,MF,MT) = line_type1_info(line)
+					(ZAv,AWRv,l1,LCT,NKv,l2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 			if (MAT != -1):
 				if (MF == 6):
 					if (MT == MTi):
@@ -1308,21 +1199,21 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 							iflcomlab = 1
 						for NSS in range (NK):
 							line = ifile.readline()
-							data = eachlineinfo(line)
-							(ZAP[NSS],AWP[NSS],LIP,LAW[NSS],NR6,Nyld[NSS],MAT,MF,MT) = line_type1_info(line)
+							data = UtilsU.eachLineInfo(line)
+							(ZAP[NSS],AWP[NSS],LIP,LAW[NSS],NR6,Nyld[NSS],MAT,MF,MT) = UtilsU.lineType1Info(line)
 
 							if (float(AWP[NSS]) > int(beta[lpr])):
 								irs = NSS
 								iflr = 1
 							temporary1 = [0]*NR6
 							temporary2 = [0]*NR6
-							(temporary1,temporary2) = line_type3_info(ifile,NR6,2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NR6,2)
 							for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								NBT[NSS][N] = value1
 								INTr[NSS][N] = value2
 							temporary1 = [0]*int(Nyld[NSS])
 							temporary2 = [0]*int(Nyld[NSS])
-							(temporary1,temporary2) = line_type3_info(ifile,int(Nyld[NSS]),2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,int(Nyld[NSS]),2)
 							for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								Eint6[NSS][N] = value1
 								yi[NSS][N] = value2
@@ -1334,20 +1225,20 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 									ifspad6 = 1
 									isps = NSS
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								c1 = float(data[0]); c2 = float(data[1]); l3 = int(data[2])
 								l4 = int(data[3]); NR6 = int(data[4]); NE6[NSS] = int(data[5])
 								MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
 								temporary1 = [0]*NR6
 								temporary2 = [0]*NR6
-								(temporary1,temporary2) = line_type3_info(ifile,NR6,2)
+								(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NR6,2)
 								for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 									NBT[NSS][N] = value1
 									INTr[NSS][N] = value2
 
 								for i in range (int(NE6[NSS])):
 									line = ifile.readline()
-									data = eachlineinfo(line)
+									data = UtilsU.eachLineInfo(line)
 									c1 = float(data[0]); En[NSS][i] = float(data[1]); LG[NSS] = int(data[2])
 									l2 = int(data[3]); NW = int(data[4]); NL[NSS][i] = int(data[5])
 									MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
@@ -1357,7 +1248,7 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 										al6[NSS][i][0] = 1
 										al6[NSS][i][1:-1] = 0
 										temporary = [0]*int(NL[NSS][i])
-										temporary = line_type3_info (ifile,int(NL[NSS][i])-1,1)
+										temporary = UtilsU.lineType3Info (ifile,int(NL[NSS][i])-1,1)
 										for j, value in enumerate (temporary, 1):
 											al6[NSS][i][j] = value
 
@@ -1368,26 +1259,26 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 											iflgfdlcd = 1
 										temporary1 = [0]*int(NL[NSS][i])
 										temporary2 = [0]*int(NL[NSS][i])
-										(temporary1,temporary2) = line_type3_info(ifile,int(NL[NSS][i]),2)
+										(temporary1,temporary2) = UtilsU.lineType3Info(ifile,int(NL[NSS][i]),2)
 										for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 											cdata6[NSS][i][j] = value1
 											fdata6[NSS][i][j] = value2
 
 							if (int(LAW[NSS]) == 1):
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								c1 = float(data[0]); c2 = float(data[1]); LG[NSS] = int(data[2])
 								LP = int(data[3]); NR6 = int(data[4]); NE6[NSS] = int(data[5])
 								MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
 								temporary1 = [0]*NR6
 								temporary2 = [0]*NR6
-								(temporary1,temporary2) = line_type3_info(ifile,NR6,2)
+								(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NR6,2)
 								for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 									NBT[NSS][N] = value1
 									INTr[NSS][N] = value2
 								for i in range (int(NE6[NSS])):
 									line = ifile.readline()
-									data = eachlineinfo(line)
+									data = UtilsU.eachLineInfo(line)
 									c1 = float(data[0]); En[NSS][i] = float(data[1]); ND = int(data[2])
 									NA = int(data[3]) 
 									NW = int(data[4])
@@ -1401,7 +1292,7 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 											fiso[NSS] = 1
 											Ball = [0]*NW
 											temporary = [0]*NW
-											temporary = line_type3_info (ifile,NW,1)
+											temporary = UtilsU.lineType3Info (ifile,NW,1)
 											for j1, value in enumerate(temporary, 0):
 												Ball[j1] = value
 											K1 = 0
@@ -1415,14 +1306,12 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 										fiso[NSS] = 1
 										temporary1 = [0]*int(NEP[NSS][i])
 										temporary2 = [0]*int(NEP[NSS][i])
-										(temporary1,temporary2) = line_type3_info(ifile,int(NEP[NSS][i]),2)
+										(temporary1,temporary2) = UtilsU.lineType3Info(ifile,int(NEP[NSS][i]),2)
 										for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 											Enp[NSS][i][j] = value1
 											f[NSS][i][j] = value2
 			else:
 				break
-
-		ifile.close()
 
 		ifllargeNP = 0
 		if (NP > NPt):
@@ -2119,7 +2008,7 @@ def n_CPO (ofile_outRMINDD,MTi,lpr,mdisp,Ed,bad,cad,NPt,Etu):
 	# number 1601. This number is also used in the file name giving the
 	# total from (n,xn) reactions.
 
-def CONTROL_nxn (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
+def CONTROL_nxn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames):
 	dpaxn1 = [0]*NPt; snhtxn1 = [0]*NPt; signxntot = [0]*NPt
 	num_of_displnxntot = [0]*NPt; tot_energy_productsnxntot = [0]*NPt
 		# snhtt = Heating cross section from (n,(i)n)				
@@ -2134,9 +2023,10 @@ def CONTROL_nxn (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 	for i in range(3):
 		iflMTpr = 0
 		MTfind = MTnum[i]
-		iflMTpr = FindMT (MTfind)
+		iflMTpr = FindMT (MTfind, ifile_rawENDF6)
 		if (iflMTpr == 1):
-			(signxnl, num_disp, tot_en_products, sdpat, snhtt, iflpresent) = n_xn (ofile_outRMINDD,MTnum[i],NPt,Etu,mdisp,Ed,bad,cad)
+			(signxnl, num_disp, tot_en_products, sdpat, snhtt, iflpresent) = \
+			n_xn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTnum[i],NPt,Etu,mdisp,Ed,bad,cad,out_filenames)
 			if (iflpresent == 1):
 				MTc = MTnum[i]
 				print ( 'MT = ', MTc)
@@ -2148,8 +2038,8 @@ def CONTROL_nxn (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 					snhtxn1[isum] = snhtxn1[isum] + snhtt[isum]
 
 	# 1601 = id for (n,xn) output file, 1 = DPA
-	printtofile (NPt,Etu,signxntot, num_of_displnxntot, dpaxn1,1601,0,1)
-	printtofile (NPt,Etu,signxntot, tot_energy_productsnxntot, snhtxn1,1601,0,2)
+	printToFile (NPt,Etu,signxntot, num_of_displnxntot, dpaxn1,1601,0,1,out_filenames)
+	printToFile (NPt,Etu,signxntot, tot_energy_productsnxntot, snhtxn1,1601,0,2,out_filenames)
 
 #==============================================
 
@@ -2160,7 +2050,7 @@ def CONTROL_nxn (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 	# and kept in an arbitrarily assigned MT number 3001. This number is 
 	# also used in the file name giving the total from (n,CPO) reactions.
 
-def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
+def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames):
 
 	tmdpaMT103 = [0]*NPt; tmdpaMT104 = [0]*NPt
 	tmdpaMT105 = [0]*NPt; tmdpaMT106 = [0]*NPt; tmdpaMT107 = [0]*NPt
@@ -2258,7 +2148,7 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 
 	for j in range(5):
 		iflMTpr = 0
-		iflMTpr = FindMT(MTtpnum[j])
+		iflMTpr = FindMT(MTtpnum[j], ifile_rawENDF6)
 		if (iflMTpr==1):
 			print('', file = ofile_outRMINDD)
 			print(':: MESSAGE :: CPO reaction cross section', file = ofile_outRMINDD)
@@ -2295,11 +2185,11 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 				lpr = 21
 			if (MTfind == 207):
 				lpr = 22
-			iflMTpr = FindMT(MTfind)
+			iflMTpr = FindMT(MTfind, ifile_rawENDF6)
 			if (iflMTpr == 1):
 				(signcpol,num_of_displ1,tot_energy_products1, \
 				tot_energy_n_photons1,dpanth, snhtt, snhtt_EB, ifdpd, iflpresent) = \
-											n_CPO (ofile_outRMINDD,MTtpnum[j],lpr,mdisp,Ed,bad,cad,NPt,Etu)
+					n_CPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTtpnum[j],lpr,mdisp,Ed,bad,cad,NPt,Etu,out_filenames)
 				if (iflpresent == 1):
 					MTc = MTtpnum[j]
 					print('MT = ', MTc)
@@ -2311,9 +2201,9 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 						num_of_displMT103 = num_of_displ1
 						tot_energy_productsMT103 = tot_energy_products1
 						tot_energy_n_photonsMT103 = tot_energy_n_photons1
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpaMT103,203,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtMT103,203,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtMT103_EB,203,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpaMT103,203,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtMT103,203,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtMT103_EB,203,0,3,out_filenames)
 					if (MTc == 204):
 						dpaMT104 = dpanth
 						snhtMT104 = snhtt
@@ -2322,9 +2212,9 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 						num_of_displMT104 = num_of_displ1
 						tot_energy_productsMT104 = tot_energy_products1
 						tot_energy_n_photonsMT104 = tot_energy_n_photons1
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpaMT104,204,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtMT104,204,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtMT104_EB,204,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpaMT104,204,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtMT104,204,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtMT104_EB,204,0,3,out_filenames)
 					if (MTc == 205):
 						dpaMT105 = dpanth
 						snhtMT105 = snhtt
@@ -2333,9 +2223,9 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 						num_of_displMT105 = num_of_displ1
 						tot_energy_productsMT105 = tot_energy_products1
 						tot_energy_n_photonsMT105 = tot_energy_n_photons1
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpaMT105,205,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtMT105,205,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtMT105_EB,205,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpaMT105,205,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtMT105,205,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtMT105_EB,205,0,3,out_filenames)
 					if (MTc == 206):
 						dpaMT106 = dpanth
 						snhtMT106 = snhtt
@@ -2344,9 +2234,9 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 						num_of_displMT106 = num_of_displ1
 						tot_energy_productsMT106 = tot_energy_products1
 						tot_energy_n_photonsMT106 = tot_energy_n_photons1
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpaMT106,206,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtMT106,206,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtMT106_EB,206,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpaMT106,206,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtMT106,206,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtMT106_EB,206,0,3,out_filenames)
 					if (MTc == 207):
 						dpaMT107 = dpanth
 						snhtMT107 = snhtt
@@ -2355,9 +2245,9 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 						num_of_displMT107 = num_of_displ1
 						tot_energy_productsMT107 = tot_energy_products1
 						tot_energy_n_photonsMT107 = tot_energy_n_photons1
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpaMT107,207,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtMT107,207,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtMT107_EB,207,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpaMT107,207,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtMT107,207,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtMT107_EB,207,0,3,out_filenames)
 				# for the iflpresent
  			# for the iflMTpr
  		# for loop
@@ -2372,7 +2262,7 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 		for j in range (281):
 			iflMTpr = 0
 			MTfind = MTnum[j]	
-			iflMTpr = FindMT(MTfind)
+			iflMTpr = FindMT(MTfind, ifile_rawENDF6)
 			if (iflMTpr == 1):
 				if (MTfind == 103):
 					ifl103pr = 1
@@ -2387,7 +2277,7 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 
 				(signcpol,num_of_displ1,tot_energy_products1, \
 				tot_energy_n_photons1,dpanth, snhtt, snhtt_EB, ifdpd, iflpresent) = \
-											n_CPO (ofile_outRMINDD,int(MTnum[j]),j,mdisp,Ed,bad,cad,NPt,Etu)
+					n_CPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,int(MTnum[j]),j,mdisp,Ed,bad,cad,NPt,Etu,out_filenames)
 				if (iflpresent == 1):
 					MTc = int(MTnum[j])
 					print('MT = ', MTc)
@@ -2440,9 +2330,9 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 
 					if (MTc < 600):
 
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
 
 						for isum in range (NPt):
 							dpa3[isum] = dpa3[isum] + dpanth[isum]
@@ -2465,9 +2355,9 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 							num_of_displMT103[isum] = num_of_displMT103[isum] + num_of_displ1[isum]
 							tot_energy_productsMT103[isum] = tot_energy_productsMT103[isum] + tot_energy_products1[isum]
 							tot_energy_n_photonsMT103[isum] = tot_energy_n_photonsMT103[isum] + tot_energy_n_photons1[isum]
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
 
 					if (ifdpd == 0 and ifdisc103 == 1):
 						for isum in range(NPt):
@@ -2478,9 +2368,9 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 							num_of_displMT103[isum] = num_of_displMT103[isum] + num_of_displ1[isum]
 							tot_energy_productsMT103[isum] = tot_energy_productsMT103[isum] + tot_energy_products1[isum]
 							tot_energy_n_photonsMT103[isum] = tot_energy_n_photonsMT103[isum] + tot_energy_n_photons1[isum]
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
 					if (ifdpd == 0 and ifdisc103 == 0):
 						dpaMT103 = dpanth 
 						snhtMT103 = snhtt
@@ -2489,18 +2379,18 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 						num_of_displMT103 = num_of_displ1
 						tot_energy_productsMT103 = tot_energy_products1
 						tot_energy_n_photonsMT103[isum] = tot_energy_n_photons1[isum]
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
 					if (MTc == 649):
 						iffldd103 = 1
 						print('..... taking disc.+cont. (n,p)')
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
-						printtofile(NPt,Etu,signcpoMT103,num_of_displMT103,dpaMT103,103,0,1)
-						printtofile(NPt,Etu,signcpoMT103,tot_energy_productsMT103,snhtMT103,103,0,2)
-						printtofile(NPt,Etu,signcpoMT103,tot_energy_n_photonsMT103,snhtMT103_EB,103,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
+						printToFile(NPt,Etu,signcpoMT103,num_of_displMT103,dpaMT103,103,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpoMT103,tot_energy_productsMT103,snhtMT103,103,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpoMT103,tot_energy_n_photonsMT103,snhtMT103_EB,103,0,3,out_filenames)
 				#-------------------
 
 				if (650 <= MTc and MTc <= 699):
@@ -2515,9 +2405,9 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 							num_of_displMT104[isum] = num_of_displMT104[isum] + num_of_displ1[isum]
 							tot_energy_productsMT104[isum] = tot_energy_productsMT104[isum] + tot_energy_products1[isum]
 							tot_energy_n_photonsMT104[isum] = tot_energy_n_photonsMT104[isum] + tot_energy_n_photons1[isum]
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
 					if (ifdpd == 0 and ifdisc104 == 1):
 						for isum in range (NPt):
 							dpaMT104[isum] = dpaMT104[isum] + dpanth[isum]
@@ -2527,9 +2417,9 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 							num_of_displMT104[isum] = num_of_displMT104[isum] + num_of_displ1[isum]
 							tot_energy_productsMT104[isum] = tot_energy_productsMT104[isum] + tot_energy_products1[isum]
 							tot_energy_n_photonsMT104[isum] = tot_energy_n_photonsMT104[isum] + tot_energy_n_photons1[isum]
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
 					if (ifdpd == 0 and ifdisc104 == 0):
 						dpaMT104 = dpanth
 						snhtMT104 = snhtt
@@ -2538,18 +2428,18 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 						num_of_displMT104 = num_of_displ1
 						tot_energy_productsMT104 = tot_energy_products1
 						tot_energy_n_photonsMT104 = tot_energy_n_photons1
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
 					if (MTc == 699):
 						iffldd104 = 1
 						print('..... taking disc.+cont. (n,d)')
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
-						printtofile(NPt,Etu,signcpoMT104,num_of_displMT104,dpaMT104,104,0,1)
-						printtofile(NPt,Etu,signcpoMT104,tot_energy_productsMT104,snhtMT104,104,0,2)
-						printtofile(NPt,Etu,signcpoMT104,tot_energy_n_photonsMT104,snhtMT104_EB,104,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
+						printToFile(NPt,Etu,signcpoMT104,num_of_displMT104,dpaMT104,104,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpoMT104,tot_energy_productsMT104,snhtMT104,104,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpoMT104,tot_energy_n_photonsMT104,snhtMT104_EB,104,0,3,out_filenames)
 				#-------------------
 
 				if (700 <= MTc and MTc <= 749):
@@ -2564,10 +2454,10 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 							num_of_displMT105[isum] = num_of_displMT105[isum] + num_of_displ1[isum]
 							tot_energy_productsMT105[isum] = tot_energy_productsMT105[isum] + tot_energy_products1[isum]
 							tot_energy_n_photonsMT105[isum] = tot_energy_n_photonsMT105[isum] + tot_energy_n_photons1[isum]
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
-					if (ifdpd == 0 and ifdisc105==1): 		
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
+					if (ifdpd == 0 and ifdisc105==1):
 						for isum in range(NPt):
 							dpaMT105[isum] = dpaMT105[isum] + dpanth[isum]
 							snhtMT105[isum] = snhtMT105[isum] + snhtt[isum]
@@ -2576,9 +2466,9 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 							num_of_displMT105[isum] = num_of_displMT105[isum] + num_of_displ1[isum]
 							tot_energy_productsMT105[isum] = tot_energy_productsMT105[isum] + tot_energy_products1[isum]
 							tot_energy_n_photonsMT105[isum] = tot_energy_n_photonsMT105[isum] + tot_energy_n_photons1[isum]
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
 					if (ifdpd == 0 and ifdisc105 == 0):
 						dpaMT105 = dpanth
 						snhtMT105 = snhtt
@@ -2587,18 +2477,18 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 						num_of_displMT105 = num_of_displ1
 						tot_energy_productsMT105 = tot_energy_products1
 						tot_energy_n_photonsMT105 = tot_energy_n_photons1
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
 					if (MTc == 749):
 						iffldd105 = 1
 						print('..... taking disc.+cont. (n,t)')
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
-						printtofile(NPt,Etu,signcpoMT105,num_of_displMT105,dpaMT105,105,0,1)
-						printtofile(NPt,Etu,signcpoMT105,tot_energy_productsMT105,snhtMT105,105,0,2)
-						printtofile(NPt,Etu,signcpoMT105,tot_energy_n_photonsMT105,snhtMT105_EB,105,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
+						printToFile(NPt,Etu,signcpoMT105,num_of_displMT105,dpaMT105,105,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpoMT105,tot_energy_productsMT105,snhtMT105,105,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpoMT105,tot_energy_n_photonsMT105,snhtMT105_EB,105,0,3,out_filenames)
 				#-------------------
 
 				if (750 <= MTc and MTc <= 799):
@@ -2613,9 +2503,9 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 							num_of_displMT106[isum] = num_of_displMT106[isum] + num_of_displ1[isum]
 							tot_energy_productsMT106[isum] = tot_energy_productsMT106[isum] + tot_energy_products1[isum]
 							tot_energy_n_photonsMT106[isum] = tot_energy_n_photonsMT106[isum] + tot_energy_n_photons1[isum]
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
 					if (ifdpd == 0 and ifdisc106 == 1):
 						for isum in range (NPt):
 							dpaMT106[isum] = dpaMT106[isum] + dpanth[isum]
@@ -2625,9 +2515,9 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 							num_of_displMT106[isum] = num_of_displMT106[isum] + num_of_displ1[isum]
 							tot_energy_productsMT106[isum] = tot_energy_productsMT106[isum] + tot_energy_products1[isum]
 							tot_energy_n_photonsMT106[isum] = tot_energy_n_photonsMT106[isum] + tot_energy_n_photons1[isum]
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
 					if (ifdpd == 0 and ifdisc106 == 0):
 						dpaMT106 = dpanth
 						snhtMT106 = snhtt
@@ -2636,18 +2526,18 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 						num_of_displMT106 = num_of_displ1
 						tot_energy_productsMT106 = tot_energy_products1
 						tot_energy_n_photonsMT106 = tot_energy_n_photons1
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
 					if (MTc == 799):
 						iffldd106 = 1
 						print('..... taking disc.+cont. (n,3He)')
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
-						printtofile(NPt,Etu,signcpoMT106,num_of_displMT106,dpaMT106,106,0,1)
-						printtofile(NPt,Etu,signcpoMT106,tot_energy_productsMT106,snhtMT106,106,0,2)
-						printtofile(NPt,Etu,signcpoMT106,tot_energy_n_photonsMT106,snhtMT106_EB,106,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
+						printToFile(NPt,Etu,signcpoMT106,num_of_displMT106,dpaMT106,106,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpoMT106,tot_energy_productsMT106,snhtMT106,106,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpoMT106,tot_energy_n_photonsMT106,snhtMT106_EB,106,0,3,out_filenames)
 				# -------------------
 				
 				if (800 <= MTc and MTc <= 849):
@@ -2662,9 +2552,9 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 							num_of_displMT107[isum] = num_of_displMT107[isum] + num_of_displ1[isum]
 							tot_energy_productsMT107[isum] = tot_energy_productsMT107[isum] + tot_energy_products1[isum]
 							tot_energy_n_photonsMT107[isum] = tot_energy_n_photonsMT107[isum] + tot_energy_n_photons1[isum]
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
 					if (ifdpd == 0 and ifdisc107 == 1):
 						for isum in range(NPt):
 							dpaMT107[isum] = dpaMT107[isum] + dpanth[isum]
@@ -2674,9 +2564,9 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 							num_of_displMT107[isum] = num_of_displMT107[isum] + num_of_displ1[isum]
 							tot_energy_productsMT107[isum] = tot_energy_productsMT107[isum] + tot_energy_products1[isum]
 							tot_energy_n_photonsMT107[isum] = tot_energy_n_photonsMT107[isum] + tot_energy_n_photons1[isum]
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
 					if (ifdpd == 0 and ifdisc107 == 0):
 						dpaMT107 = dpanth
 						snhtMT107 = snhtt
@@ -2685,18 +2575,18 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 						num_of_displMT107 = num_of_displ1
 						tot_energy_productsMT107 = tot_energy_products1
 						tot_energy_n_photonsMT107 = tot_energy_n_photons1
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
 					if (MTc == 849):
 						iffldd107 = 1
 						print('..... taking disc.+cont. (n,a)')
-						printtofile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1)
-						printtofile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2)
-						printtofile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3)
-						printtofile(NPt,Etu,signcpoMT107,num_of_displMT107,dpaMT107,107,0,1)
-						printtofile(NPt,Etu,signcpoMT107,tot_energy_productsMT107,snhtMT107,107,0,2)
-						printtofile(NPt,Etu,signcpoMT107,tot_energy_n_photonsMT107,snhtMT107_EB,107,0,3)
+						printToFile(NPt,Etu,signcpol,num_of_displ1,dpanth,MTc,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_products1,snhtt,MTc,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpol,tot_energy_n_photons1,snhtt_EB,MTc,0,3,out_filenames)
+						printToFile(NPt,Etu,signcpoMT107,num_of_displMT107,dpaMT107,107,0,1,out_filenames)
+						printToFile(NPt,Etu,signcpoMT107,tot_energy_productsMT107,snhtMT107,107,0,2,out_filenames)
+						printToFile(NPt,Etu,signcpoMT107,tot_energy_n_photonsMT107,snhtMT107_EB,107,0,3,out_filenames)
 					# -------------------
 				# for the iflpresent
 			# for the iflMTpr
@@ -2713,9 +2603,9 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 			tot_energy_n_photonsMT103 = tmtot_energy_n_photonsMT103
 			if (ifdisdata103==1):
 				print('..... taking only MT=103')
-			printtofile(NPt,Etu,signcpoMT103,num_of_displMT103,dpaMT103,103,0,1)
-			printtofile(NPt,Etu,signcpoMT103,tot_energy_productsMT103,snhtMT103,103,0,2)
-			printtofile(NPt,Etu,signcpoMT103,tot_energy_n_photonsMT103,snhtMT103_EB,103,0,3)
+			printToFile(NPt,Etu,signcpoMT103,num_of_displMT103,dpaMT103,103,0,1,out_filenames)
+			printToFile(NPt,Etu,signcpoMT103,tot_energy_productsMT103,snhtMT103,103,0,2,out_filenames)
+			printToFile(NPt,Etu,signcpoMT103,tot_energy_n_photonsMT103,snhtMT103_EB,103,0,3,out_filenames)
 		# -------------------
 		if ((ifdisdata104 == 0 or iffldd104 == 0) and ifl104pr == 1):
 			dpaMT104 = tmdpaMT104
@@ -2727,9 +2617,9 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 			tot_energy_n_photonsMT104 = tmtot_energy_n_photonsMT104
 			if (ifdisdata104 == 1):
 				print('..... taking only MT=104')
-			printtofile(NPt,Etu,signcpoMT104,num_of_displMT104,dpaMT104,104,0,1)
-			printtofile(NPt,Etu,signcpoMT104,tot_energy_productsMT104,snhtMT104,104,0,2)
-			printtofile(NPt,Etu,signcpoMT104,tot_energy_n_photonsMT104,snhtMT104_EB,104,0,3)
+			printToFile(NPt,Etu,signcpoMT104,num_of_displMT104,dpaMT104,104,0,1,out_filenames)
+			printToFile(NPt,Etu,signcpoMT104,tot_energy_productsMT104,snhtMT104,104,0,2,out_filenames)
+			printToFile(NPt,Etu,signcpoMT104,tot_energy_n_photonsMT104,snhtMT104_EB,104,0,3,out_filenames)
 		# -------------------
 		if ((ifdisdata105 == 0 or iffldd105 == 0) and ifl105pr == 1):
 			dpaMT105 = tmdpaMT105
@@ -2741,9 +2631,9 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 			tot_energy_n_photonsMT105 = tmtot_energy_n_photonsMT105
 			if (ifdisdata105 == 1):
 				print('..... taking only MT=105')
-			printtofile(NPt,Etu,signcpoMT105,num_of_displMT105,dpaMT105,105,0,1)
-			printtofile(NPt,Etu,signcpoMT105,tot_energy_productsMT105,snhtMT105,105,0,2)
-			printtofile(NPt,Etu,signcpoMT105,tot_energy_n_photonsMT105,snhtMT105_EB,105,0,3)
+			printToFile(NPt,Etu,signcpoMT105,num_of_displMT105,dpaMT105,105,0,1,out_filenames)
+			printToFile(NPt,Etu,signcpoMT105,tot_energy_productsMT105,snhtMT105,105,0,2,out_filenames)
+			printToFile(NPt,Etu,signcpoMT105,tot_energy_n_photonsMT105,snhtMT105_EB,105,0,3,out_filenames)
 		# -------------------
 		if ((ifdisdata106 == 0 or iffldd106 == 0) and ifl106pr == 1):
 			dpaMT106 = tmdpaMT106
@@ -2755,9 +2645,9 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 			tot_energy_n_photonsMT106 = tmtot_energy_n_photonsMT106
 			if (ifdisdata106 == 1):
 				print('..... taking only MT=106')
-			printtofile(NPt,Etu,signcpoMT106,num_of_displMT106,dpaMT106,106,0,1)
-			printtofile(NPt,Etu,signcpoMT106,tot_energy_productsMT106,snhtMT106,106,0,2)
-			printtofile(NPt,Etu,signcpoMT106,tot_energy_n_photonsMT106,snhtMT106_EB,106,0,3)
+			printToFile(NPt,Etu,signcpoMT106,num_of_displMT106,dpaMT106,106,0,1,out_filenames)
+			printToFile(NPt,Etu,signcpoMT106,tot_energy_productsMT106,snhtMT106,106,0,2,out_filenames)
+			printToFile(NPt,Etu,signcpoMT106,tot_energy_n_photonsMT106,snhtMT106_EB,106,0,3,out_filenames)
 		# -------------------
 		if ((ifdisdata107 == 0 or iffldd107 == 0) and ifl107pr == 1):
 			dpaMT107 = tmdpaMT107
@@ -2769,9 +2659,9 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 			tot_energy_n_photonsMT107 = tmtot_energy_n_photonsMT107
 			if (ifdisdata107 == 1):
 				print('..... taking only MT=107')
-			printtofile(NPt,Etu,signcpoMT107,num_of_displMT107,dpaMT107,107,0,1)
-			printtofile(NPt,Etu,signcpoMT107,tot_energy_productsMT107,snhtMT107,107,0,2)
-			printtofile(NPt,Etu,signcpoMT107,tot_energy_n_photonsMT107,snhtMT107_EB,107,0,3)
+			printToFile(NPt,Etu,signcpoMT107,num_of_displMT107,dpaMT107,107,0,1,out_filenames)
+			printToFile(NPt,Etu,signcpoMT107,tot_energy_productsMT107,snhtMT107,107,0,2,out_filenames)
+			printToFile(NPt,Etu,signcpoMT107,tot_energy_n_photonsMT107,snhtMT107_EB,107,0,3,out_filenames)
 		# --------------------
 
 		# If required take Contributions coming from MT = 5
@@ -2803,17 +2693,18 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 			dpaMT5 = [0]*NPt
 			snhtMT5 = [0]*NPt
 
-			ifile = open ("tape02", 'r')
+			ifile_preprocessedENDF6.seek(0, 0)
+			ifile = ifile_preprocessedENDF6
 
 			# extraction of cross sections
 			NP1 = 0
 			while (True):
 				line = ifile.readline()
-				data = eachlineinfo(line)
+				data = UtilsU.eachLineInfo(line)
 				MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 				if (MT == 0 and MF != 0):
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					iflspace = 0
 					for element in data:
 						if (element == ''):
@@ -2831,7 +2722,7 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 							ZA = ZAv
 							AWR = AWRv
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = UtilsU.eachLineInfo(line)
 							QM = float(data[0]); QI =  float(data[1]); LR = int(data[3])
 							NR = int(data[4]); NP1 = int(data[5])
 							E5 = [0]*NP1; sig5 = [0]*NP1
@@ -2844,7 +2735,7 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 							i = 0
 							while (i<NP1):
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								for j in range(0,6,2):
 									if (data[j] != ''):
 										E5[i] = float(data[j])
@@ -2855,8 +2746,6 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 										break
 				else:
 					break
-
-			ifile.close()
 
 			if (iflmt5absreac == 1):
 				Z = ZA//1000
@@ -3004,8 +2893,8 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 				num_of_displ3 = interpolateXSToUniqueEnergyArray(E5, num_of_displMT5, Etu)
 				tot_energy_products3 = interpolateXSToUniqueEnergyArray(E5, tot_energy_productsMT5, Etu)
 	
-				printtofile(NPt,Etu,sigetMT5,num_of_displ3,dpaMT5,5,0,1)
-				printtofile(NPt,Etu,sigetMT5,tot_energy_products3,snhtMT5,5,0,2)
+				printToFile(NPt,Etu,sigetMT5,num_of_displ3,dpaMT5,5,0,1,out_filenames)
+				printToFile(NPt,Etu,sigetMT5,tot_energy_products3,snhtMT5,5,0,2,out_filenames)
 
 			# if for iflmt5absreac == 1
 		# if required, then take contributions from MT = 5
@@ -3062,9 +2951,9 @@ def CONTROL_nCPO (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 			break
 	# --------------
 
-	printtofile(NPt,Etu,signcpo3,num_of_displ3,dpa3,3001,0,1)
-	printtofile(NPt,Etu,signcpo3,tot_energy_products3,snht3,3001,0,2)
-	printtofile(NPt,Etu,signcpo3,tot_energy_n_photons3,snht3_EB,3001,0,3)
+	printToFile(NPt,Etu,signcpo3,num_of_displ3,dpa3,3001,0,1,out_filenames)
+	printToFile(NPt,Etu,signcpo3,tot_energy_products3,snht3,3001,0,2,out_filenames)
+	printToFile(NPt,Etu,signcpo3,tot_energy_n_photons3,snht3_EB,3001,0,3,out_filenames)
 
 #=======Average Eg2 from Continuum and discrete (File 6)=======*	
 
@@ -3116,7 +3005,7 @@ def avegsqc(Ep1,fEEp,nfe,iplaw,ndisc,Yd,iFile):
 	## Calculation of neutron dpa and heating cross sections due to
 	## radiative capture of neutron reaction.
 
-def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
+def RADIATIVE_CAPTURE (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames):
 	siget = numpy.zeros(NPt); sdpa = numpy.zeros(NPt); snht = numpy.zeros(NPt)
 	s1 = numpy.zeros(NPt); s2 = numpy.zeros(NPt)
 	num_of_displ = numpy.zeros(NPt); tot_energy_products = numpy.zeros(NPt)
@@ -3146,17 +3035,18 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 #------------------------------------------------------------
 
 	ifl6 = 0
-	ifile = open ("tape01", 'r')
+	ifile_rawENDF6.seek(0, 0)
+	ifile = ifile_rawENDF6
 	ifile.readline()
 	while True:
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8]) 
 		if (MT == 0):
 			line = ifile.readline()
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			iflspace = 0
 			for element in data:
 				if (element == ''):
@@ -3173,14 +3063,14 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 					ifl6 = 1
 					NK6 = NKv
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					C1 = float(data[0]); C2 =  float(data[1]); LIP = int(data[2])
 					LAW = int(data[3]); NR = int(data[4]); NP6 = int(data[5]); MAT = int(data[6])
 					MF = int(data[7]); MT = int(data[8])
 					N = 0
 					while (N < NR):
 						line = ifile.readline()
-						data = eachlineinfo(line)
+						data = UtilsU.eachLineInfo(line)
 						for i in range(0,6,2):
 							if (data[i] != ''):
 								NBT[N] = int(data[i])
@@ -3192,7 +3082,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 					N = 0
 					while (N < NP6):
 						line = ifile.readline()
-						data = eachlineinfo(line)
+						data = UtilsU.eachLineInfo(line)
 						for i in range(0,6,2):
 							if (data[i] != ''):
 								E6[N] = float(data[i])
@@ -3217,14 +3107,14 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 								Y6tot[i] = TERPOLIN(intflg,Etu[i],E6[j],E6[j+1],Y6[j],Y6[j+1])
 					
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					C1 = float(data[0]); C2 =  float(data[1]); LANG = int(data[2])
 					LEP = int(data[3]); NR6 = int(data[4]); NE6 = int(data[5]); MAT = int(data[6])
 					MF = int(data[7]); MT = int(data[8])
 					N = 0
 					while (N < NR6):
 						line = ifile.readline()
-						data = eachlineinfo(line)
+						data = UtilsU.eachLineInfo(line)
 						for i in range(0,6,2):
 							if (data[i] != ''):
 								NBT6[N] = int(data[i])
@@ -3235,14 +3125,14 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 								break
 					for i in range(NE6):
 						line = ifile.readline()
-						data = eachlineinfo(line)
+						data = UtilsU.eachLineInfo(line)
 						C1 = float(data[0]); En6[i] =  float(data[1]); ND6[i] = int(data[2])
 						NA = int(data[3]); NW = int(data[4]); NPg6[i] = int(data[5]); MAT = int(data[6])
 						MF = int(data[7]); MT = int(data[8])
 						N = 0
 						while (N < NPg6[i]):
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = UtilsU.eachLineInfo(line)
 							for j in range(0,6,2):
 								if (data[j] != ''):
 									Eg6[i][N] = float(data[j])
@@ -3253,20 +3143,20 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 									break
 		else:
 			break
-	ifile.close()
 
 	ifl12 = 0
-	ifile = open("tape01", 'r')
+	ifile_rawENDF6.seek(0, 0)
+	ifile = ifile_rawENDF6
 	while True:
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if (MF <= 12 and MT == 0):
 			if (MAT != -1):
 				line = ifile.readline()
-				data = eachlineinfo(line)
+				data = UtilsU.eachLineInfo(line)
 				iflspace = 0
 				for element in data:
 					if (element == ''):
@@ -3280,7 +3170,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 		if (MF == 0):
 			if (MAT != -1):
 				line = ifile.readline()
-				data = eachlineinfo(line)
+				data = UtilsU.eachLineInfo(line)
 				iflspace = 0
 				for element in data:
 					if (element == ''):
@@ -3295,7 +3185,6 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 			if (MF == 12):
 				if (MT == 102):
 					ifl12 = 1
-					print("File 12, Section 102, NK = ", NKv)
 					NK = NKv
 					AWR = AWRv
 					ZA = ZAv
@@ -3303,7 +3192,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 					EGk = [0]*NK; ESk = [0]*NK; LP = [0]*NK; NBTk12 = numpy.zeros((NK,20))
 					INTrk12 = numpy.zeros((NK,20)); NRk12 = [0]*NK
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					C1 = float(data[0]); C2 =  float(data[1]); L1 = int(data[2])
 					L2 = int(data[3]); NR = int(data[4]); NP12 = int(data[5]); MAT = int(data[6])
 					MF = int(data[7]); MT = int(data[8])
@@ -3311,7 +3200,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 					N = 0
 					while (N < NR):
 						line = ifile.readline()
-						data = eachlineinfo(line)
+						data = UtilsU.eachLineInfo(line)
 						for i in range(0,6,2):
 							if (data[i] != ''):
 								NBT[N] = int(data[i])
@@ -3323,7 +3212,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 					N = 0
 					while (N < NP12):
 						line = ifile.readline()
-						data = eachlineinfo(line)
+						data = UtilsU.eachLineInfo(line)
 						for i in range(0,6,2):
 							if (data[i] != ''):
 								E12[N] = float(data[i])
@@ -3356,7 +3245,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 					if (NK > 1):
 						for i in range(NK):
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = UtilsU.eachLineInfo(line)
 							EGk[i] = float(data[0]); ESk[i] =  float(data[1]); LP[i] = int(data[2])
 							LF = int(data[3]); NRk12[i] = int(data[4])
 							NPn12[i] = int(data[5]); MAT = int(data[6])
@@ -3364,7 +3253,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 							N = 0
 							while (N < NRk12[i]):
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								for j in range(0,6,2):
 									if (data[j] != ''):
 										NBTk12[i][N] = int(data[j])
@@ -3376,7 +3265,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 							N = 0
 							while (N < NPn12[i]):
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								for j in range(0,6,2):
 									if (data[j] != ''):
 										En12[i][N] = float(data[j])
@@ -3390,7 +3279,6 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 	# (unique energy array) by interpolation
 
 					if (ifl12 == 1):
-						print('doing this ....')
 						Yk12tot = numpy.zeros((NK,NPt))
 						if (NK == 1):
 							for j in range(NPt):
@@ -3411,20 +3299,20 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 											break
 		else:
 			break
-	ifile.close()
 
 	ifl15 = 0
-	ifile = open ("tape01", 'r')
+	ifile_rawENDF6.seek(0, 0)
+	ifile = ifile_rawENDF6
 	if (ifl6 == 0):
 		while True:
 			line = ifile.readline()
 			if (line == ''):
 				break
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 			if (MT == 0):
 				line = ifile.readline()
-				(ZAv,AWRv,L0,L1,NCv,L2,MAT,MF,MT) = line_type1_info(line)
+				(ZAv,AWRv,L0,L1,NCv,L2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 	
 			if (MAT != -1):
 				if (MF == 15):
@@ -3432,11 +3320,11 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 						ifl15 = 1
 						NC = NCv
 						line = ifile.readline()
-						(C1,C2,L1,LF,NR,NP15,MAT,MF,MT) = line_type2_info(line)
+						(C1,C2,L1,LF,NR,NP15,MAT,MF,MT) = UtilsU.lineType2Info(line)
 						N = 0
 						while (N < NR):
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = UtilsU.eachLineInfo(line)
 							for j in range(0,6,2):
 								if (data[j] != ''):
 									NBT[N] = int(data[j])
@@ -3448,7 +3336,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 						N = 0
 						while (N < NP15):
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = UtilsU.eachLineInfo(line)
 							for j in range(0,6,2):
 								if (data[j] != ''):
 									E15[N] = float(data[j])
@@ -3458,11 +3346,11 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 									N += 1
 									break
 						line = ifile.readline()
-						(C1,C2,L1,L2,NR15a,NE15,MAT,MF,MT) = line_type2_info(line)
+						(C1,C2,L1,L2,NR15a,NE15,MAT,MF,MT) = UtilsU.lineType2Info(line)
 						N = 0
 						while (N < NR15a):
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = UtilsU.eachLineInfo(line)
 							for j in range(0,6,2):
 								if (data[j] != ''):
 									NBT15a[N] = int(data[j])
@@ -3473,11 +3361,11 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 									break
 						for i in range(NE15):
 							line = ifile.readline()
-							(C1,En15[i],L1,L2,NR,NPg15[i],MAT,MF,MT) = line_type2_info(line)
+							(C1,En15[i],L1,L2,NR,NPg15[i],MAT,MF,MT) = UtilsU.lineType2Info(line)
 							N = 0
 							while (N < NR):
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								for j in range(0,6,2):
 									if (data[j] != ''):
 										NBT[N] = int(data[j])
@@ -3489,7 +3377,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 							N = 0
 							while (N < NPg15[i]):
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								for j in range(0,6,2):
 									if (data[j] != ''):
 										Eg15[i][N] = float(data[j])
@@ -3500,25 +3388,25 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 										break
 			else:
 				break
-		ifile.close()
 
 # ---- Reading the (n,g) cross sections ----
 
-	ifile = open ("tape02", 'r')
+	ifile_preprocessedENDF6.seek(0, 0)
+	ifile = ifile_preprocessedENDF6
 	ifile.readline()
 	line = ifile.readline()
-	(ZA,AWR,L0,L1,L2,L3,MAT,MF,MT) = line_type1_info(line)
+	(ZA,AWR,L0,L1,L2,L3,MAT,MF,MT) = UtilsU.lineType1Info(line)
 	while True:
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
 		if (MAT != -1):
 			if (MF == 3):
 				if (MT == 102):
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					QM = float(data[0]); QI =  float(data[1]); LR = int(data[3])
 					NR = int(data[4]); NP = int(data[5])
 					ifile.readline()
@@ -3526,7 +3414,7 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 					i = 0 
 					while (i < NP):
 						line = ifile.readline()
-						data = eachlineinfo(line)
+						data = UtilsU.eachLineInfo(line)
 						for j in range(0,6,2):
 							if (data[j] != ''):
 								E[i] = float(data[j])
@@ -3537,7 +3425,6 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 								break
 		else:
 			break
-	ifile.close()
 
 	print('', file = ofile_outRMINDD)
 	print('Number of energy points given is ',NP, file = ofile_outRMINDD)
@@ -3601,7 +3488,6 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 	# when NK > 1
 
 	if (ifl12 == 1 and NK > 1):
-		print('Doing this ....')
 		for j in range(NPt):
 			sY12 = 0
 			for i in range(NK):
@@ -3728,7 +3614,6 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 
 	if ((ifl12 == 1 and NK > 1) or (ifl12 == 1 and NK == 1 and ifl15 == 0)):
 		NKd = NK
-		print('doing this also ...., NKd = ', NKd)
 		if (ifl15 == 1):
 			NKd = NK-1
 		for i in range(NPt):
@@ -3738,7 +3623,6 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 		
 	# Total Egamma square from discrete and continuum
 	
-	print(sum(s1), sum(s2), s2[0], s2[int(NPt/10)], s2[int(NPt/8)], s2[int(NPt/5)], s2[int(NPt/2)], s2[NPt-1])
 	for i in range(NPt):
 		Eg2Av[i] = s1[i] + s2[i]
  
@@ -3753,8 +3637,6 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 	emc2 = 939.512e6 
 	tm = emc2*A1
 	rtm = 1/tm
-	
-	print(rtm/2)
 
 	for i in range(NPt):
 		Er = Eg2Av[i]*rtm/2
@@ -3779,15 +3661,15 @@ def RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 			sdpa[i] = abs(siget[i]*dn1)
 			snht[i] = abs(siget[i]*dn2)
 
-	printtofile(NPt,Etu,siget,num_of_displ,sdpa,102,0,1)
-	printtofile(NPt,Etu,siget,tot_energy_products,snht,102,0,2)
+	printToFile(NPt,Etu,siget,num_of_displ,sdpa,102,0,1,out_filenames)
+	printToFile(NPt,Etu,siget,tot_energy_products,snht,102,0,2,out_filenames)
 
 #=========== ELASTIC INTERACTION ===========*
 		
     # Calculation of neutron dpa and heating cross sections due to the elastic
 	# scattering interactions.
 	
-def ELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
+def ELASTIC_SCATTERING(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames):
 
 	siget = [0]*NPt; sdpat = [0]*NPt; snht = [0]*NPt
 	alfull = numpy.zeros((NPt,65)); fmuE = numpy.zeros((NPt,64))
@@ -3803,26 +3685,26 @@ def ELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 # ------------------------------------------------------------------
 
 	# Extraction of Elastic Cross Sections
-	ifile = open("tape02", 'r')
+	ifile_preprocessedENDF6.seek(0, 0)
+	ifile = ifile_preprocessedENDF6
 	while True:
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if (MAT != -1):
 			if (MF == 3):
 				if (MT == 2):
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					QM = float(data[0]); QI =  float(data[1])
 					NR = int(data[4]); NP = int(data[5])
 					E = [0]*NP; sig = [0]*NP
 					LR = int(ifile.readline().split()[3])
-					(E, sig) = line_type3_info(ifile,NP,2)
+					(E, sig) = UtilsU.lineType3Info(ifile,NP,2)
 		else:
 			break
-	ifile.close()
 
 	print('', file = ofile_outRMINDD)
 	print('Number of energy points given is ',NP, file = ofile_outRMINDD)
@@ -3830,17 +3712,18 @@ def ELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
  	# Extraction of Legendre Polynomial Coefficients and 
 	# Tabulated Probability
 
-	ifile = open("tape01", 'r')
+	ifile_rawENDF6.seek(0, 0)
+	ifile = ifile_rawENDF6
 	while True:
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if (MF == 3 and MT == 0):
 			ifile.readline()
 			line = ifile.readline()
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			iflspace = 0
 			for element in data:
 				if (element == ''):
@@ -3858,24 +3741,24 @@ def ELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 						alc = [0]*65
 					if (LTT == 3 or LTT == 1):
 						line = ifile.readline()
-						data = eachlineinfo(line)
+						data = UtilsU.eachLineInfo(line)
 						NE1 = int(data[5])
 						# Legendre polynomial coefficients
 						ifile.readline()
 						al = numpy.zeros((NE1,65)); EL = [0]*NE1; alc = [0]*65
 						for i in range(NE1):
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = UtilsU.eachLineInfo(line)
 							T = float(data[0]); EL[i] = float(data[1]); NL = int(data[4])
 							NL = NL+1
 							al[i][0] = 1
 							temporary = [0]*NL
-							temporary = line_type3_info(ifile,NL-1,1)
+							temporary = UtilsU.lineType3Info(ifile,NL-1,1)
 							for j, value in enumerate(temporary, 1):
 								al[i][j] = value
 					if (LTT == 3 or LTT == 2):
 						line = ifile.readline()
-						data = eachlineinfo(line)
+						data = UtilsU.eachLineInfo(line)
 						NE2 = int(data[5])
 						# Tabulated Probability
 						ifile.readline()
@@ -3883,20 +3766,19 @@ def ELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 						fdata = numpy.zeros((NE2,201)); ftotal = numpy.zeros((NE2,64))
 						for i in range(NE2):
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = UtilsU.eachLineInfo(line)
 							T = float(data[0]); Enf[i] = float(data[1])
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = UtilsU.eachLineInfo(line)
 							NPr[i] = int(data[0])
 							temporary1 = [0]*201
 							temporary2 = [0]*201
-							(temporary1,temporary2) = line_type3_info(ifile,NPr[i],2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NPr[i],2)
 							for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								cdata[i][j] = value1
 								fdata[i][j] = value2
 		else:
 			break
-	ifile.close()
 
 	print('', file = ofile_outRMINDD)
 	if(LTT == 3):
@@ -4060,10 +3942,9 @@ def ELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 		sdpat[i] = siget[i]*dn1
 		snht[i] = siget[i]*dn2
 
-	printtofile (NPt,Etu,siget,num_of_displ,sdpat,2,0,1) 
-	printtofile (NPt,Etu,siget,tot_energy_products,snht,2,0,2)
+	printToFile (NPt,Etu,siget,num_of_displ,sdpat,2,0,1,out_filenames) 
+	printToFile (NPt,Etu,siget,tot_energy_products,snht,2,0,2,out_filenames)
 
-#-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 
 # NOT USED	
@@ -4087,7 +3968,7 @@ def AKPel(A,Z,En,Ed):
 	# Calculation of neutron dpa and heating cross sections due to the inelastic
 	# scattering interactions.
 	
-def INELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
+def INELASTIC_SCATTERING(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames):
 
 	sdpa = [0]*NPt; sdpatemp = [0]*NPt; snhttemp = [0]*NPt
 	snht = [0]*NPt; alc = [0]*65; alfull = numpy.zeros((NPt,65))
@@ -4113,11 +3994,11 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 	print(' Inelastic scattering dpa/heating cross section', file = ofile_outRMINDD)
 	print('------------------------------------------------', file = ofile_outRMINDD)
 
-	ifile = open("tape01", 'r')
+	ifile_rawENDF6.seek(0, 0)
+	ifile = ifile_rawENDF6
 	ifile.readline()
 	line = ifile.readline()
-	(ZA,AWR,L0,L1,L2,L3,MAT,MF,MT) = line_type1_info(line)
-	ifile.close()
+	(ZA,AWR,L0,L1,L2,L3,MAT,MF,MT) = UtilsU.lineType1Info(line)
 
 	Z = int(ZA/1000)
 	A = AWR
@@ -4130,31 +4011,31 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 		iflMTpr = 0
 		mta = mta + 1
 		MTfind = mta
-		iflMTpr = FindMT(MTfind)
+		iflMTpr = FindMT(MTfind, ifile_rawENDF6)
 		if (iflMTpr == 1):
 			iflpr = 0
-			ifile = open("tape02", 'r')
+			ifile_preprocessedENDF6.seek(0, 0)
+			ifile = ifile_preprocessedENDF6
 			while True:
 				line = ifile.readline()
 				if (line == ''):
 					break
-				data = eachlineinfo(line)
+				data = UtilsU.eachLineInfo(line)
 				MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
 				if (MAT != -1):
 					if (MF == 3):
 						if (MT == mta):
 							iflpr = 1
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = UtilsU.eachLineInfo(line)
 							QM = float(data[0]); QI =  float(data[1])
 							LR = int(data[3]); NR = int(data[4]); NP = int(data[5])
 							E = [0]*NP; sig = [0]*NP; sdpal = [0]*NP; snhtl = [0]*NP
 							num_of_displ = numpy.zeros(NP); tot_energy_products = numpy.zeros(NP)
 							ifile.readline()
-							(E, sig) = line_type3_info(ifile,NP,2)
+							(E, sig) = UtilsU.lineType3Info(ifile,NP,2)
 				else:
 					break
-			ifile.close()
 
 			print('', file = ofile_outRMINDD)
 			print('Level MT=',mta,' has ',NP,' cross section points', file = ofile_outRMINDD)
@@ -4162,16 +4043,17 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 			if (iflpr == 1):	# do the following only if MT is present in MF=3
 				if4d = 0
 				if4c = 0
-				ifile = open ("tape01", 'r')
+				ifile_rawENDF6.seek(0, 0)
+				ifile = ifile_rawENDF6
 				while True:
 					line = ifile.readline()
 					if (line == ''):
 						break
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
 					if (MT == 0):
 						line = ifile.readline()
-						(ZA,AWR,L1,LTTv,L2,L3,MAT,MF,MT) = line_type1_info(line)
+						(ZA,AWR,L1,LTTv,L2,L3,MAT,MF,MT) = UtilsU.lineType1Info(line)
 					if (MAT != -1):
 						if (MF == 4):
 							if (MT == mta):
@@ -4181,39 +4063,39 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 									if4c = 1
 								LTT = LTTv
 								line = ifile.readline()
-								(ZA,AWR,LI,LCT,L2,L3,MAT,MF,MT) = line_type1_info(line)
+								(ZA,AWR,LI,LCT,L2,L3,MAT,MF,MT) = UtilsU.lineType1Info(line)
 								if (LTT == 1  and  LI == 0):
 									line = ifile.readline()
-									(C1,C2,L1,L2,NR,NE4,MAT,MF,MT) = line_type2_info(line)
-									(NBT, INTr) = line_type3_info(ifile,NR,2)
+									(C1,C2,L1,L2,NR,NE4,MAT,MF,MT) = UtilsU.lineType2Info(line)
+									(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 									for i in range(NE4):
 										line = ifile.readline()
-										data = eachlineinfo(line)
+										data = UtilsU.eachLineInfo(line)
 										c1 = float(data[0]); En4[i] = float(data[1]); NL4 = int(data[4])
 										NL4 = NL4 + 1
 										al4[i][0] = 1
 										al4[i][1:-1] = 0.0
 										temporary = [0]*NL4
-										temporary = line_type3_info (ifile,NL4-1,1)
+										temporary = UtilsU.lineType3Info (ifile,NL4-1,1)
 										for j, value in enumerate(temporary, 1):
 											al4[i][j] = value
 					else:
 						break
-				ifile.close()
 
 				ift5c = 0
 				if5c = 0
 				if (mta == 91 and if4c == 0):
-					ifile = open ("tape01", 'r')
+					ifile_rawENDF6.seek(0, 0)
+					ifile = ifile_rawENDF6
 					while True:
 						line = ifile.readline()
 						if (line == ''):
 							break
-						data = eachlineinfo(line)
+						data = UtilsU.eachLineInfo(line)
 						MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
 						if (MT == 0):
 							line = ifile.readline()
-							(ZA,AWR,L1,L2,NKv,L3,MAT,MF,MT) = line_type1_info(line)
+							(ZA,AWR,L1,L2,NKv,L3,MAT,MF,MT) = UtilsU.lineType1Info(line)
 						if (MAT != -1):
 							if (MF == 5):
 								if (MT == 91):
@@ -4222,23 +4104,23 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 									for NSS in range(NK5):
 										ifile.readline()
 										line = ifile.readline()
-										(C1,C2,L1,LF[NSS],NR,NP5[NSS],MAT,MF,MT) = line_type2_info(line)
-										(NBT, INTr) = line_type3_info(ifile,NR,2)
-										line_type3_info(ifile,NP5[NSS],2)
+										(C1,C2,L1,LF[NSS],NR,NP5[NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
+										(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
+										UtilsU.lineType3Info(ifile,NP5[NSS],2)
 										if (LF[NSS] == 1):
 											ift5c = 1
 											ifile.readline()
 											line = ifile.readline()
-											(C1,C2,L1,L2,NR,NE5[NSS],MAT,MF,MT) = line_type2_info(line)
-											(NBT, INTr) = line_type3_info(ifile,NR,2)
+											(C1,C2,L1,L2,NR,NE5[NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
+											(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 											for i in range (NE5[NSS]):
 												ifile.readline()
 												line = ifile.readline()
-												(C1,En5[NSS][i],L1,L2,NR,NF5[NSS][i],MAT,MF,MT) = line_type2_info(line)
-												(NBT, INTr) = line_type3_info(ifile,NR,2)
+												(C1,En5[NSS][i],L1,L2,NR,NF5[NSS][i],MAT,MF,MT) = UtilsU.lineType2Info(line)
+												(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 												temporary1 = [0]*NF5[NSS][i]
 												temporary2 = [0]*NF5[NSS][i]
-												(temporary1,temporary2) = line_type3_info(ifile,NF5[NSS][i],2)
+												(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NF5[NSS][i],2)
 												for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 													Enp5[NSS][i][j] = value1
 													f5[NSS][i][j] = value2
@@ -4248,40 +4130,40 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 											#read(700,13) (Eint(l,NSS,N), p(l,NSS,N), N = 1, NP5(l,NSS))
 											ifile.readline()
 											line = ifile.readline()
-											(C1,C2,L1,L2,NR,NE5[NSS],MAT,MF,MT) = line_type2_info(line)
-											(NBT, INTr) = line_type3_info(ifile,NR,2)
+											(C1,C2,L1,L2,NR,NE5[NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
+											(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 											temporary1 = [0]*NE5[NSS]
 											temporary2 = [0]*NE5[NSS]
-											(temporary1,temporary2) = line_type3_info(ifile,NE5[NSS],2)
+											(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NE5[NSS],2)
 											for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 												En5[NSS][N] = value1
 												tht[NSS][N] = value2
 						else:
 							break
-					ifile.close()
 
 				iflawiso = 0 		# for isotropic emitted particle distribution
 				if6d = 0
 				if6c = 0
 
 				if (if4d == 0 or if4c == 0 or if5c == 0):
-					ifile = open ("tape01", 'r')
+					ifile_rawENDF6.seek(0, 0)
+					ifile = ifile_rawENDF6
 					while True:
 						line = ifile.readline()
 						if (line == ''):
 							break
-						data = eachlineinfo(line)
+						data = UtilsU.eachLineInfo(line)
 						MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
 						if (MAT == -1):
 							break
 						if (MT == 0):
 							if (MF == 6):
 								line = ifile.readline()
-								(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = line_type1_info(line)
+								(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = UtilsU.lineType1Info(line)
 							if (MF < 6):
 								ifile.readline()
 								line = ifile.readline()
-								(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = line_type1_info(line)
+								(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = UtilsU.lineType1Info(line)
 						if (MAT != -1):
 							if (MF == 6):
 								if (MT == mta):
@@ -4292,12 +4174,12 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 									NK = NKv
 									for NSS in range(NK):
 										line = ifile.readline()
-										data = eachlineinfo(line)
-										(ZAP,AWP,LIP,LAW[NSS],NR,NP6[NSS],MAT,MF,MT) = line_type1_info(line)
-										(NBT, INTr) = line_type3_info(ifile,NR,2)
+										data = UtilsU.eachLineInfo(line)
+										(ZAP,AWP,LIP,LAW[NSS],NR,NP6[NSS],MAT,MF,MT) = UtilsU.lineType1Info(line)
+										(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 										temporary1 = [0]*NP6[NSS]
 										temporary2 = [0]*NP6[NSS]
-										(temporary1,temporary2) = line_type3_info(ifile,NP6[NSS],2)
+										(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NP6[NSS],2)
 										for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 											Eint6[NSS][j] = value1
 											yi[NSS][j] = value2
@@ -4305,31 +4187,31 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 											iflawiso = 1
 										if (LAW[NSS] == 2):
 											line = ifile.readline()
-											(c1,c2,l3,l4,NR,NE6[NSS],MAT,MF,MT) = line_type2_info(line)
-											(NBT, INTr) = line_type3_info(ifile,NR,2)
+											(c1,c2,l3,l4,NR,NE6[NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
+											(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 											for i in range (NE6[NSS]):
 												line = ifile.readline()
-												(c1,En[NSS][i],LG[NSS],l2,NW,NL6,MAT,MF,MT) = line_type2_info(line)
+												(c1,En[NSS][i],LG[NSS],l2,NW,NL6,MAT,MF,MT) = UtilsU.lineType2Info(line)
 												NL6 = NL6 + 1
 												al6[i][0] = 1
 												al6[i][1:-1] = 0.0
 												temporary = [0]*NL6
-												temporary = line_type3_info (ifile,NL6-1,1)
+												temporary = UtilsU.lineType3Info (ifile,NL6-1,1)
 												for j, value in enumerate(temporary, 1):
 													al6[i][j] = value
 										if (LAW[NSS] == 1):
 											line = ifile.readline()
-											(c1,c2,LG[NSS],LP,NR,NE6[NSS],MAT,MF,MT) = line_type2_info(line)
-											(NBT, INTr) = line_type3_info(ifile,NR,2)
+											(c1,c2,LG[NSS],LP,NR,NE6[NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
+											(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 											for i in range (NE6[NSS]):
 												line = ifile.readline()
-												(c1,En[NSS][i],ND,NA,NW,NEP[NSS][i],MAT,MF,MT) = line_type2_info(line)
+												(c1,En[NSS][i],ND,NA,NW,NEP[NSS][i],MAT,MF,MT) = UtilsU.lineType2Info(line)
 												if (NA != 0):
 													if (LG[NSS] == 2 or LG[NSS] == 1):
 														fiso[NSS] = 1
 														Ball = [0]*NW
 														temporary = [0]*NW
-														temporary = line_type3_info (ifile,NW,1)
+														temporary = UtilsU.lineType3Info (ifile,NW,1)
 														for j1, value in enumerate(temporary, 0):
 															Ball[j1] = value
 														K1 = 0
@@ -4344,13 +4226,12 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 													fiso[NSS] = 1
 													temporary1 = [0]*int(NEP[NSS][i])
 													temporary2 = [0]*int(NEP[NSS][i])
-													(temporary1,temporary2) = line_type3_info(ifile,int(NEP[NSS][i]),2)
+													(temporary1,temporary2) = UtilsU.lineType3Info(ifile,int(NEP[NSS][i]),2)
 													for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 														Enp[NSS][i][j] = value1
 														f[NSS][i][j] = value2
 						else:
 							break
-					ifile.close()
 
 				if (mta == 91 and if4c == 0):
 					kdim = int(numpy.max(NEP))
@@ -4664,15 +4545,15 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 					num_of_displ4[i] = num_of_displ4[i] + num_of_displ_temp[i]
 					tot_energy_products4[i] = tot_energy_products4[i] + tot_energy_products_temp[i]
 
-			printtofile (NPt, Etu, siginel_temp, num_of_displ_temp, sdpatemp, mta, 0, 1)
-			printtofile (NPt, Etu, siginel_temp, tot_energy_products_temp, snhttemp, mta, 0, 2)
+			printToFile (NPt, Etu, siginel_temp, num_of_displ_temp, sdpatemp, mta, 0, 1, out_filenames)
+			printToFile (NPt, Etu, siginel_temp, tot_energy_products_temp, snhttemp, mta, 0, 2, out_filenames)
 #--------------------------------------------------------------------	
 
 		if (mta == 91):
 			break
 
-	printtofile (NPt,Etu,tot_siginel4,num_of_displ4,sdpa,4,0,1)
-	printtofile (NPt,Etu,tot_siginel4,tot_energy_products4,snht,4,0,2)
+	printToFile (NPt,Etu,tot_siginel4,num_of_displ4,sdpa,4,0,1,out_filenames)
+	printToFile (NPt,Etu,tot_siginel4,tot_energy_products4,snht,4,0,2,out_filenames)
 
 #=============================================
 
@@ -4681,7 +4562,7 @@ def INELASTIC_SCATTERING(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 	# Calculation of neutron dpa and heating cross sections due to
 	# (n, 2n), (n, 3n) and (n, 4n) reactions.
 
-def n_xn (ofile_outRMINDD,MTi,NPt,Etu,mdisp,Ed,bad,cad):
+def n_xn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,NPt,Etu,mdisp,Ed,bad,cad,out_filenames):
 
 	sdpat = [0]*NPt; snhtt = [0]*NPt; signxnl = [0]*NPt; alc = [0]*65
 	num_of_displ = [0]*NPt; tot_energy_products = [0]*NPt
@@ -4705,36 +4586,36 @@ def n_xn (ofile_outRMINDD,MTi,NPt,Etu,mdisp,Ed,bad,cad):
 	print ('  (n, xn) MT=',MTi,' dpa/heating cross section', file = ofile_outRMINDD)
 	print ('------------------------------------------------', file = ofile_outRMINDD)
 
-	ifile = open ("tape01", 'r')
+	ifile_rawENDF6.seek(0, 0)
+	ifile = ifile_rawENDF6
 	ifile.readline() 
 	line = ifile.readline()
-	(ZA,AWR,L0,L1,L2,L3,MAT,MF,MT) = line_type1_info(line)
-	ifile.close()
+	(ZA,AWR,L0,L1,L2,L3,MAT,MF,MT) = UtilsU.lineType1Info(line)
 
 	Z = int(ZA/1000)
 	A = AWR
 
-	ifile = open ("tape02", 'r')
+	ifile_preprocessedENDF6.seek(0, 0)
+	ifile = ifile_preprocessedENDF6
 	while True:
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])
 		if (MAT != -1):
 			if (MF == 3):
 				if (MT == MTi):
 					iflpresent = 1
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					QM = float(data[0]); QI =  float(data[1])
 					LR = int(data[3]); NR = int(data[4]); NP = int(data[5])
 					ifile.readline()
 					E = [0]*NP; sig = [0]*NP; sdpa = [0]*NP; snht = [0]*NP
-					(E, sig) = line_type3_info(ifile,NP,2)
+					(E, sig) = UtilsU.lineType3Info(ifile,NP,2)
 		else:
 			break
-	ifile.close()
 
 	print('', file = ofile_outRMINDD)
 	print('Number of energy points given is ', NP, file = ofile_outRMINDD)
@@ -4742,21 +4623,22 @@ def n_xn (ofile_outRMINDD,MTi,NPt,Etu,mdisp,Ed,bad,cad):
 	if (iflpresent == 1):
 		ift5 = 0
 		if5 = 0
-		ifile = open ("tape01", 'r')
+		ifile_rawENDF6.seek(0, 0)
+		ifile = ifile_rawENDF6
 		while True:
 			line = ifile.readline()
 			if (line == ''):
 				break
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])	
 			if (MT == 0):
 				if (MF == 5):
 					line = ifile.readline()
-					(ZAv,AWRv,L1,L2,NK5,L3,MAT,MF,MT) = line_type1_info(line)
+					(ZAv,AWRv,L1,L2,NK5,L3,MAT,MF,MT) = UtilsU.lineType1Info(line)
 				if (MF < 5):
 					ifile.readline()
 					line = ifile.readline()
-					(ZAv,AWRv,L1,L2,NK5,L3,MAT,MF,MT) = line_type1_info(line)
+					(ZAv,AWRv,L1,L2,NK5,L3,MAT,MF,MT) = UtilsU.lineType1Info(line)
 			if (MAT != -1):
 				if (MF == 5):
 					if (MT == MTi):
@@ -4765,25 +4647,25 @@ def n_xn (ofile_outRMINDD,MTi,NPt,Etu,mdisp,Ed,bad,cad):
 						if5 = 1
 						for NSS in range (NK5):
 							line = ifile.readline()
-							(C1,C2,L1,LF[NSS],NR,NP5[NSS],MAT,MF,MT) = line_type2_info(line)
-							(NBT, INTr) = line_type3_info(ifile,NR,2)
+							(C1,C2,L1,LF[NSS],NR,NP5[NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
+							(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 							temporary1 = [0]*NP5[NSS]
 							temporary2 = [0]*NP5[NSS]
-							(temporary1,temporary2) = line_type3_info(ifile,NP5[NSS],2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NP5[NSS],2)
 							for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								Eint[NSS][N] = value1
 								p[NSS][N] = value2
 							if (LF[NSS] == 1):
 								line = ifile.readline()
-								(C1,C2,L1,L2,NR,NE5[NSS],MAT,MF,MT) = line_type2_info(line)
-								(NBT, INTr) = line_type3_info(ifile,NR,2)
+								(C1,C2,L1,L2,NR,NE5[NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
+								(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 								for i in range (NE5[NSS]):
 									line = ifile.readline()
-									(C1,En5[NSS][i],L1,L2,NR,NF5[NSS][i],MAT,MF,MT) = line_type2_info(line)
-									(NBT, INTr) = line_type3_info(ifile,NR,2)
+									(C1,En5[NSS][i],L1,L2,NR,NF5[NSS][i],MAT,MF,MT) = UtilsU.lineType2Info(line)
+									(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 									temporary1 = [0]*NF5[NSS][i]
 									temporary2 = [0]*NF5[NSS][i]
-									(temporary1,temporary2) = line_type3_info(ifile,NF5[NSS][i],2)
+									(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NF5[NSS][i],2)
 									for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 										Enp5[NSS][i][j] = value1
 										f5[NSS][i][j] = value2
@@ -4791,35 +4673,35 @@ def n_xn (ofile_outRMINDD,MTi,NPt,Etu,mdisp,Ed,bad,cad):
 								ift5 = 1
 								U = C1
 								line = ifile.readline()
-								(C1,C2,L1,L2,NR,NE5[NSS],MAT,MF,MT) = line_type2_info(line)
-								(NBT, INTr) = line_type3_info(ifile,NR,2)
+								(C1,C2,L1,L2,NR,NE5[NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
+								(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 								temporary1 = [0]*NE5[NSS]
 								temporary2 = [0]*NE5[NSS]
-								(temporary1,temporary2) = line_type3_info(ifile,NE5[NSS],2)
+								(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NE5[NSS],2)
 								for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 									En5[NSS][N] = value1
 									tht[NSS][N] = value2
 			else:
 				break
-		ifile.close()
 
 		if6 = 0
 		if (if5 == 0):
-			ifile = open ("tape01", 'r')
+			ifile_rawENDF6.seek(0, 0)
+			ifile = ifile_rawENDF6
 			while True:
 				line = ifile.readline()
 				if (line == ''):
 					break
-				data = eachlineinfo(line)
+				data = UtilsU.eachLineInfo(line)
 				MAT = int(data[6]); MF = int(data[7]); MT = int(data[8])	
 				if (MT == 0):
 					if (MF == 6):
 						line = ifile.readline()
-						(ZAv,AWRv,l1,LCT,NKv,l2,MAT,MF,MT) = line_type1_info(line)
+						(ZAv,AWRv,l1,LCT,NKv,l2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 					if (MF < 6):
 						ifile.readline()
 						line = ifile.readline()
-						(ZAv,AWRv,l1,LCT,NKv,l2,MAT,MF,MT) = line_type1_info(line)
+						(ZAv,AWRv,l1,LCT,NKv,l2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 				if (MAT != -1):
 					if (MF == 6):
 						if (MT == MTi):
@@ -4830,36 +4712,36 @@ def n_xn (ofile_outRMINDD,MTi,NPt,Etu,mdisp,Ed,bad,cad):
 
 							for NSS in range (NK):
 								line = ifile.readline()
-								(ZAP,AWP,LIP,LAW[NSS],NR,NP6[NSS],MAT,MF,MT) = line_type1_info(line)
-								(NBT, INTr) = line_type3_info(ifile,NR,2)
+								(ZAP,AWP,LIP,LAW[NSS],NR,NP6[NSS],MAT,MF,MT) = UtilsU.lineType1Info(line)
+								(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 								temporary1 = [0]*NP6[NSS]
 								temporary2 = [0]*NP6[NSS]
-								(temporary1,temporary2) = line_type3_info(ifile,NP6[NSS],2)
+								(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NP6[NSS],2)
 								for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 									Eint6[NSS][N] = value1
 									yi[NSS][N] = value2
 		
 								if (LAW[NSS] == 2):
 									line = ifile.readline()
-									(c1,c2,l3,l4,NR,NE6[NSS],MAT,MF,MT) = line_type2_info(line)
+									(c1,c2,l3,l4,NR,NE6[NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
 									al6 = numpy.zeros((NE6[NSS],65))
-									(NBT, INTr) = line_type3_info(ifile,NR,2)
+									(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 									for i in range (NE6[NSS]):
 										line = ifile.readline()
-										(c1,En[NSS][i],LG[NSS],l2,NW,NL6,MAT,MF,MT) = line_type2_info(line)
+										(c1,En[NSS][i],LG[NSS],l2,NW,NL6,MAT,MF,MT) = UtilsU.lineType2Info(line)
 										NL6 = NL6 + 1
 										al6[i][0] = 1
 										temporary = [0]*NL6
-										temporary = line_type3_info (ifile,NL6,1)
+										temporary = UtilsU.lineType3Info (ifile,NL6,1)
 										for j, value in enumerate(temporary, 1):
 											al6[i][j] = value
 
 								if (LAW[NSS] == 1):
 									line = ifile.readline()
-									(c1,c2,LG[NSS],LP,NR,NE6[NSS],MAT,MF,MT) = line_type2_info(line)
+									(c1,c2,LG[NSS],LP,NR,NE6[NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
 									temporary1 = [0]*NR
 									temporary2 = [0]*NR
-									(temporary1,temporary2) = line_type3_info(ifile,NR,2)
+									(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NR,2)
 									for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 										NBT[N] = value1
 										INTr[N] = value2
@@ -4867,13 +4749,13 @@ def n_xn (ofile_outRMINDD,MTi,NPt,Etu,mdisp,Ed,bad,cad):
 										# 		read(601,*)
 									for i in range (NE6[NSS]):
 										line = ifile.readline()
-										(c1,En[NSS][i],ND,NA,NW,NEP[NSS][i],MAT,MF,MT) = line_type2_info(line)
+										(c1,En[NSS][i],ND,NA,NW,NEP[NSS][i],MAT,MF,MT) = UtilsU.lineType2Info(line)
 										if (NA != 0):
 											if (LG[NSS] == 2 or LG[NSS] == 1):
 												fiso[NSS] = 1
 												Ball = [0]*NW
 												temporary = [0]*NW
-												temporary = line_type3_info (ifile,NW,1)
+												temporary = UtilsU.lineType3Info (ifile,NW,1)
 												for J1, value in enumerate(temporary, 0):
 													Ball[J1] = value
 												K1 = 0
@@ -4888,13 +4770,12 @@ def n_xn (ofile_outRMINDD,MTi,NPt,Etu,mdisp,Ed,bad,cad):
 											fiso[NSS] = 1
 											temporary1 = [0]*int(NEP[NSS][i])
 											temporary2 = [0]*int(NEP[NSS][i])
-											(temporary1,temporary2) = line_type3_info(ifile,int(NEP[NSS][i]),2)
+											(temporary1,temporary2) = UtilsU.lineType3Info(ifile,int(NEP[NSS][i]),2)
 											for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 												Enp[NSS][i][j] = value1
 												f[NSS][i][j] = value2
 				else:
 					break
-		ifile.close()
 
 		kdim = int(numpy.max(NEP))
 		if (if5 == 1):
@@ -5059,9 +4940,9 @@ def n_xn (ofile_outRMINDD,MTi,NPt,Etu,mdisp,Ed,bad,cad):
 
 		sdpat = interpolateXSToUniqueEnergyArray (E,sdpa,Etu)
 		signxnl = interpolateXSToUniqueEnergyArray (E,sig,Etu)
-		printtofile (NPt,Etu,signxnl,num_of_displ,sdpat,MTi,0,1)
+		printToFile (NPt,Etu,signxnl,num_of_displ,sdpat,MTi,0,1,out_filenames)
 		snhtt = interpolateXSToUniqueEnergyArray (E,snht,Etu)
-		printtofile (NPt,Etu,signxnl,tot_energy_products,snhtt,MTi,0,2)
+		printToFile (NPt,Etu,signxnl,tot_energy_products,snhtt,MTi,0,2,out_filenames)
 
 	return(signxnl, num_of_displ, tot_energy_products, sdpat, snhtt, iflpresent)
 #============================================
@@ -5070,7 +4951,7 @@ def n_xn (ofile_outRMINDD,MTi,NPt,Etu,mdisp,Ed,bad,cad):
 	# Calculation of neutron dpa and heating cross sections due to
 	# all inexplicitly given neutron reactions.
 
-def anytnMF6MT5 (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
+def anytnMF6MT5 (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames):
 	sdpat = [0]*NPt; snhtt = [0]*NPt; snhtt_EB = [0]*NPt
 	num_of_displ = [0]*NPt; tot_energy_products = [0]*NPt; tot_energy_n_photons = [0]*NPt
 	siget = [0]*NPt
@@ -5081,18 +4962,19 @@ def anytnMF6MT5 (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 	print('-------------------------------------------------', file = ofile_outRMINDD)
 
 	iflpresent = 0 		# flag for the presence of cross sections MF=3. 
-	ifile = open ("tape02", 'r')
+	ifile_preprocessedENDF6.seek(0, 0)
+	ifile = ifile_preprocessedENDF6
 
 	# extraction of cross sections
 	while True:
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if ( MT==0 and MF != 0):	# .and. NS==99999
 			line = ifile.readline()
-			(ZA,AWR,L0,L1,NKv,L2,MAT,MF,MT) = line_type1_info(line)
+			(ZA,AWR,L0,L1,NKv,L2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 		if (MAT != -1):
 			if (MF == 3):
 				if (MT == 5):
@@ -5101,17 +4983,16 @@ def anytnMF6MT5 (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 					AWR = float(AWR)
 					A = AWR
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					QM = float(data[0]); QI =  float(data[1])
 					LR = int(data[3]); NR = int(data[4]); NP = int(data[5])
 					Eall = [0]*NP; sall = [0]*NP; sdall = [0]*NP; shall = [0]*NP; shall_EB = [0]*NP
 					num_of_displ1 = [0]*NP; tot_energy_products1 = [0]*NP; tot_energy_n_photons1 = [0]*NP
 					dn4_neutrons = [0]*NP; dn5_photons = [0]*NP
 					ifile.readline()
-					(Eall, sall) = line_type3_info(ifile,NP,2)
+					(Eall, sall) = UtilsU.lineType3Info(ifile,NP,2)
 		else:
 			break
-	ifile.close()
 
 ## only if MF3 cross sections are available then do the following
 
@@ -5124,23 +5005,24 @@ def anytnMF6MT5 (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 		iflcom = 0 # secondary energy and angle in c.o.m. system
 		iflcomlab = 0 # secondary energy and angle in c.o.m (A<=4), lab. (A>4)
 
-		ifile = open ("tape01", 'r')
+		ifile_rawENDF6.seek(0, 0)
+		ifile = ifile_rawENDF6
 		while True:
 			line = ifile.readline()
 			if (line == ''):
 				break
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 			if (MAT == -1):
 				break
 			if (MT == 0):
 				if (MF == 6):
 					line = ifile.readline()
-					(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = line_type1_info(line)
+					(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = UtilsU.lineType1Info(line)
 				if (MF < 6):
 					ifile.readline()
 					line = ifile.readline()
-					(ZAv,AWRv,l1,LCT,NKv,l2,MAT,MF,MT) = line_type1_info(line)
+					(ZAv,AWRv,l1,LCT,NKv,l2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 			if (MAT != -1):
 				if (MF == 6):
 					if (MT == 5):
@@ -5152,25 +5034,25 @@ def anytnMF6MT5 (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 						NL = numpy.zeros((NK,400)); NE6 = [0]*NK; En = numpy.zeros((NK,400))
 						ND = numpy.zeros((NK,400))
 						break
-		ifile.close()
 
-		ifile = open ("tape01", 'r')
+		ifile_rawENDF6.seek(0, 0)
+		ifile = ifile_rawENDF6
 		while True:
 			line = ifile.readline()
 			if (line == ''):
 				break
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 			if (MAT == -1):
 				break
 			if (MT == 0):
 				if (MF == 6):
 					line = ifile.readline()
-					(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = line_type1_info(line)
+					(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = UtilsU.lineType1Info(line)
 				if (MF < 6):
 					ifile.readline()
 					line = ifile.readline()
-					(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = line_type1_info(line)
+					(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = UtilsU.lineType1Info(line)
 			if (MAT != -1):
 				if (MF == 6):
 					if (MT == 5):
@@ -5183,31 +5065,31 @@ def anytnMF6MT5 (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 							iflcomlab = 1
 						for NSS in range (NK):
 							line = ifile.readline()
-							(ZAP[NSS],AWP[NSS],LIP,LAW[NSS],NR6,Nyld[NSS],MAT,MF,MT) = line_type1_info(line)
+							(ZAP[NSS],AWP[NSS],LIP,LAW[NSS],NR6,Nyld[NSS],MAT,MF,MT) = UtilsU.lineType1Info(line)
 							temporary1 = [0]*NR6
 							temporary2 = [0]*NR6
-							(temporary1,temporary2) = line_type3_info(ifile,NR6,2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NR6,2)
 							for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								NBT[NSS][N] = value1
 								INTr[NSS][N] = value2
 							temporary1 = [0]*Nyld[NSS]
 							temporary2 = [0]*Nyld[NSS]
-							(temporary1,temporary2) = line_type3_info(ifile,Nyld[NSS],2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,Nyld[NSS],2)
 							for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								Eint6[NSS][N] = value1
 								Yi[NSS][N] = value2
 							if (LAW[NSS] == 1):
 								line = ifile.readline()
-								(c1,c2,LG[NSS],LEP[NSS],NR6,NE6[NSS],MAT,MF,MT) = line_type2_info(line)
-								(NBTp, INTrp) = line_type3_info(ifile,NR6,2)
+								(c1,c2,LG[NSS],LEP[NSS],NR6,NE6[NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
+								(NBTp, INTrp) = UtilsU.lineType3Info(ifile,NR6,2)
 								for i in range (int(NE6[NSS])):
 									line = ifile.readline()
-									(c1,En[NSS][i],ND[NSS][i],NA,NW,NEP[NSS][i],MAT,MF,MT) = line_type2_info(line)
+									(c1,En[NSS][i],ND[NSS][i],NA,NW,NEP[NSS][i],MAT,MF,MT) = UtilsU.lineType2Info(line)
 									if (NA != 0):
 										if (LG[NSS] == 1 or LG[NSS] == 2):
 											Ball = [0]*NW
 											temporary = [0]*NW
-											temporary = line_type3_info (ifile,NW,1)
+											temporary = UtilsU.lineType3Info (ifile,NW,1)
 											for J1, value in enumerate(temporary, 0):
 												Ball[J1] = value
 											K1 = 0
@@ -5220,13 +5102,12 @@ def anytnMF6MT5 (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 									if (LG[NSS] == 1 and NA == 0):
 										temporary1 = [0]*int(NEP[NSS][i])
 										temporary2 = [0]*int(NEP[NSS][i])
-										(temporary1,temporary2) = line_type3_info(ifile,int(NEP[NSS][i]),2)
+										(temporary1,temporary2) = UtilsU.lineType3Info(ifile,int(NEP[NSS][i]),2)
 										for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 											Enp[NSS][i][j] = value1
 											f[NSS][i][j] = value2
 			else:
 				break
-		ifile.close()
 
 		ifllargeNP = 0
 		if (NP > NPt):
@@ -5454,14 +5335,9 @@ def anytnMF6MT5 (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 			tot_energy_products = tot_energy_products1
 			tot_energy_n_photons = tot_energy_n_photons1
 
-		# THIS PART IS ADDED TO REMOVE SUDDEN NON-ZERO VALUES BELOW THE 
-		# STARTING ENERGY POINT (WHEN DOING W180 FROM ENDF/B-VII.1)
-		#-------------
-	
-		#for i in range (NPt):
-		#	if (Etu[i] >= 2.0e+7):
-		#		nbstart = i - 1
-		#		break
+		## THIS PART IS ADDED TO REMOVE SUDDEN NON-ZERO VALUES BELOW THE 
+		## STARTING ENERGY POINT (WHEN DOING W180 FROM ENDF/B-VII.1)
+		## -------------
 
 		for i in reversed(range (len(Etu))):
 			if (sdpat[i] == 0 and (sdpat[i-1] > 0 and sdpat[i+1] > 0)):
@@ -5474,167 +5350,95 @@ def anytnMF6MT5 (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad):
 				for j in range(i):
 					snhtt[j] = 0
 				break
-		# --------------
 
-		#for i = nbstart, 1, -1
-		#		if (sdpat(i)==0) then
-		#			do j = 1, i
-		#				sdpat(j)=0
-		#			end do
-		#			exit
-		#		end if
-		#	end do
-		#	do i = nbstart, 1, -1
-		#		if (snhtt(i)==0) then
-		#			do j = 1, i
-		#				snhtt(j)=0
-		#			end do
-		#			exit
-		#		end if
-		#	end do
-
-		printtofile (NPt,Etu,siget,num_of_displ,sdpat,5001,0,1)
-		printtofile (NPt,Etu,siget,tot_energy_products,snhtt,5001,0,2)
-		printtofile (NPt,Etu,siget,tot_energy_n_photons,snhtt_EB,5001,0,3)
+		printToFile (NPt,Etu,siget,num_of_displ,sdpat,5001,0,1,out_filenames)
+		printToFile (NPt,Etu,siget,tot_energy_products,snhtt,5001,0,2,out_filenames)
+		printToFile (NPt,Etu,siget,tot_energy_n_photons,snhtt_EB,5001,0,3,out_filenames)
 	
-		#--------------
 	# **** the above is done only if MF3 for that MT is present ****
 
 	# anytnMF6MT5 (n, anything) completes here
 #====================================================
 
-#=======Make the required unique common energy and call reactions=======*
-	
-	# It creates an unique energy array out of the MF3 MT1 energy points
-	# given in the pre-processed ENDF-6 file which is used as the common 
-	# energy array for partial and total dpa and heating cross section 
-	# computation. This energy array is called unique because any repetition
-	# (may occur at the dense resonances regions) in the pre-processed energy 
-	# points are found out and removed, so that each energy point is present
-	# only once. It calls other reaction-specific subroutines and their required
-	# multigrouping according to the inputs given.
-	
-def uqce (ofile_outRMINDD,insp,nra,nreac,mdisp,Ed,bad,cad,mgyn,igtype):
+#=======Call reactions for heating and dpa calculations =======*
 
-	# Et=Energy array in MT=1, Etu=unique of Et
-	# extraction of total energy points
-
-	ifile = open ('tape02', 'r') # tape02=output of (reconr + broadr) PENDF
-
-	while True:
-		line = ifile.readline()
-		if (line == ''):
-			break  
-		data = eachlineinfo(line)
-		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
-		if (MAT != -1):
-			if (MF == 3):
-				if (MT == 1):
-					line = ifile.readline() 
-					data = eachlineinfo(line)
-					QM = float(data[0]); QI =  float(data[1]); NR = int(data[4]); NPt = int(data[5])
-					Et = [0]*NPt
-					LR = int(ifile.readline().split()[1])
-					i = 0
-					while (i < NPt):
-						line = ifile.readline()
-						data = eachlineinfo(line)
-						for j in range(0,5,2):
-							if (data[j] != ''):
-								Et[i] = float(data[j])
-								i += 1
-							else:
-								i += 1
-								break
-		else:
-			break
-	ifile.close()
-
-	print('', file = ofile_outRMINDD)
-	print(NPt,' Total cross sections energy points', file = ofile_outRMINDD)
-	
-	# make unique common energy
-	
-	Etu = numpy.array(Et)
-	Etu = numpy.unique(Etu)
-	NPt = len(Etu)
-	
-	print('', file = ofile_outRMINDD)
-	print(NPt,' Unique total cross sections energy points', file = ofile_outRMINDD)
-
-	# call reactions
-	
-	# binary variables required in case  nra(i)=6
-		
+'''	
+It calls reaction-specific subroutines and their required multigrouping according to the inputs given.
+According to the input options point and multigrouped cross sections and other output data gets printed
+as per the call.
+'''
+def controlAllReactionsHeatingDPA (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,nra,nreac,NPt,Etu,\
+mdisp,Ed,bad,cad,mgyn,igtype,out_filenames):
+	## call reactions
+	## binary variables required in case  nra[i]=7
 	irct1y=0; irct2y=0; irct3y=0; irct4y=0; irct5y=0; irct6y=0
 
 	for i in range(nreac):
 
 		irct = nra[i]
 		if (irct == 1):
-			RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad) # MT=102
+			RADIATIVE_CAPTURE (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames) # MT=102
 			if (mgyn==1):
-				groupmulti(insp,102,igtype,1) 	# 102=id for output file, 1=DPA
-				groupmulti(insp,102,igtype,2) 	# 102=id for output file, 2=Heating
+				groupmulti(insp,102,igtype,1,out_filenames) 	# 102=id for output file, 1=DPA
+				groupmulti(insp,102,igtype,2,out_filenames) 	# 102=id for output file, 2=Heating
 			irct1y=1
 		if (irct==2):
-			ELASTIC_SCATTERING (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad) 	# MT=2
+			ELASTIC_SCATTERING (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames) 	# MT=2
 			if (mgyn==1): 
-				groupmulti(insp,2,igtype,1)
-				groupmulti(insp,2,igtype,2)
+				groupmulti(insp,2,igtype,1,out_filenames)
+				groupmulti(insp,2,igtype,2,out_filenames)
 			irct2y=1
 		if (irct==3):
-			INELASTIC_SCATTERING (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad) 		# MT=51 to 91
+			INELASTIC_SCATTERING (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames) 		# MT=51 to 91
 			if (mgyn==1):
-				groupmulti(insp,4,igtype,1)
-				groupmulti(insp,4,igtype,2)
+				groupmulti(insp,4,igtype,1,out_filenames)
+				groupmulti(insp,4,igtype,2,out_filenames)
 			irct3y=1
 		if (irct==4):							 # (n,2n), (n,3n) and (n,4n)
-			CONTROL_nxn (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad) 
+			CONTROL_nxn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames) 
 			if (mgyn==1):
-				groupmulti(insp,1601,igtype,1)
-				groupmulti(insp,1601,igtype,2)
+				groupmulti(insp,1601,igtype,1,out_filenames)
+				groupmulti(insp,1601,igtype,2,out_filenames)
 			irct4y=1
 		if (irct==5):
-			CONTROL_nCPO(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad) 		# (n,CPO)
+			CONTROL_nCPO(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames) 		# (n,CPO)
 			if (mgyn==1):
-				groupmulti(insp,3001,igtype,1)
-				groupmulti(insp,3001,igtype,2)
+				groupmulti(insp,3001,igtype,1,out_filenames)
+				groupmulti(insp,3001,igtype,2,out_filenames)
 			irct5y=1
 		if (irct==6):
-			anytnMF6MT5(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad)		# (n, anything)
+			anytnMF6MT5(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames)		# (n, anything)
 			if (mgyn==1):
-				groupmulti(insp,5001,igtype,1)
-				groupmulti(insp,5001,igtype,2)
-				groupmulti(insp,5001,igtype,3)
+				groupmulti(insp,5001,igtype,1,out_filenames)
+				groupmulti(insp,5001,igtype,2,out_filenames)
+				groupmulti(insp,5001,igtype,3,out_filenames)
 			irct6y=1
 		if (irct==7): 				# Total DPA and Heating due to incident neutron
 			if(irct1y==0):
-				RADIATIVE_CAPTURE (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad)
+				RADIATIVE_CAPTURE (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames)
 			if(irct2y==0):
-				ELASTIC_SCATTERING (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad)
+				ELASTIC_SCATTERING (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames)
 			if(irct3y==0):
-				INELASTIC_SCATTERING (ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad)
+				INELASTIC_SCATTERING (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames)
 			if(irct4y==0):
-				CONTROL_nxn(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad)
+				CONTROL_nxn(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames)
 			if(irct5y==0):
-				CONTROL_nCPO(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad)
+				CONTROL_nCPO(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames)
 			if(irct6y==0):
-				anytnMF6MT5(ofile_outRMINDD,NPt,Etu,mdisp,Ed,bad,cad)
-			total(NPt,Etu)				# Add contributions to DPA,Heating from all partial reactions
+				anytnMF6MT5(ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,NPt,Etu,mdisp,Ed,bad,cad,out_filenames)
+			total(NPt,Etu,out_filenames)				# Add contributions to DPA,Heating from all partial reactions
 			if (mgyn==1):
-				groupmulti(insp,1,igtype,1) 		# 1= id for output file, 1 = DPA
-				groupmulti(insp,1,igtype,2) 		# 1= id for output file, 2 = Heating
-				groupmulti(insp,1,igtype,3) 		# 1= id for output file, 3 = Heating_Energy_balance
+				groupmulti(insp,1,igtype,1,out_filenames) 		# 1= id for output file, 1 = DPA
+				groupmulti(insp,1,igtype,2,out_filenames) 		# 1= id for output file, 2 = Heating
+				groupmulti(insp,1,igtype,3,out_filenames) 		# 1= id for output file, 3 = Heating_Energy_balance
+## ===========================
 
-# ==============================================================
-
-# =======Total=======*
-# Calculation of total neutron dpa and heating cross sections
-# by adding together the partial contributions from individual
-# reactions.
-
-def total (NPt, Etu):
+'''
+=======Total=======*
+Calculation of total neutron dpa and heating cross sections
+by adding together the partial contributions from individual reactions.
+'''
+def total (NPt, Etu, out_filenames):
 	print("n, all .....")
 
 	for iprd in range(1, 4):
@@ -5644,43 +5448,43 @@ def total (NPt, Etu):
 		for nrct in range (1, 7):
 			s1 = [0]*NPt
 			if (nrct == 1 and iprd == 1):
-				ifile = open("ndpa2.txt", 'r')
+				ifile = open(out_filenames+"ndpa2.txt", 'r')
 			if (nrct == 2 and iprd == 1):
-				ifile = open("ndpa4.txt", 'r')
+				ifile = open(out_filenames+"ndpa4.txt", 'r')
 			if (nrct == 3 and iprd == 1):
-				ifile = open("ndpa1601.txt", 'r')
+				ifile = open(out_filenames+"ndpa1601.txt", 'r')
 			if (nrct == 4 and iprd == 1):
-				ifile = open("ndpa102.txt", 'r') 
+				ifile = open(out_filenames+"ndpa102.txt", 'r') 
 			if (nrct == 5 and iprd == 1):
-				ifile = open("ndpa3001.txt", 'r')
+				ifile = open(out_filenames+"ndpa3001.txt", 'r')
 			if (nrct == 6 and iprd == 1):
-				ifile = open("ndpa5001.txt", 'r') 
+				ifile = open(out_filenames+"ndpa5001.txt", 'r') 
 
 			if (nrct == 1 and iprd == 2):
-				ifile = open("nheat2.txt", 'r')
+				ifile = open(out_filenames+"nheat2.txt", 'r')
 			if (nrct == 2 and iprd == 2):
-				ifile = open("nheat4.txt", 'r')
+				ifile = open(out_filenames+"nheat4.txt", 'r')
 			if (nrct == 3 and iprd == 2):
-				ifile = open("nheat1601.txt", 'r')
+				ifile = open(out_filenames+"nheat1601.txt", 'r')
 			if (nrct == 4 and iprd == 2):
-				ifile = open("nheat102.txt", 'r') 
+				ifile = open(out_filenames+"nheat102.txt", 'r') 
 			if (nrct == 5 and iprd == 2):
-				ifile = open("nheat3001.txt", 'r') 
+				ifile = open(out_filenames+"nheat3001.txt", 'r') 
 			if (nrct == 6 and iprd == 2):
-				ifile = open("nheat5001.txt", 'r')
+				ifile = open(out_filenames+"nheat5001.txt", 'r')
 
 			if (nrct == 1 and iprd == 3):
-				ifile = open("nheat2.txt", 'r')
+				ifile = open(out_filenames+"nheat2.txt", 'r')
 			if (nrct == 2 and iprd == 3):
-				ifile = open("nheat4.txt", 'r')
+				ifile = open(out_filenames+"nheat4.txt", 'r')
 			if (nrct == 3 and iprd == 3):
-				ifile = open("nheat1601.txt", 'r')
+				ifile = open(out_filenames+"nheat1601.txt", 'r')
 			if (nrct == 4 and iprd == 3):
-				ifile = open("nheat102.txt", 'r') 
+				ifile = open(out_filenames+"nheat102.txt", 'r') 
 			if (nrct == 5 and iprd == 3):
-				ifile = open("nheat_EB3001.txt", 'r') 
+				ifile = open(out_filenames+"nheat_EB3001.txt", 'r') 
 			if (nrct == 6 and iprd == 3):
-				ifile = open("nheat_EB5001.txt", 'r')
+				ifile = open(out_filenames+"nheat_EB5001.txt", 'r')
 
 			npmt = int(ifile.readline().split()[0])
 			if (npmt != 0):
@@ -5693,21 +5497,20 @@ def total (NPt, Etu):
 					s1[i] = float(data[3])
 					tot_dhsig[i] = tot_dhsig[i] + s1[i]
 			ifile.close()
-		printtofile (NPt,Etu,tot_sig,tot_dhval,tot_dhsig,1,0,iprd)
-
+		printToFile (NPt,Etu,tot_sig,tot_dhval,tot_dhsig,1,0,iprd,out_filenames)
 
 # ===================================================================
 
 # =======Print the dpa / heating cross sections to files=======*
-		
+
 	# The point and multigrouped dpa / heating cross sections are
 	# written in files in the energy -- cross sections two-column format.
 	# The files are named according to point / grouped, dpa / heat and
 	# the MT number of the partial contribution. The total point dpa 
 	# and heating cross sections are written only up to 20 MeV since in 
 	# general information above 20 MeV is available only for (n,n) partial.
-		
-def printtofile (NPt,Etu,siget,disp_heat_value,sdpat,MTtp,iflgrouped,ifldh):
+
+def printToFile (NPt,Etu,siget,disp_heat_value,sdpat,MTtp,iflgrouped,ifldh,out_filenames):
 	MTname = str(MTtp)
 
 	# NPt = Total points in Etu, sdpat=cross section, 
@@ -5715,33 +5518,33 @@ def printtofile (NPt,Etu,siget,disp_heat_value,sdpat,MTtp,iflgrouped,ifldh):
 	# point data: 1, grouped data, ifldh, 1 = DPA: 2 = Heating 
 	# Create o/p files with name as: [ndpa(grouped)+id for output file],
 	# [nheat(grouped)+ id for outputfile].
-		
+
 	if (ifldh == 1):
 		if (iflgrouped == 0):
-			dpafilename_point = 'ndpa' + MTname + '.txt'
+			dpafilename_point = out_filenames + 'ndpa' + MTname + '.txt'
 			ofile100 = open(dpafilename_point, 'w')
 		if (iflgrouped == 1):
-			dpafilename_grouped = 'ndpagrouped' + MTname + '.txt'
+			dpafilename_grouped = out_filenames + 'ndpagrouped' + MTname + '.txt'
 			ofile100 = open(dpafilename_grouped, 'w')
 
 	if (ifldh==2):
 		if (iflgrouped == 0):
-			heatfilename_point = 'nheat' + MTname + '.txt'
+			heatfilename_point = out_filenames + 'nheat' + MTname + '.txt'
 			ofile100 = open(heatfilename_point, 'w')
 		if (iflgrouped == 1):
-			heatfilename_grouped = 'nheatgrouped' + MTname + '.txt'
+			heatfilename_grouped = out_filenames + 'nheatgrouped' + MTname + '.txt'
 			ofile100 = open(heatfilename_grouped, 'w')
 
 	if (ifldh==3):
 		if (iflgrouped == 0):
-			heatfilename_point = 'nheat_EB' + MTname + '.txt'
+			heatfilename_point = out_filenames + 'nheat_EB' + MTname + '.txt'
 			ofile100 = open(heatfilename_point, 'w')
 		if (iflgrouped == 1):
-			heatfilename_grouped = 'nheatgrouped_EB' + MTname + '.txt'
+			heatfilename_grouped = out_filenames + 'nheatgrouped_EB' + MTname + '.txt'
 			ofile100 = open(heatfilename_grouped, 'w')
 
 	NPtlast = NPt
-	
+
 	print(NPtlast, file = ofile100)
 	if (NPt != 0):
 		for i in range(NPtlast):
@@ -5754,34 +5557,35 @@ def printtofile (NPt,Etu,siget,disp_heat_value,sdpat,MTtp,iflgrouped,ifldh):
 	## The directory of Files (MFs) and the corresponding Sections (MTs)
 	## given in the evaluation are read from File 1 and returned.
 	
-def file1(): 
+def file1(ifile_rawENDF6): 
 		# maximum of NXC = 350 (ENDF-102), 
 		# but deviates for Mn55 ENDF/B-VII.1, so changed to 1000 
-	ifile = open('tape01', 'r')
+	ifile_rawENDF6.seek(0, 0)
+	ifile = ifile_rawENDF6
 	ifile.readline()
 	line = ifile.readline()
-	data = eachlineinfo(line)
+	data = UtilsU.eachLineInfo(line)
 	ZA = float(data[0]); AWR = float(data[1])
 	LRP = int(data[2]); LFI = int(data[3]); NLIB = int(data[4])
 	NMOD = int(data[5]); MAT = int(data[6]); MF = int(data[7])
 	MT = int(data[8])
 
 	line = ifile.readline()
-	data = eachlineinfo(line)
+	data = UtilsU.eachLineInfo(line)
 	ELIS = float(data[0]); STA = float(data[1]);
 	LIS = int(data[2]); LISO = int(data[3]); num = int(data[4]);
 	NFOR = int(data[5]); MAT = int(data[6]); MF = int(data[7])
 	MT = int(data[8])
 
 	line = ifile.readline()
-	data = eachlineinfo(line)
+	data = UtilsU.eachLineInfo(line)
 	AWI = float(data[0]); EMAX = float(data[1])
 	LREL = int(data[2]); num = int(data[3]); NSUB = int(data[4]);
 	NVER = int(data[5]); MAT = int(data[6]); MF = int(data[7])
 	MT = int(data[8])
 
 	line = ifile.readline()
-	data = eachlineinfo(line)
+	data = UtilsU.eachLineInfo(line)
 	TEMP = float(data[0]); c2 = float(data[1])
 	LDRV = int(data[2]); num = int(data[3]); NWD = int(data[4])
 	NXC = int(data[5]); MAT = int(data[6]); MF = int(data[7])
@@ -5795,14 +5599,13 @@ def file1():
 
 	for i in range(NXC):
 		line = ifile.readline()
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		blnk = data[0]; blnk = data[1]
 		MFs[i] = int(data[2]); MTs[i] = int(data[3])
 		NCn = int(data[4]); MODn = int(data[5]); MAT = int(data[6])
 		MF = int(data[7]); MT = int(data[8])
 
-	nfiles = NXC	
-	ifile.close()
+	nfiles = NXC
 
 	return(nfiles,MFs,MTs)
 
@@ -5812,9 +5615,9 @@ def file1():
 	# searched from the information about evaluation given in File 1 of raw
 	# ENDF-6 file.
 	
-def FindMT(MTfind):		# MTfind = raw ENDF MT, iflMTpr = output from FindMT
+def FindMT(MTfind, ifile_rawENDF6):
 	MFs = numpy.zeros(1000); MTs = numpy.zeros(1000)
-	(nfiles,MFs,MTs) = file1()
+	(nfiles,MFs,MTs) = file1(ifile_rawENDF6)
 		
 	iflMTpr = 0
 	for i in range(nfiles):
@@ -5828,11 +5631,11 @@ def FindMT(MTfind):		# MTfind = raw ENDF MT, iflMTpr = output from FindMT
 	## Multigroup, according to requirement, the point dpa and heating
 	## cross sections into the chosen neutron energy group structure.
 	
-def groupmulti(insp,MTg,igtype,ifldh):
+def groupmulti(insp,MTg,igtype,ifldh,out_filenames):
 	MTgname =  str(MTg)
-		
+
 	print("Group .....")
-		
+
 	if (insp == 1):
 		ifile = open('NeutronSpectrum.txt', 'r')
 		nre = int(ifile.readline().split()[-1])
@@ -5844,13 +5647,13 @@ def groupmulti(insp,MTg,igtype,ifldh):
 		ifile.close()
 
 	if (ifldh == 1):
-		filename = 'ndpa' + MTgname + '.txt'
+		filename = out_filenames + 'ndpa' + MTgname + '.txt'
 		ifile = open(filename, 'r')
 	if (ifldh == 2):
-		filename = 'nheat' + MTgname + '.txt'
+		filename = out_filenames + 'nheat' + MTgname + '.txt'
 		ifile = open(filename, 'r')
 	if (ifldh == 3):
-		filename = 'nheat_EB' + MTgname + '.txt'
+		filename = out_filenames + 'nheat_EB' + MTgname + '.txt'
 		ifile = open(filename, 'r')
 
 	NP = int(ifile.readline().split()[-1])
@@ -6014,7 +5817,7 @@ def groupmulti(insp,MTg,igtype,ifldh):
 			if (dhcs != 0 and denominator != 0):
 				gsdpa[i] = dhcs/denominator
 
-		printtofile(Ngl,Eg,gsiget,gdhval,gsdpa,MTg,1,ifldh)
+		printToFile(Ngl,Eg,gsiget,gdhval,gsdpa,MTg,1,ifldh,out_filenames)
 
 #******************************** WEIGHT SPECTRUM GENERATOR **************************		
  		

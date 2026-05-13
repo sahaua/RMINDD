@@ -1,16 +1,20 @@
-## >> Code: RMINDD.py, module file: RecedU.py
-## >> Perform: Recoil energy distributions of nuclei from basic ENDF-6 files
-## >> Author: Uttiyoarnab Saha
-## >> Version and Date: 1.0 and 25/03/2021
-## >> Last modified: 25/03/2021, Kolkata
-## >> Update: 25/03/2021
-## >> Major changes:
-##
-## ======================================================================================================
+''' 
+Code: RMINDD - (Radiation Matter Interaction and Damage calculation using Nuclear Data)
+Perform: Calcuation of metrics of neutron radiation damage in a material using ENDF-6 files
+Module: RecedU.py -- finds recoil energy spectra
+Author: Uttiyoarnab Saha
+Version and Date: 1.0 and 01/07/2022
+Last modified: 01/07/2022, Kolkata
+Update: 01/07/2022
+Major changes: 
+
+=========================================================================================
+'''
 
 import numpy
 import math
-import os
+#import os
+import UtilsU
 
 #=======Linear interpolation=======*		
         
@@ -84,125 +88,6 @@ def TERPOLAPR (iprule,n1,x1,y1,n2,x2):
 				break
 	return(y2)
 
-#===============================================================
-
-#========The data in each line are explicitly extracted=======*
-
-def eachlineinfo(line):	
-	data = [0]*9
-	for i in range(6):
-		s = ''						# 6 data each of 11 places
-		for char in range(i*11,(i+1)*11):
-			s = s + line[char]
-		data[i] = s.lstrip(' ')
-	
-	s = ''
-	for char in range(66,70):			# MAT data of 4 places
-		s = s + line[char]
-	data[6] = s.lstrip(' ')
-	
-	s = ''
-	for char in range(70,72):			# MF data of 2 places
-		s = s + line[char]
-	data[7] = s.lstrip(' ')
-	
-	s = ''
-	for char in range(72,75):			# MT data of 3 places
-		s = s + line[char]
-	data[8] = s.lstrip(' ')
-	
-	for i in range(6):
-		data[i] = "E-".join(data[i].split('-'))
-		data[i] = "E+".join(data[i].split('+'))
-		data[i] = data[i].lstrip('E')
-	
-	return(data)
-
-#========The data in lines of different types of ENDF-6 file are explicitly extracted=======*
-
-def line_type1_info(line):
-	data = eachlineinfo(line)
-	dataV1 = 0; dataV2 = 0; dataV3 = 0; dataV4 = 0; dataV5 = 0; dataV6 = 0
-	dataV7 = 0; dataV8 = 0; dataV9 = 0
-	iflspace = 0
-	for element in data:
-		if (element == ''):
-			iflspace = 1
-			break
-	if (iflspace == 0):
-		dataV1 = float(data[0]); dataV2 = float(data[1]); dataV3 = int(data[2])
-		dataV4 = int(data[3]); dataV5 = int(data[4]); dataV6 = int(data[5])
-		dataV7 = int(data[6]); dataV8 = int(data[7]); dataV9 = int(data[8])
-	return(dataV1,dataV2,dataV3,dataV4,dataV5,dataV6,dataV7,dataV8,dataV9)
-
-def line_type2_info(line):
-	data = eachlineinfo(line)
-	dataV1 = float(data[0]); dataV2 = float(data[1]); dataV3 = int(data[2])
-	dataV4 = int(data[3]); dataV5 = int(data[4]); dataV6 = int(data[5])
-	dataV7 = int(data[6]); dataV8 = int(data[7]); dataV9 = int(data[8])
-	return(dataV1,dataV2,dataV3,dataV4,dataV5,dataV6,dataV7,dataV8,dataV9)
-
-def line_type3_info (filehandle,numdata,numvariables):
-	# numvariables (1 / 2) denotes no. of variables the given data has to be read into
-	if (numvariables == 2):
-		xdata = [0]*numdata
-		ydata = [0]*numdata
-	if (numvariables == 1):
-		xdata = [0]*numdata
-	i = 0
-	
-	if (numvariables == 2):
-		while (i < numdata):
-			line = filehandle.readline()
-			data = eachlineinfo(line)
-			for j in range(0,6,2):
-				if (data[j] != ''):
-					xdata[i] = float(data[j])
-					ydata[i] = float(data[j+1])
-					i += 1
-				else:
-					i += 1
-					break
-	if (numvariables == 1):
-		while (i < numdata):
-			line = filehandle.readline()
-			data = eachlineinfo(line)
-			for j in range(6):
-				if (data[j] != ''):
-					xdata[i] = float(data[j])
-					i += 1
-				else:
-					i += 1
-					break
-
-	if (numvariables == 2):
-		return(xdata, ydata)
-	if (numvariables == 1):
-		return(xdata)
-
-#========The Data from Output File of PKA Matrix in Specific Format==========*
-
-def line_type4_info(filehandle,nre,numdata):
-	xdata = [0]*numdata
-	i = 0
-	while (i < numdata):
-		line = filehandle.readline()
-		line = line.lstrip('[')
-		line = line.rstrip(']')
-		data = line.split()
-		for num in range(len(data)):
-			if (num == len(data) - 1):
-				data[num] = float(data[num].lstrip("'").rstrip("']"))
-			elif (num == 0):
-				data[num] = float(data[num].lstrip("['").rstrip("',"))
-			else:
-				data[num] = float(data[num].lstrip("'").rstrip("',"))
-		for j in range(len(data)):
-			#print(i,j)
-			xdata[i] = float(data[j])
-			i += 1
-	return(xdata)
-
 # =======Interpolate cross section to unique common energy=======*
 	
 	# When the basic / dpa / heating cross sections from partial reactions
@@ -254,21 +139,21 @@ def GQ():
 	
 # Finds the sum of the PKA spectra from partial reactions.
 	
-def ALLSUM (nrg,nrcta):
+def ALLSUM (num_group_limits,partial_reac_tosum):
 
-	nre = nrg - 1
+	nre = num_group_limits - 1
 	numdata = nre*nre
 	dsdt = numpy.zeros((nre,nre)); pkaind = numpy.zeros((nre,nre))
 	ifile = open('ToAddAll.txt', 'r')
 
 	# maximum number of pka spectra matrices (nsp) to add
 	nsp = 6
-	if (len(nrcta) == 1):	# total has been sought
+	if (len(partial_reac_tosum) == 1):	# total has been sought
 		print("n,all .....")
 		for i in range(nsp):
 			ifile.readline()
 			temporary = [0]*numdata
-			temporary = line_type4_info(ifile,nre,numdata)
+			temporary = UtilsU.lineType4Info(ifile,nre,numdata)
 			k1 = 0
 			for j in range (nre):
 				for k in range (nre):
@@ -278,22 +163,22 @@ def ALLSUM (nrg,nrcta):
 				for k in range (nre):
 					dsdt[j][k] = dsdt[j][k] + pkaind[j][k]
 
-	if (len(nrcta) > 1): 	# sum of some partials has been sought
+	if (len(partial_reac_tosum) > 1): 	# sum of some partials has been sought
 		print("Sum of sought partial reactions .....")
 		for i in range(nsp):
 			flag = 0
-			for j in range(len(nrcta)):
-				if (i+1 == nrcta[j]):
+			for j in range(len(partial_reac_tosum)):
+				if (i+1 == partial_reac_tosum[j]):
 					flag = 1
 					break
 			if (flag == 0):
 				ifile.readline()
 				temporary = [0]*numdata
-				temporary = line_type4_info(ifile,nre,numdata)
+				temporary = UtilsU.lineType4Info(ifile,nre,numdata)
 			if (flag == 1):
 				ifile.readline()
 				temporary = [0]*numdata
-				temporary = line_type4_info(ifile,nre,numdata)
+				temporary = UtilsU.lineType4Info(ifile,nre,numdata)
 				k1 = 0
 				for j in range (nre):
 					for k in range (nre):
@@ -316,15 +201,16 @@ def ALLSUM (nrg,nrcta):
 	# After creating this finer array it also calls the reaction specific
 	# subroutines according to the input.
 
-def FINE_ENERGY_CALL_REAC (insp,eliso,igtype,nrg,nbpoints,irct,nrcta):
+def FINE_ENERGY_CALL_REAC (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,igtype,\
+num_group_limits,nbpoints,num_reac_array):
 
-	nre = nrg - 1
-	nbge = nrg + (nbpoints*nre)
+	nre = num_group_limits - 1
+	nbge = num_group_limits + (nbpoints*nre)
 	fct = 1.0/(nbpoints+1)
-	ret = [0]*nbge; erg = [0]*nrg
+	ret = [0]*nbge; erg = [0]*num_group_limits
 	if (igtype == 0):
 		ifile = open('Energy-GroupLimits.txt', 'r')
-		nrg = int(ifile.readline().split()[0])
+		num_group_limits = int(ifile.readline().split()[0])
 		for i in range (nre,-1,1):
 			erg[i] = float(ifile.readline().split()[0])
 		ifile.close()
@@ -360,38 +246,39 @@ def FINE_ENERGY_CALL_REAC (insp,eliso,igtype,nrg,nbpoints,irct,nrcta):
 		for k in range (nbpoints+1):
 			ret[j] = k*x + erg[i]
 			j = j + 1
-	ret[nbge-1] = erg[nrg-1]
+	ret[nbge-1] = erg[num_group_limits-1]
 
-	if (irct == 1):
-		PKAS_ELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype)
-	if (irct == 2):
-		PKAS_INELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype)
-	if (irct == 3):
-		CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype)
-	if (irct == 4):
-		CONTROL_nxn (insp,eliso,ret,nbge,nbpoints,nre,igtype)
-	if (irct == 5):
-		PKAS_ng (insp,eliso,ret,nbge,nbpoints,nre,igtype)
-	if (irct == 6):
-		PKAS_redtnMF6MT5 (insp,eliso,ret,nbge,nbpoints,nre,igtype)
-	if (irct == 7):
-		ofile1001 = open('n-allPKAspectra.txt', 'a')
-		print(eliso, file = ofile1001)
-		PKAS_ELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype)
-		PKAS_INELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype)
-		CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype)
-		CONTROL_nxn (insp,eliso,ret,nbge,nbpoints,nre,igtype)
-		PKAS_ng (insp,eliso,ret,nbge,nbpoints,nre,igtype)
-		PKAS_redtnMF6MT5 (insp,eliso,ret,nbge,nbpoints,nre,igtype)
-		# for the total of contributions from all reactions
-		dsdt = numpy.zeros((nre,nre))
-		dsdt = ALLSUM (nrg,nrcta)
-		print('calculated total PKA spectra .....')
-		print('writing .....')
-		print('The total recoil nuclei energy spectra', file = ofile1001)
-		for it in range (nre):
-			print (['{:.6E}'.format(dsdt[it][jt]) for jt in range (nre)], file = ofile1001)
-		ofile1001.close()
+	for irct in num_reac_array:
+		if (irct == 1):
+			PKAS_ELASTIC (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype)
+		if (irct == 2):
+			PKAS_INELASTIC (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype)
+		if (irct == 3):
+			CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype)
+		if (irct == 4):
+			CONTROL_nxn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype)
+		if (irct == 5):
+			PKAS_ng (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype)
+		if (irct == 6):
+			PKAS_redtnMF6MT5 (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype)
+		if (irct == 7):
+			ofile1001 = open('n-allPKAspectra.txt', 'a')
+			print(eliso, file = ofile1001)
+			PKAS_ELASTIC (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype)
+			PKAS_INELASTIC (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype)
+			CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype)
+			CONTROL_nxn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype)
+			PKAS_ng (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype)
+			PKAS_redtnMF6MT5 (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype)
+			# for the total of contributions from all reactions
+			dsdt = numpy.zeros((nre,nre))
+			dsdt = ALLSUM (num_group_limits,num_reac_array)
+			print('calculated total PKA spectra .....')
+			print('writing .....')
+			print('The total recoil nuclei energy spectra', file = ofile1001)
+			for it in range (nre):
+				print (['{:.6E}'.format(dsdt[it][jt]) for jt in range (nre)], file = ofile1001)
+			ofile1001.close()
 
 #=======Integrate in the mesh within groups=======*
 
@@ -439,17 +326,17 @@ def GROUP_INTEG (ret,nbge,nbpoints,nre,dsgmdT):
 	# basic neutron cross section for a particular incident neutron energy
 	# group.
 	
-def PKAS_NORM_CROSSSEC (insp,MTtg,igtype,nrg,dsgmdT):
-	
-	nre = nrg - 1
-	erg = [0]*nrg
+def PKAS_NORM_CROSSSEC (insp,MTtg,igtype,num_group_limits,dsgmdT,ifile_preprocessedENDF6):
+
+	nre = num_group_limits - 1
+	erg = [0]*num_group_limits
 	gsig = [0]*nre
-	
+
 	print('normalize .....')
-				
+
 	if (igtype == 0):
 		ifile = open('Energy-GroupLimits.txt', 'r')
-		nrg = int(ifile.readline().split()[0])
+		num_group_limits = int(ifile.readline().split()[0])
 		for i in range (nre,-1,1):
 			erg[i] = float(ifile.readline().split()[0])
 		ifile.close()
@@ -479,7 +366,7 @@ def PKAS_NORM_CROSSSEC (insp,MTtg,igtype,nrg,dsgmdT):
 	if (igtype==12):
 		erg = engrp12()
 
-	gsig = GROUPMULTI (insp,igtype,MTtg,nrg)
+	gsig = GROUPMULTI (insp,igtype,MTtg,num_group_limits,ifile_preprocessedENDF6)
 
 	for i in range (nre):
 		if (gsig[i] != 0):
@@ -526,7 +413,7 @@ def PRINTPKAS (eliso,MTtg,nre,pkamatr):
 	# reactions is performed here. Corresponding to each of this type 
 	# of reaction the subroutine PKAS_nCPO is called for the calculation.
 			
-def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
+def CONTROL_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype):
 
 	print("n,CPO .....")
 	pka3l = numpy.zeros((nbge,nbge)); tmpkaMT103 = numpy.zeros((nbge,nbge))
@@ -537,7 +424,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 	pkaMT107 = numpy.zeros((nre,nre)); pkamatr = numpy.zeros((nre,nre))
 
 	MTnum = [0]*281   		# 31 + 250
-	nrg = nre + 1
+	num_group_limits = nre + 1
 	
 	MTnum[0]=11; MTnum[1]=22;MTnum[2]=23;MTnum[3]=24
 	MTnum[4]=25; MTnum[5]=28;MTnum[6]=29;MTnum[7]=30
@@ -558,9 +445,9 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 	for j in range (281):
 		iflMTpr = 0
 		MTfind = MTnum[j]	
-		iflMTpr = FindMT(MTfind)
+		iflMTpr = FindMT(MTfind, ifile_rawENDF6)
 		if (iflMTpr == 1):
-			(pka3l,ifdpd,iflpresent) = PKAS_nCPO (MTnum[j],j,ret,nbge)
+			(pka3l,ifdpd,iflpresent) = PKAS_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTnum[j],j,ret,nbge)
 			if (iflpresent == 1):
 				print ('n-threshold: MT = ', MTnum[j])
 				MTc = MTnum[j]			
@@ -577,7 +464,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 				if (MTc != 103 and MTc != 104 and MTc != 105 and MTc != 106 and MTc != 107):
 					if (MTc < 600):
 						pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,pka3l)
-						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,nrg,pkamatr)
+						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,num_group_limits,pkamatr,ifile_preprocessedENDF6)
 						PRINTPKAS (eliso,MTc,nre,pkamatr)
 						for isum in range (nre):
 							for jsum in range (nre):
@@ -589,7 +476,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 					if (ifdpd == 1):
 						ifdisc103 = 1
 						pkamatr = GROUP_INTEG (ret,nbge,nbpoints,nre,pka3l)
-						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,nrg,pkamatr)
+						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,num_group_limits,pkamatr,ifile_preprocessedENDF6)
 						PRINTPKAS (eliso,MTc,nre,pkamatr)
 						for isum in range (nre):
 							for jsum in range (nre):
@@ -597,7 +484,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 					
 					if (ifdpd == 0 and ifdisc103 == 1):
 						pkamatr = GROUP_INTEG (ret,nbge,nbpoints,nre,pka3l)
-						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,nrg,pkamatr)
+						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,num_group_limits,pkamatr,ifile_preprocessedENDF6)
 						PRINTPKAS (eliso,MTc,nre,pkamatr)		
 						for isum in range (nre):
 							for jsum in range (nre):
@@ -605,7 +492,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 					
 					if (ifdpd == 0 and ifdisc103 == 0):
 						pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,tmpkaMT103)
-						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,nrg,pkamatr)
+						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,num_group_limits,pkamatr,ifile_preprocessedENDF6)
 						pkaMT103 = pkamatr 
 	
 					if (MTc == 649):
@@ -618,7 +505,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 					if (ifdpd == 1):
 						ifdisc104 = 1
 						pkamatr = GROUP_INTEG (ret,nbge,nbpoints,nre,pka3l)
-						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,nrg,pkamatr)        
+						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,num_group_limits,pkamatr,ifile_preprocessedENDF6)        
 						PRINTPKAS (eliso,MTc,nre,pkamatr)
 						for isum in range (nre):
 							for jsum in range (nre):
@@ -626,7 +513,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 	
 					if (ifdpd == 0 and ifdisc104 == 1):
 						pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,pka3l)
-						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,nrg,pkamatr)        
+						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,num_group_limits,pkamatr,ifile_preprocessedENDF6)        
 						PRINTPKAS (eliso,MTc,nre,pkamatr)		
 						for isum in range (nre):
 							for jsum in range (nre):
@@ -634,7 +521,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 	
 					if (ifdpd == 0 and ifdisc104 == 0):
 						pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,tmpkaMT104)
-						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,nrg,pkamatr)
+						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,num_group_limits,pkamatr,ifile_preprocessedENDF6)
 						pkaMT104 = pkamatr
 	
 					if (MTc == 699):
@@ -647,7 +534,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 					if (ifdpd == 1):
 						ifdisc105 = 1
 						pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,pka3l)
-						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,nrg,pkamatr)
+						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,num_group_limits,pkamatr,ifile_preprocessedENDF6)
 						PRINTPKAS (eliso,MTc,nre,pkamatr)
 						for isum in range (nre):
 							for jsum in range (nre):
@@ -655,7 +542,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 					
 					if (ifdpd == 0 and ifdisc105 == 1):
 						pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,pka3l)
-						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,nrg,pkamatr)
+						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,num_group_limits,pkamatr,ifile_preprocessedENDF6)
 						PRINTPKAS (eliso,MTc,nre,pkamatr)
 						for isum in range (nre):
 							for jsum in range (nre):
@@ -663,7 +550,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 		
 					if (ifdpd == 0 and ifdisc105 == 0):
 						pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,tmpkaMT105)	
-						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,nrg,pkamatr)
+						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,num_group_limits,pkamatr,ifile_preprocessedENDF6)
 						pkaMT105 = pkamatr 
 					
 					if (MTc==749):
@@ -676,7 +563,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 					if (ifdpd == 1):
 						ifdisc106 = 1
 						pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,pka3l)
-						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,nrg,pkamatr)
+						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,num_group_limits,pkamatr,ifile_preprocessedENDF6)
 						PRINTPKAS (eliso,MTc,nre,pkamatr)
 						for isum in range (nre):
 							for jsum in range (nre):
@@ -684,7 +571,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 					
 					if (ifdpd == 0 and ifdisc106 == 1):
 						pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,pka3l)
-						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,nrg,pkamatr)
+						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,num_group_limits,pkamatr,ifile_preprocessedENDF6)
 						PRINTPKAS (eliso,MTc,nre,pkamatr)
 						for isum in range (nre):
 							for jsum in range (nre):
@@ -692,7 +579,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 					
 					if (ifdpd == 0 and ifdisc106 == 0):
 						pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,tmpkaMT106)
-						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,nrg,pkamatr)		
+						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,num_group_limits,pkamatr,ifile_preprocessedENDF6)		
 						pkaMT106 = pkamatr
 					
 					if (MTc == 799):
@@ -705,7 +592,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 					if (ifdpd == 1):
 						ifdisc107 = 1
 						pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,pka3l)
-						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,nrg,pkamatr)
+						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,num_group_limits,pkamatr,ifile_preprocessedENDF6)
 						PRINTPKAS (eliso,MTc,nre,pkamatr)
 						for isum in range (nre):
 							for jsum in range (nre):
@@ -713,7 +600,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 	
 					if (ifdpd == 0 and ifdisc107 == 1):
 						pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,pka3l)
-						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,nrg,pkamatr)
+						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,num_group_limits,pkamatr,ifile_preprocessedENDF6)
 						PRINTPKAS (eliso,MTc,nre,pkamatr)
 						for isum in range (nre):
 							for jsum in range (nre):
@@ -721,7 +608,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 	
 					if (ifdpd == 0 and ifdisc107 == 0):
 						pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,tmpkaMT107)
-						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,nrg,pkamatr)		
+						pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,num_group_limits,pkamatr,ifile_preprocessedENDF6)		
 						pkaMT107 = pkamatr
 					
 					if (MTc==849):
@@ -733,7 +620,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 		iflpr = prflag(nbge,tmpkaMT103)
 		if (iflpr == 1):
 			pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,tmpkaMT103)
-			pkamatr = PKAS_NORM_CROSSSEC (insp,103,igtype,nrg,pkamatr)
+			pkamatr = PKAS_NORM_CROSSSEC (insp,103,igtype,num_group_limits,pkamatr,ifile_preprocessedENDF6)
 			pkaMT103 = pkamatr
 			PRINTPKAS (eliso,103,nre,pkaMT103)
 
@@ -741,7 +628,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 		iflpr = prflag(nbge,tmpkaMT104)
 		if (iflpr == 1):
 			pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,tmpkaMT104)
-			pkamatr = PKAS_NORM_CROSSSEC (insp,104,igtype,nrg,pkamatr)
+			pkamatr = PKAS_NORM_CROSSSEC (insp,104,igtype,num_group_limits,pkamatr,ifile_preprocessedENDF6)
 			pkaMT104 = pkamatr
 			PRINTPKAS (eliso,104,nre,pkaMT104)
 
@@ -749,7 +636,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 		iflpr = prflag(nbge,tmpkaMT105)
 		if (iflpr == 1):
 			pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,tmpkaMT105)
-			pkamatr = PKAS_NORM_CROSSSEC (insp,105,igtype,nrg,pkamatr)
+			pkamatr = PKAS_NORM_CROSSSEC (insp,105,igtype,num_group_limits,pkamatr,ifile_preprocessedENDF6)
 			pkaMT105 = pkamatr
 			PRINTPKAS (eliso,105,nre,pkaMT105)
 		
@@ -757,7 +644,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 		iflpr = prflag(nbge,tmpkaMT106)
 		if (iflpr == 1):
 			pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,tmpkaMT106)
-			pkamatr = PKAS_NORM_CROSSSEC (insp,106,igtype,nrg,pkamatr)
+			pkamatr = PKAS_NORM_CROSSSEC (insp,106,igtype,num_group_limits,pkamatr,ifile_preprocessedENDF6)
 			pkaMT106 = pkamatr
 			PRINTPKAS (eliso,106,nre,pkaMT106)
 
@@ -765,7 +652,7 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 		iflpr = prflag(nbge,tmpkaMT107)
 		if (iflpr == 1):
 			pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,tmpkaMT107)
-			pkamatr = PKAS_NORM_CROSSSEC (insp,107,igtype,nrg,pkamatr)
+			pkamatr = PKAS_NORM_CROSSSEC (insp,107,igtype,num_group_limits,pkamatr,ifile_preprocessedENDF6)
 			pkaMT107 = pkamatr
 			PRINTPKAS (eliso,107,nre,pkaMT107)
 	
@@ -791,26 +678,26 @@ def CONTROL_nCPO (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 	# of reaction the subroutine PKAS_nxn is called for the calculation.
 	# (n,2n), (n,3n) and (n,4n) only.
 	
-def CONTROL_nxn (insp,eliso,ret,nbge,nbpoints,nre,igtype):
+def CONTROL_nxn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype):
 
 	print("n,xn .....")
 	pkaxn1l = numpy.zeros((nbge,nbge))
 	pkaxn1 = numpy.zeros((nre,nre)); pkamatr = numpy.zeros((nre,nre))
 	MTnum = [0]*3
-	nrg = nre + 1
+	num_group_limits = nre + 1
 	MTnum[0] = 16; MTnum[1] = 17; MTnum[2] = 37
 	
 	for i in range (3):
 		iflMTpr = 0
 		MTfind = MTnum[i]
-		iflMTpr = FindMT(MTfind)
+		iflMTpr = FindMT(MTfind, ifile_rawENDF6)
 		if (iflMTpr == 1):
-			(pkaxn1l, iflpresent) = PKAS_nxn (MTnum[i],ret,nbge,nbpoints,nre,igtype)
+			(pkaxn1l, iflpresent) = PKAS_nxn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTnum[i],ret,nbge,nbpoints,nre,igtype)
 			if (iflpresent == 1):
 				MTc = MTnum[i]
 				print ('n, xn:: MT = ', MTc)
 				pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,pkaxn1l)
-				pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,nrg,pkamatr)
+				pkamatr = PKAS_NORM_CROSSSEC (insp,MTc,igtype,num_group_limits,pkamatr,ifile_preprocessedENDF6)
 				PRINTPKAS (eliso,MTc,nre,pkamatr)
 				for isum in range (nre):
 					for jsum in range (nre):
@@ -831,9 +718,9 @@ def CONTROL_nxn (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 	# Finds if a particular reaction is given in the present evaluation
 	# from the directory available in File 1.
 	
-def FindMT (MTfind):
+def FindMT (MTfind, ifile_rawENDF6):
 	MFs = [0]*1000; MTs = [0]*1000
-	(nfiles,MFs,MTs) = FILE1()
+	(nfiles,MFs,MTs) = FILE1(ifile_rawENDF6)
 	iflMTpr = 0
 	for i in range (nfiles):
 		if (MFs[i] == 3 and MTs[i] == MTfind):
@@ -903,47 +790,8 @@ def SPKAEL1 (xgaussq,fmuE,ret,nbge,A,Z,En,y):
 				break
 	return(val2)
 
-#=======Uniue energy Array=========*
 
-# Making unique energy array from MF3 MT1
-	
-def UQCE():
-	# Et=Energy array in MT=1, Etu=unique of Et
-	# extraction of total energy points
-	
-	ifile104 = open ('tape02', 'r')
-	while True:
-		line = ifile104.readline()  
-		data = eachlineinfo(line)
-		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
-		if (MAT != -1):
-			if (MF == 3):
-				if (MT == 1):
-					line = ifile104.readline() 
-					data = eachlineinfo(line)
-					QM = float(data[0]); QI =  float(data[1]); NR = int(data[4]); NPt = int(data[5])
-					Et = [0]*NPt
-					LR = int(ifile104.readline().split()[1])
-					temporary1 = [0]*NPt
-					temporary2 = [0]*NPt
-					(temporary1,temporary2) = line_type3_info(ifile104,NPt,2)
-					for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
-						Et[N] = value1
-						s = value2
-		else:
-			break
-	ifile104.close()
-
-	# make unique common energy
-	
-	Etu = numpy.array(Et)
-	Etu = numpy.unique(Etu)
-	NPt = len(Etu)
-	
-	return(Etu, NPt)
-#---------------------------------------------------------------------------
-
-# Often unterpolation function
+## Often used interpolation function
 
 def crstd(x,x1,x2,y1,y2):
 	if((x2-x1) != 0):
@@ -955,7 +803,7 @@ def crstd(x,x1,x2,y1,y2):
 	# Calculation of PKA spectra due to the elastic scattering 
 	# interaction of neutron.
 		
-def PKAS_ELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype):
+def PKAS_ELASTIC (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype):
 
 	print ("n,n .....")
 	sret = [0]*nbge
@@ -964,80 +812,80 @@ def PKAS_ELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 	xgaussq = [0]*nquad
 	wgaussq = [0]*nquad
 	pkamatr = numpy.zeros((nre,nre))
-	nrg = nre + 1
-	ofile101 = open("Output_RadEMC-RecedU.txt", 'a')
+	num_group_limits = nre + 1
 
-	print(' Elastic scattering (MT = 2) PKA spectra', file = ofile101)
-	print('-------------------------------------------', file = ofile101)
+	print(' Elastic scattering (MT = 2) PKA spectra', file = ofile_outRMINDD)
+	print('-------------------------------------------', file = ofile_outRMINDD)
 # --------------------------------------------------------------------------
 	# extraction of total energy grid
-	ifile = open ("tape02", 'r')
+	ifile_preprocessedENDF6.seek(0, 0)
+	ifile = ifile_preprocessedENDF6
 	while True:
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if (MAT != -1):
 			if (MF == 3):
 				if (MT == 1):
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					QM = float(data[0]); QI =  float(data[1])
 					NR = int(data[4]); NPt = int(data[5])
 					Et = [0]*NPt; Etu = [0]*NPt; siget = [0]*NPt
 					alfull = numpy.zeros((nbge,65)); fmuE = numpy.zeros((64,nbge))
 					LR = int(ifile.readline().split()[1])
-					(Et, sigt) = line_type3_info(ifile,NPt,2)
+					(Et, sigt) = UtilsU.lineType3Info(ifile,NPt,2)
 		else:
 			break
-	ifile.close()
 
-	print('', file = ofile101)
-	print(NPt, ' Energy points in total cross section', file = ofile101)
+	print('', file = ofile_outRMINDD)
+	print(NPt, ' Energy points in total cross section', file = ofile_outRMINDD)
 
 	# extraction of cross sections
 		
-	ifile = open ("tape02", 'r')
+	ifile_preprocessedENDF6.seek(0, 0)
+	ifile = ifile_preprocessedENDF6
 	while True:
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 
 		if (MAT != -1):
 			if (MF == 3):
 				if (MT == 2):
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					QM = float(data[0]); QI =  float(data[1])
 					NR = int(data[4]); NP = int(data[5])
 					E = [0]*NP; sig = [0]*NP
 					LR = int(ifile.readline().split()[1])
-					(E, sig) = line_type3_info(ifile,NP,2)
+					(E, sig) = UtilsU.lineType3Info(ifile,NP,2)
 		else:
 			break
-	ifile.close()
 
-	print ('', file = ofile101)
-	print (NP, 'Energy points in elastic scattering', file = ofile101)
+	print ('', file = ofile_outRMINDD)
+	print (NP, 'Energy points in elastic scattering', file = ofile_outRMINDD)
 		
  	# extraction of Legendre polynomial coefficients and Probability
 	
-	ifile = open ("tape01", 'r')
+	ifile_rawENDF6.seek(0, 0)
+	ifile = ifile_rawENDF6
 	while True:
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])	
 		if (MF == 3 and MT == 0):		#.and. NS==99999
 			line = ifile.readline()
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 			line = ifile.readline()
-			(ZA,AWR,l1,LTT,NK,l2,MAT,MF,MT) = line_type1_info(line)
+			(ZA,AWR,l1,LTT,NK,l2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 
 		if (MAT != -1):
 			if (MF == 4):
@@ -1047,25 +895,25 @@ def PKAS_ELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 						alc = [0]*65
 					if (LTT == 3 or LTT == 1):
 						line = ifile.readline()
-						data = eachlineinfo(line)
+						data = UtilsU.eachLineInfo(line)
 						NE1 = int(data[5])
 						# Legendre polynomial coefficients
 						ifile.readline()
 						NLarray = [0]*NE1; al = numpy.zeros((NE1,65)); EL = [0]*NE1; alc = [0]*65
 						for i in range (NE1):
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = UtilsU.eachLineInfo(line)
 							T = float(data[0]); EL[i] = float(data[1]); NL = int(data[4])
 							NLarray[i] = NL + 1
 							al[i][0] = 1
 							temporary = [0]*NLarray[i]
-							temporary = line_type3_info(ifile,NLarray[i]-1,1)
+							temporary = UtilsU.lineType3Info(ifile,NLarray[i]-1,1)
 							for j, value in enumerate(temporary, 1):
 								al[i][j] = value
 
 					if (LTT == 3 or LTT == 2):
 						line = ifile.readline()
-						data = eachlineinfo(line)
+						data = UtilsU.eachLineInfo(line)
 						NE2 = int(data[5])
 						# Tabulated Probability
 						ifile.readline()
@@ -1073,21 +921,19 @@ def PKAS_ELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 						fdata = numpy.zeros((200,NE2)); ftotal = numpy.zeros((64,NE2))
 						for i in range (NE2):
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = UtilsU.eachLineInfo(line)
 							T = float(data[0]); Enf[i] = float(data[1])
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = UtilsU.eachLineInfo(line)
 							NPr[i] = int(data[0])
 							temporary1 = [0]*NPr[i]
 							temporary2 = [0]*NPr[i]
-							(temporary1,temporary2) = line_type3_info(ifile,NPr[i],2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NPr[i],2)
 							for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								cdata[j][i] = value1
 								fdata[j][i] = value2
 		else:
 			break
-
-	ifile.close()
 
 # --------------------------------------------------------------------------
 	A = AWR
@@ -1100,8 +946,8 @@ def PKAS_ELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 	Etu = numpy.array(Et)
 	Etu = numpy.unique(Etu)
 	NPt = len(Etu)
-	print('', file = ofile101)
-	print(NPt,' Unique total energy points', file = ofile101)
+	print('', file = ofile_outRMINDD)
+	print(NPt,' Unique total energy points', file = ofile_outRMINDD)
 
 	# Finding (n,n) cross section in the unique energy array
 
@@ -1111,17 +957,17 @@ def PKAS_ELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 
 	sret = trptuqce (Etu, siget, ret)
 
-	print('', file = ofile101)
+	print('', file = ofile_outRMINDD)
 
 	if(LTT == 3):
-		print('Legendre coefficients and tabulated probability', file = ofile101)
-		print('data representations of angular distribution', file = ofile101)
+		print('Legendre coefficients and tabulated probability', file = ofile_outRMINDD)
+		print('data representations of angular distribution', file = ofile_outRMINDD)
 
 	if(LTT == 1):
-		print('Legendre coefficients representation of angular distribution', file = ofile101)
+		print('Legendre coefficients representation of angular distribution', file = ofile_outRMINDD)
 
 	if(LTT == 2):
-		print('Tabulated probability data representation of angular distribution', file = ofile101)
+		print('Tabulated probability data representation of angular distribution', file = ofile_outRMINDD)
 		
 	# call GROUPMULTI(igtype,2,nbge,sret)
 
@@ -1226,7 +1072,7 @@ def PKAS_ELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 				dsgmdT[i][ia] = abs(sret[i]*val2[ia])
 	
 	pkamatr = GROUP_INTEG (ret,nbge,nbpoints,nre,dsgmdT)	
-	pkamatr = PKAS_NORM_CROSSSEC (insp,2,igtype,nrg,pkamatr)
+	pkamatr = PKAS_NORM_CROSSSEC (insp,2,igtype,num_group_limits,pkamatr,ifile_preprocessedENDF6)
 	PRINTPKAS (eliso,2,nre,pkamatr)
 
 	ofile1000 = open ('ToAddAll.txt', 'a')
@@ -1235,7 +1081,6 @@ def PKAS_ELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 		print (['{:.6E}'.format(pkamatr[i][j]) for j in range (nre)], file = ofile1000)
 	
 	ofile1000.close()
-	ofile101.close()
 
 	# PKAS_ELASTIC function completes here
 # ============================================================================
@@ -1268,7 +1113,7 @@ def SPKAINEL(alc1,NLa,ret,nbge,A,Z,En,Q,y):
 	# Calcualtion of PKA spectra due to inelastic scattering 
 	# interaction of neutron.
 	
-def PKAS_INELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype):
+def PKAS_INELASTIC (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype):
 
 	print ("n,n' .....")
 	val2 = [0]*nbge; cr2 = [0]*nbge
@@ -1307,18 +1152,17 @@ def PKAS_INELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 	Enp = numpy.zeros((3,100,1000)); f = numpy.zeros((3,100,1000))
 	al6 = numpy.zeros((41,3,100,65))
 	
-	nrg = nre + 1
-	
-	ofile101 = open("Output_RadEMC-RecedU.txt", 'a')
-	print('', file = ofile101)
-	print(' Inelastic scattering (MT = 4) PKA spectra', file = ofile101)
-	print('-------------------------------------------', file = ofile101)
+	num_group_limits = nre + 1
 
-	ifile = open ("tape01", 'r')
+	print('', file = ofile_outRMINDD)
+	print(' Inelastic scattering (MT = 4) PKA spectra', file = ofile_outRMINDD)
+	print('-------------------------------------------', file = ofile_outRMINDD)
+
+	ifile_rawENDF6.seek(0, 0)
+	ifile = ifile_rawENDF6
 	ifile.readline()
-	line = ifile201.readline()
-	(ZA,AWR,L0,L1,L2,L3,MAT,MF,MT) = line_type1_info(line)
-	ifile.close()
+	line = ifile.readline()
+	(ZA,AWR,L0,L1,L2,L3,MAT,MF,MT) = UtilsU.lineType1Info(line)
 
 	Z = int(ZA/1000)
 	A = AWR
@@ -1334,37 +1178,38 @@ def PKAS_INELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 		mta[i] = m
 		m = m + 1
 
-	ifile = open ("tape02", 'r')
+	ifile_preprocessedENDF6.seek(0, 0)
+	ifile = ifile_preprocessedENDF6
 	l = 0
 	while True:
 		line = ifile.readline()
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if (MAT != -1):
 			if (MF == 3):
 				if (MT == 1):
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					QMt = float(data[0]); QIt =  float(data[1])
 					LR = int(data[3]); NR = int(data[4]); NPt = int(data[5])
 					ifile.readline()
 					Et = [0]*NPt; sigt = [0]*NPt; Etu = [0]*NPt; sigit = numpy.zeros((NPt,41))
 					E = numpy.zeros((NPt,41)); sig = numpy.zeros((NPt,41))
 					sigl = numpy.zeros((NPt,41)); alfull = numpy.zeros((NPt,65))
-					(Et, sigt) = line_type3_info(ifile,NPt,2)
+					(Et, sigt) = UtilsU.lineType3Info(ifile,NPt,2)
 
 				if (MT == mta[l] or MT == 91):
 					if (MT == 91):
 						l = 40
 					iflpresent[l] = 1
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					QM = float(data[0]); QI[l] =  float(data[1])
 					LR = int(data[3]); NR = int(data[4]); NP[l] = int(data[5])
 					ifile.readline()
 					temporary1 = [0]*NP[l]
 					temporary2 = [0]*NP[l]
-					(temporary1,temporary2) = line_type3_info(ifile,NP[l],2)
+					(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NP[l],2)
 					for i, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 						E[i][l] = value1
 						sig[i][l] = value2
@@ -1372,21 +1217,21 @@ def PKAS_INELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 						l = l + 1
 		else:
 			break
-	ifile.close()
 
 	if4d = 0
 	if4c = 0
-	ifile = open ("tape01", 'r')
+	ifile_rawENDF6.seek(0, 0)
+	ifile = ifile_rawENDF6
 	l = 0
 	while True:
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if (MT == 0):
 			line = ifile.readline()
-			(ZA,AWR,L1,LTTv,L2,L3,MAT,MF,MT) = line_type1_info(line)
+			(ZA,AWR,L1,LTTv,L2,L3,MAT,MF,MT) = UtilsU.lineType1Info(line)
 		if (MAT != -1):
 			if (MF == 4):
 				if (MT == mta[l] or MT == 91):
@@ -1397,37 +1242,37 @@ def PKAS_INELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 						if4c = 1
 					LTT = LTTv
 					line = ifile.readline()
-					(ZA,AWR,LI,LCT,L2,L3,MAT,MF,MT) = line_type1_info(line)
+					(ZA,AWR,LI,LCT,L2,L3,MAT,MF,MT) = UtilsU.lineType1Info(line)
 					if (LTT == 1 and LI == 0):
 						line = ifile.readline()
-						(C1,C2,L1,L2,NR,NE4[l],MAT,MF,MT) = line_type2_info(line)
-						(NBT, INTr) = line_type3_info(ifile,NR,2)
+						(C1,C2,L1,L2,NR,NE4[l],MAT,MF,MT) = UtilsU.lineType2Info(line)
+						(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 						for i in range (int(NE4[l])):
 							line = ifile.readline()
-							(c1,En4[l][i],LT,l2,NL4[l][i],l3,MAT,MF,MT) = line_type2_info(line)
+							(c1,En4[l][i],LT,l2,NL4[l][i],l3,MAT,MF,MT) = UtilsU.lineType2Info(line)
 							NL4[l][i] = NL4[l][i] + 1
 							al4[l][i][0] = 1
 							temporary = [0]*int(NL4[l][i])
-							temporary = line_type3_info (ifile,int(NL4[l][i])-1,1)
+							temporary = UtilsU.lineType3Info (ifile,int(NL4[l][i])-1,1)
 							for j, value in enumerate (temporary, 1):
 								al4[l][i][j] = value
 					if (l != 40):
 						l = l+1
 		else:
 			break
-	ifile.close()
 
 	if5c = 0
-	ifile = open ("tape01", 'r')
+	ifile_rawENDF6.seek(0, 0)
+	ifile = ifile_rawENDF6
 	while True:
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if (MT == 0):
 			line = ifile.readline()
-			(ZA,AWR,L1,L2,NKv,L3,MAT,MF,MT) = line_type1_info(line)
+			(ZA,AWR,L1,L2,NKv,L3,MAT,MF,MT) = UtilsU.lineType1Info(line)
 		if (MAT != -1):
 			if (MF == 5):
 				if (MT == 91):
@@ -1436,56 +1281,56 @@ def PKAS_INELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 					NK5[l] = NKv
 					for NSS in range (int(NK5[l])):
 						line = ifile.readline()
-						(C1,C2,L1,LF[l][NSS],NR,NP5[l][NSS],MAT,MF,MT) = line_type2_info(line)
+						(C1,C2,L1,LF[l][NSS],NR,NP5[l][NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
 						if (LF[l][NSS] == 1):
 							line = ifile.readline()
-							(C1,C2,L1,L2,NR,NE5[l][NSS],MAT,MF,MT) = line_type2_info(line)
-							(NBT, INTr) = line_type3_info(ifile,NR,2)
+							(C1,C2,L1,L2,NR,NE5[l][NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
+							(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 							for i in range (int(NE5[l][NSS])):
 								line = ifile.readline()
-								(C1,En5[l][NSS][i],L1,L2,NR,NF5[l][NSS][i],MAT,MF,MT) = line_type2_info(line)
-								(NBT, INTr) = line_type3_info(ifile,NR,2)
+								(C1,En5[l][NSS][i],L1,L2,NR,NF5[l][NSS][i],MAT,MF,MT) = UtilsU.lineType2Info(line)
+								(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 								temporary1 = [0]*int(NF5[l][NSS][i])
 								temporary2 = [0]*int(NF5[l][NSS][i])
-								(temporary1,temporary2) = line_type3_info(ifile,int(NF5[l][NSS][i]),2)
+								(temporary1,temporary2) = UtilsU.lineType3Info(ifile,int(NF5[l][NSS][i]),2)
 								for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 									Enp5[NSS][i][j] = value1
 									f5[NSS][i][j] = value2
 						if (LF[l][NSS] == 9):
-							(NBT, INTr) = line_type3_info(ifile,NR,2)
+							(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 							temporary1 = [0]*int(NP5[l][NSS])
 							temporary2 = [0]*int(NP5[l][NSS])
-							(temporary1,temporary2) = line_type3_info(ifile,int(NP5[l][NSS]),2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,int(NP5[l][NSS]),2)
 							for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								Eint[l][NSS][j] = value1
 								p[l][NSS][j] = value2
 							line = ifile.readline()
-							(C1,C2,L1,L2,NR,NE5[l][NSS],MAT,MF,MT) = line_type2_info(line)
-							(NBT, INTr) = line_type3_info(ifile,NR,2)
+							(C1,C2,L1,L2,NR,NE5[l][NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
+							(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 							temporary1 = [0]*int(NE5[l][NSS])
 							temporary2 = [0]*int(NE5[l][NSS])
-							(temporary1,temporary2) = line_type3_info(ifile,int(NE5[l][NSS]),2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,int(NE5[l][NSS]),2)
 							for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								En5[l][NSS][j] = value1
 								tht[l][NSS][j] = value2
 		else:
 			break
-	ifile.close()
 
 	if6d = 0
 	if6c = 0
 	if (if4d == 0 or if4c == 0 or if5c == 0):
-		ifile = open ("tape01", 'r')
+		ifile_rawENDF6.seek(0, 0)
+		ifile = ifile_rawENDF6
 		l = 0
 		while True:
 			line = ifile.readline()
 			if (line == ''):
 				break
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 			if (MT == 0):	#.and. NS==99999
 				line = ifile.readline()
-				(ZAv,AWRv,l1,LCT,NKv,l2,MAT,MF,MT) = line_type1_info(line)
+				(ZAv,AWRv,l1,LCT,NKv,l2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 			if (MAT != -1):
 				if (MF == 6):
 					if (MT == mta[l] or MT == 91):
@@ -1497,42 +1342,42 @@ def PKAS_INELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 						NK[l] = NKv
 						for NSS in range (int(NK[l])):
 							line = ifile.readline()
-							(ZAP,AWP,LIP,LAW[l][NSS],NR,NP6[l][NSS],MAT,MF,MT) = line_type1_info(line)
-							(NBT, INTr) = line_type3_info(ifile,NR,2)
+							(ZAP,AWP,LIP,LAW[l][NSS],NR,NP6[l][NSS],MAT,MF,MT) = UtilsU.lineType1Info(line)
+							(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 							temporary1 = [0]*int(NP6[l][NSS])
 							temporary2 = [0]*int(NP6[l][NSS])
-							(temporary1,temporary2) = line_type3_info(ifile,int(NP6[l][NSS]),2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,int(NP6[l][NSS]),2)
 							for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								Eint6[l][NSS][j] = value1
 								yi[l][NSS][j] = value2
 
 							if (LAW[l][NSS] == 2):
 								line = ifile.readline()
-								(c1,c2,l3,l4,NR,NE6[l][NSS],MAT,MF,MT) = line_type2_info(line)
-								(NBT, INTr) = line_type3_info(ifile,NR,2)
+								(c1,c2,l3,l4,NR,NE6[l][NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
+								(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 								for i in range (int(NE6[l][NSS])):
 									line = ifile.readline()
-									(c1,En[l][NSS][i],LG[l][NSS],l2,NW,NL[l][NSS][i],MAT,MF,MT) = line_type2_info(line)
+									(c1,En[l][NSS][i],LG[l][NSS],l2,NW,NL[l][NSS][i],MAT,MF,MT) = UtilsU.lineType2Info(line)
 									NL[l][NSS][i] = NL[l][NSS][i] + 1
 									al6[l][NSS][i][0] = 1
 									temporary = [0]*int(NL[l][NSS][i])
-									temporary = line_type3_info (ifile,int(NL[l][NSS][i])-1,1)
+									temporary = UtilsU.lineType3Info (ifile,int(NL[l][NSS][i])-1,1)
 									for j, value in enumerate (temporary, 1):
 										al6[l][NSS][i][j] = value 
 
 							if (LAW[l][NSS] == 1):
 								line = ifile.readline()
-								(c1,c2,LG[l][NSS],LEP[l][NSS],NR,NE6[l][NSS],MAT,MF,MT) = line_type2_info(line)
-								(NBT, INTr) = line_type3_info(ifile,NR,2)
+								(c1,c2,LG[l][NSS],LEP[l][NSS],NR,NE6[l][NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
+								(NBT, INTr) = UtilsU.lineType3Info(ifile,NR,2)
 								for i in range (int(NE6[l][NSS])):
 									line = ifile.readline()
-									(c1,En[l][NSS][i],ND,NA,NW,NEP[l][NSS][i],MAT,MF,MT) = line_type2_info(line)
+									(c1,En[l][NSS][i],ND,NA,NW,NEP[l][NSS][i],MAT,MF,MT) = UtilsU.lineType2Info(line)
 									if (NA != 0):
 										if (LG[l][NSS] == 2 or LG[l][NSS] == 1):
 											fiso[NSS] = 1
 											Ball = [0]*NW
 											temporary = [0]*NW
-											temporary = line_type3_info (ifile,NW,1)
+											temporary = UtilsU.lineType3Info (ifile,NW,1)
 											for j1, value in enumerate(temporary, 0):
 												Ball[j1] = value
 											K1 = 0
@@ -1547,7 +1392,7 @@ def PKAS_INELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 										fiso[NSS] = 1
 										temporary1 = [0]*int(NEP[l][NSS][i])
 										temporary2 = [0]*int(NEP[l][NSS][i])
-										(temporary1,temporary2) = line_type3_info(ifile,int(NEP[l][NSS][i]),2)
+										(temporary1,temporary2) = UtilsU.lineType3Info(ifile,int(NEP[l][NSS][i]),2)
 										for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 											Enp[NSS][i][j] = value1
 											f[NSS][i][j] = value2
@@ -1555,20 +1400,19 @@ def PKAS_INELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 							l = l+1
 			else:
 				break
-	ifile.close()
 
 	(xabc, wg) = GQ()
 
-	print('', file = ofile101)
-	print(NPt,' Energy points in total cross section', file = ofile101)
+	print('', file = ofile_outRMINDD)
+	print(NPt,' Energy points in total cross section', file = ofile_outRMINDD)
 
 	# Make unique common energy in MF=3, MT=1
 
 	Etu = numpy.array(Et)
 	Etu = numpy.unique(Etu)
 	NPt = len(Etu)
-	print('', file = ofile101)
-	print(NPt,' Unique total energy points', file = ofile101)
+	print('', file = ofile_outRMINDD)
+	print(NPt,' Unique total energy points', file = ofile_outRMINDD)
 	
 	# Finding (n,n') cross section in the unique energy array
 	
@@ -1703,11 +1547,11 @@ def PKAS_INELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 					dsgmdTl[l][i][ia] = abs(val2[ia])
 
 			if(if4d == 1):
-				print('Discrete angular distribution', file = ofile101)
-				print('represented by Legendre coefficients in File 4', file = ofile101)
+				print('Discrete angular distribution', file = ofile_outRMINDD)
+				print('represented by Legendre coefficients in File 4', file = ofile_outRMINDD)
 			if(if6d == 1):
-				print('Discrete angular distribution', file = ofile101) 
-				print('represented by Legendre coefficients in File 6', file = ofile101)
+				print('Discrete angular distribution', file = ofile_outRMINDD) 
+				print('represented by Legendre coefficients in File 6', file = ofile_outRMINDD)
 
 	l = 40
 
@@ -1726,8 +1570,8 @@ def PKAS_INELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 		Nrc = 0
 
 	if (if6c == 1 and Nrc != 0):
-		print('', file = ofile101)
-		print('Continuum reaction recoil energy distribution given in File 6', file = ofile101)
+		print('', file = ofile_outRMINDD)
+		print('Continuum reaction recoil energy distribution given in File 6', file = ofile_outRMINDD)
 
 	# Interpolation for the recoil energies in finer array
 
@@ -1797,11 +1641,11 @@ def PKAS_INELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 	Th = Qs/n2
 
 	if (if6c == 0 or Nrc == 0):
-		print('', file = ofile101)
-		print('Continuum reaction recoil energy distribution', file = ofile101)
-		print('not given in File 6, calculated with neutron', file = ofile101)
-		print('evaporation model and isotropic emission of', file = ofile101) 
-		print('recoil nucleus assumption', file = ofile101)
+		print('', file = ofile_outRMINDD)
+		print('Continuum reaction recoil energy distribution', file = ofile_outRMINDD)
+		print('not given in File 6, calculated with neutron', file = ofile_outRMINDD)
+		print('evaporation model and isotropic emission of', file = ofile_outRMINDD) 
+		print('recoil nucleus assumption', file = ofile_outRMINDD)
 		for i in range (nbge):
 			if (sret[i][l] != 0):
 				f0 = sqrt(1 + Th/ret[i])
@@ -1825,7 +1669,7 @@ def PKAS_INELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 		iflnz = prflag(nbge,dsgmdT)
 		if (iflnz == 1):
 			pkamatr = GROUP_INTEG (ret,nbge,nbpoints,nre,dsgmdT)
-			pkamatr = PKAS_NORM_CROSSSEC (insp,MTtg,igtype,nrg,pkamatr)
+			pkamatr = PKAS_NORM_CROSSSEC (insp,MTtg,igtype,num_group_limits,pkamatr,ifile_preprocessedENDF6)
 			PRINTPKAS (eliso,MTtg,nre,pkamatr)
 			for i in range (nre):
 				for j in range (nre):
@@ -1841,7 +1685,6 @@ def PKAS_INELASTIC (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 
 
 	ofile1000.close()
-	ofile101.close()
 
 	# PKAS_INELASTIC function completes here
 # ==========================================================================
@@ -1882,7 +1725,7 @@ def SPKATH (alc1,NLa,ret,nbge,A,En,Q,bta):
 	# Calculation of PKA spectra due to the charged particle emission
 	# reactions of neutron.
 	
-def PKAS_nCPO (MTi,lpr,ret,nbge):
+def PKAS_nCPO (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,lpr,ret,nbge):
 	beta = [0]*281; n1 = [0]*281; ze = [0]*281; cbe = [0]*281
 	xabc = [0]*4; wg = [0]*4
 	ifl4 = [0]*281; ifl6 = [0]*281
@@ -1957,30 +1800,30 @@ def PKAS_nCPO (MTi,lpr,ret,nbge):
 	xabc = (-0.86114,-0.33998,0.33998,0.86114)
 	#WEIGHTS CORRESPONDING TO THE ARGUEMENT POINTS
 	wg = (0.34785,0.65215,0.65215,0.34785)
-	
-	ofile101 = open("Output_RadEMC-RecedU.txt", 'a')
-	print('', file = ofile101)
-	print(' CPO reaction (MT = ',MTi,') PKA spectra', file = ofile101)
-	print('-------------------------------------------', file = ofile101)
+
+	print('', file = ofile_outRMINDD)
+	print(' CPO reaction (MT = ',MTi,') PKA spectra', file = ofile_outRMINDD)
+	print('-------------------------------------------', file = ofile_outRMINDD)
 	
 	iflpresent = 0
 	NP = 0
-	ifile = open ("tape02", 'r')
+	ifile_preprocessedENDF6.seek(0, 0)
+	ifile = ifile_preprocessedENDF6
 
 	# extraction of cross sections
 	while True:
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if ( MT == 0 and MF != 0):	# .and. NS==99999
 			line = ifile.readline()
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 			if ( MT == 0 and MF == 0):
 				line = ifile.readline()
-			(ZAv,AWRv,L0,L1,NKv,L2,MAT,MF,MT) = line_type1_info(line)
+			(ZAv,AWRv,L0,L1,NKv,L2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 		if (MAT != -1):
 			if (MF == 3):
 				if (MT == MTi):
@@ -1993,17 +1836,16 @@ def PKAS_nCPO (MTi,lpr,ret,nbge):
 					ZA = ZAv
 					AWR = AWRv
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					QM = float(data[0]); QI =  float(data[1])
 					LR = int(data[3]); NR = int(data[4]); NP = int(data[5])
 					Eall = [0]*NP; sall = [0]*NP; fr6 = numpy.zeros((NP,nbge))
 					if (ifdthl == 1):
 						alfull = numpy.zeros((nbge,65))
 					ifile.readline()
-					(Eall, sall) = line_type3_info(ifile,NP,2)
+					(Eall, sall) = UtilsU.lineType3Info(ifile,NP,2)
 		else:
 			break
-	ifile.close()
 
 #only if MF3 cross sections are available then do the following
 
@@ -2015,20 +1857,21 @@ def PKAS_nCPO (MTi,lpr,ret,nbge):
 		ifspad4al = 0 	# flag for secondary particle angular data in 'al' coefficients
 		ifspad4muf = 0 	# flag for secondary particle angular data in 'mu,f' form
 
-		ifile = open ("tape01", 'r')
+		ifile_rawENDF6.seek(0, 0)
+		ifile = ifile_rawENDF6
 
 		while True:
 			line = ifile.readline()
 			if (line == ''):
 				break
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 			if (MF == 3 and MT==0):
 				line = ifile.readline()
-				data = eachlineinfo(line)
+				data = UtilsU.eachLineInfo(line)
 				MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 				line = ifile.readline()
-				(ZA,AWR,l1,LTT,NK,l2,MAT,MF,MT) = line_type1_info(line)
+				(ZA,AWR,l1,LTT,NK,l2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 			if (MAT != -1):
 				if (MF == 4):
 					if (MT == MTi):
@@ -2041,26 +1884,26 @@ def PKAS_nCPO (MTi,lpr,ret,nbge):
 						if (LTT == 3 or LTT == 1):
 							ifspad4al = 1
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = UtilsU.eachLineInfo(line)
 							NE1 = int(data[5])
 						# Legendre polynomial coefficients
 							ifile.readline()
 							al4 = numpy.zeros((NE1,65)); EL = numpy.zeros((NE1))
 							for i in range (NE1):
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								T = float(data[0]); EL[i] = float(data[1]); NL4 = int(data[4])
 								NL4 = NL4 + 1
 								al4[i][0] = 1
 								temporary = [0]*NL4
-								temporary = line_type3_info (ifile,NL4-1,1)
+								temporary = UtilsU.lineType3Info (ifile,NL4-1,1)
 								for j, value in enumerate (temporary, 1):
 									al4[i][j] = value
 
 						if (LTT == 3 or LTT == 2):
 							ifspad4muf = 1
 							line = ifile.readline()
-							data = eachlineinfo(line)
+							data = UtilsU.eachLineInfo(line)
 							NE2 = int(data[5])
 							# Probability
 							ifile.readline()
@@ -2069,36 +1912,36 @@ def PKAS_nCPO (MTi,lpr,ret,nbge):
 							fmuE = numpy.zeros((NP,64)); fpr = [0]*64
 							for i in range (NE2):
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								T = float(data[0]); Enf[i] = float(data[1])
 								line = ifile.readline()
-								data = eachlineinfo(line)
+								data = UtilsU.eachLineInfo(line)
 								NPr[i] = int(data[0])
 								temporary1 = [0]*NPr[i]
 								temporary2 = [0]*NPr[i]
-								(temporary1,temporary2) = line_type3_info(ifile,NPr[i],2)
+								(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NPr[i],2)
 								for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 									cdata4[i][j] = value1
 									fdata4[i][j] = value2
 			else:
 				break
-		ifile.close()
 
 		iflr = 0  		#flag to know presence of recoil data in MF = 6
 		ifspad6 = 0		#flag for secondary particle angular data
 		iffdlcd = 0 	#flag for fdata linear with cdata (LAW=2)
 		iflgfdlcd = 0 	#flag for log(fdata) linear with cdata (LAW=2)
 
-		ifile = open ("tape01", 'r')
+		ifile_rawENDF6.seek(0, 0)
+		ifile = ifile_rawENDF6
 		while True:
 			line = ifile.readline()
 			if (line == ''):
 				break
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 			if (MT == 0):
 				line = ifile.readline()
-				(ZAv,AWRv,l1,LCT,NKv,l2,MAT,MF,MT) = line_type1_info(line)
+				(ZAv,AWRv,l1,LCT,NKv,l2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 			if (MAT != -1):
 				if (MF == 6):
 					if (MT == MTi):
@@ -2106,14 +1949,14 @@ def PKAS_nCPO (MTi,lpr,ret,nbge):
 						NK = NKv
 						for NSS in range (NK):
 							line = ifile.readline()
-							(ZAP[NSS],AWP[NSS],LIP,LAW[NSS],NR6,NP6[NSS],MAT,MF,MT) = line_type1_info(line)
+							(ZAP[NSS],AWP[NSS],LIP,LAW[NSS],NR6,NP6[NSS],MAT,MF,MT) = UtilsU.lineType1Info(line)
 							if (AWP[NSS] > beta[lpr]):
 								iflr = 1
 								irs = NSS
-							(NBT, INTr) = line_type3_info(ifile,NR6,2)
+							(NBT, INTr) = UtilsU.lineType3Info(ifile,NR6,2)
 							temporary1 = [0]*NP6[NSS]
 							temporary2 = [0]*NP6[NSS]
-							(temporary1,temporary2) = line_type3_info(ifile,NP6[NSS],2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NP6[NSS],2)
 							for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								Eint6[NSS][N] = value1
 								yi[NSS][N] = value2
@@ -2123,16 +1966,16 @@ def PKAS_nCPO (MTi,lpr,ret,nbge):
 									ifspad6 = 1
 									isps = NSS
 								line = ifile.readline()
-								(c1,c2,l3,l4,NR6,NE6[NSS],MAT,MF,MT) = line_type2_info(line)
-								(NBT, INTr) = line_type3_info(ifile,NR6,2)
+								(c1,c2,l3,l4,NR6,NE6[NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
+								(NBT, INTr) = UtilsU.lineType3Info(ifile,NR6,2)
 								for i in range (int(NE6[NSS])):
 									line = ifile.readline()
-									(c1,En[NSS][i],LG[NSS],l2,NW,NL[NSS][i],MAT,MF,MT) = line_type2_info(line)
+									(c1,En[NSS][i],LG[NSS],l2,NW,NL[NSS][i],MAT,MF,MT) = UtilsU.lineType2Info(line)
 									if (LG[NSS] == 0):
 										NL[NSS][i] = NL[NSS][i] + 1
 										al6[NSS][i][0] = 1
 										temporary = [0]*int(NL[NSS][i])
-										temporary = line_type3_info (ifile,int(NL[NSS][i])-1,1)
+										temporary = UtilsU.lineType3Info (ifile,int(NL[NSS][i])-1,1)
 										for j, value in enumerate (temporary, 1):
 											al6[NSS][i][j] = value
 									if (LG[NSS] > 0):
@@ -2142,22 +1985,22 @@ def PKAS_nCPO (MTi,lpr,ret,nbge):
 											iflgfdlcd = 1
 										temporary1 = [0]*int(NL[NSS][i])
 										temporary2 = [0]*int(NL[NSS][i])
-										(temporary1,temporary2) = line_type3_info(ifile,int(NL[NSS][i]),2)
+										(temporary1,temporary2) = UtilsU.lineType3Info(ifile,int(NL[NSS][i]),2)
 										for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 											cdata[NSS][i][j] = value1
 											fdata[NSS][i][j] = value2
 							if (LAW[NSS] == 1):
 								line = ifile.readline()
-								(c1,c2,LG[NSS],LEP[NSS],NR6,NE6[NSS],MAT,MF,MT) = line_type2_info(line)
-								(NBT, INTr) = line_type3_info(ifile,NR6,2)
+								(c1,c2,LG[NSS],LEP[NSS],NR6,NE6[NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
+								(NBT, INTr) = UtilsU.lineType3Info(ifile,NR6,2)
 								for i in range (int(NE6[NSS])):
 									line = ifile.readline()
-									(c1,En[NSS][i],ND,NA,NW,NEP[NSS][i],MAT,MF,MT) = line_type2_info(line)
+									(c1,En[NSS][i],ND,NA,NW,NEP[NSS][i],MAT,MF,MT) = UtilsU.lineType2Info(line)
 									if (NA != 0):
 										if (LG[NSS] == 1 or LG[NSS] == 2):
 											Ball = [0]*NW
 											temporary = [0]*NW
-											temporary = line_type3_info (ifile,NW,1)
+											temporary = UtilsU.lineType3Info (ifile,NW,1)
 											for j1, value in enumerate(temporary, 0):
 												Ball[j1] = value
 											K1 = 0
@@ -2171,13 +2014,12 @@ def PKAS_nCPO (MTi,lpr,ret,nbge):
 									if (LG[NSS] == 1 and NA == 0):
 										temporary1 = [0]*int(NEP[NSS][i])
 										temporary2 = [0]*int(NEP[NSS][i])
-										(temporary1,temporary2) = line_type3_info(ifile,int(NEP[NSS][i]),2)
+										(temporary1,temporary2) = UtilsU.lineType3Info(ifile,int(NEP[NSS][i]),2)
 										for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 											Enp[NSS][i][j] = value1
 											f[NSS][i][j] = value2
 			else:
 				break
-		ifile.close()
 
 		n1[lpr] = (A+1-beta[lpr])/(A+1)
 		cbe[lpr] = (1.029e+6*ze[lpr]*Z)/(beta[lpr]**(1/3)+A**(1/3))
@@ -2226,8 +2068,8 @@ def PKAS_nCPO (MTi,lpr,ret,nbge):
 # emission of recoil nucleus are assumed.
 
 		if (ifspad4 == 1):
-			print('', file = ofile101)
-			print('Discrete level distribution data given in File 4', file = ofile101)
+			print('', file = ofile_outRMINDD)
+			print('Discrete level distribution data given in File 4', file = ofile_outRMINDD)
 			for i in range (nbge):
 				alfull[i][0] = 1
 				for k in range (1, 65):
@@ -2274,8 +2116,8 @@ def PKAS_nCPO (MTi,lpr,ret,nbge):
 						dsgmdT[i][ia] = abs(val2[ia])
 
 		if (ifspad6 == 1):
-			print('', file = ofile101)
-			print('Discrete level distribution data given in File 6', file = ofile101)
+			print('', file = ofile_outRMINDD)
+			print('Discrete level distribution data given in File 6', file = ofile_outRMINDD)
 	
 			for i in range (nbge):
 				alfull[i][0] = 1
@@ -2317,13 +2159,13 @@ def PKAS_nCPO (MTi,lpr,ret,nbge):
 				if (sret[i] != 0):
 					for k in range (65):
 						alc[k] = alfull[i][k]
-					val2 = spkath(alc,65,ret,nbge,A,ret[i],QI,beta[lpr])
+					val2 = SPKATH(alc,65,ret,nbge,A,ret[i],QI,beta[lpr])
 					for ia in range (nbge):
 						dsgmdT[i][ia] = abs(val2[ia])
 
 		if (iflr == 1 and ifspad6 == 0):
-			print('', file = ofile101)
-			print('Continuum reaction recoil data given in File 6', file = ofile101)
+			print('', file = ofile_outRMINDD)
+			print('Continuum reaction recoil data given in File 6', file = ofile_outRMINDD)
 			for i in range (int(NE6[irs])):
 				for j in range (nbge):
 					for k in range (int(NEP[irs][i]-1)):
@@ -2384,10 +2226,10 @@ def PKAS_nCPO (MTi,lpr,ret,nbge):
 							break
 
 		if (iflr == 0 and ifspad6 == 0 and ifspad4 == 0):
-			print('', file = ofile101)
-			print('No discrete/continuum reaction data for recoil', file = ofile101) 
-			print('are given in File 4/6. Calculation performed', file = ofile101)
-			print('assuming isotropic emissopn of recoil nucleus', file = ofile101)
+			print('', file = ofile_outRMINDD)
+			print('No discrete/continuum reaction data for recoil', file = ofile_outRMINDD) 
+			print('are given in File 4/6. Calculation performed', file = ofile_outRMINDD)
+			print('assuming isotropic emissopn of recoil nucleus', file = ofile_outRMINDD)
 
 			for i in range (nbge):
 				if (sret[i] != 0):
@@ -2398,7 +2240,7 @@ def PKAS_nCPO (MTi,lpr,ret,nbge):
 					if (cbe[lpr] < availE):
 						Ea  = cbe[lpr]
 					f1 = Estar
-					f2 = 2*sqrt(beta[lpr]*Estar*Ea)
+					f2 = 2*numpy.sqrt(beta[lpr]*Estar*Ea)
 					f3 = beta[lpr]*Ea
 					tmax = n3*(f1+f2+f3)
 					tmin = n3*(f1-f2+f3)
@@ -2418,8 +2260,6 @@ def PKAS_nCPO (MTi,lpr,ret,nbge):
 		
 	# **** the above is done only if MF3 for that MT is present ****
 
-	ofile101.close()
-
 	return(dsgmdT,ifdpd,iflpresent)
 
  	# PKAS_nCPO function completes here
@@ -2431,7 +2271,7 @@ def PKAS_nCPO (MTi,lpr,ret,nbge):
 	# reactions of neutron. The PKA spectra estimated is due to all 
 	# reactions given in inexplicit way.
 	
-def PKAS_redtnMF6MT5 (insp,eliso,ret,nbge,nbpoints,nre,igtype):
+def PKAS_redtnMF6MT5 (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype):
 
 	print("n,anything .....")
 	erg = [0]*(nre+1)
@@ -2444,38 +2284,37 @@ def PKAS_redtnMF6MT5 (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 	Ball = [0]*1000
 	fr6 = numpy.zeros((1000,nbge))
 
-	ofile101 = open("Output_RadEMC-RecedU.txt", 'a')
-	print(' (n, anything) (heavy recoil nuclei) spectra', file = ofile101)
-	print('-----------------------------------------------', file = ofile101)
+	print(' (n, anything) (heavy recoil nuclei) spectra', file = ofile_outRMINDD)
+	print('-----------------------------------------------', file = ofile_outRMINDD)
 # --------------------------------------------------------------------------
 	iflpresent = 0
 	NP = 0
-	ifile = open ("tape02", 'r')
+	ifile_preprocessedENDF6.seek(0, 0)
+	ifile = ifile_preprocessedENDF6
 
 	# extraction of cross sections
 	while True:
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if ( MT==0 and MF != 0):	# .and. NS==99999
 			line = ifile.readline()
-			(ZA,AWR,L0,L1,NKv,L2,MAT,MF,MT) = line_type1_info(line)
+			(ZA,AWR,L0,L1,NKv,L2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 		if (MAT != -1):
 			if (MF == 3):
 				if (MT == 5):
 					iflpresent = 1
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					QM = float(data[0]); QI =  float(data[1])
 					LR = int(data[3]); NR = int(data[4]); NP = int(data[5])
 					Eall = [0]*NP; sall = [0]*NP
 					ifile.readline()
-					(Eall, sall) = line_type3_info(ifile,NP,2)
+					(Eall, sall) = UtilsU.lineType3Info(ifile,NP,2)
 		else:
 			break
-	ifile.close()
 
 # only if MF3 cross sections are available then do the following
 
@@ -2483,23 +2322,24 @@ def PKAS_redtnMF6MT5 (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 		Z = int(ZA/1000)
 		A = AWR
 
-		ifile = open ("tape01", 'r')
+		ifile_rawENDF6.seek(0, 0)
+		ifile = ifile_rawENDF6
 		while True:
 			line = ifile.readline()
 			if (line == ''):
 				break
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 			if (MAT == -1):
 				break
 			if (MT == 0):
 				if (MF == 6):
 					line = ifile.readline()
-					(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = line_type1_info(line)
+					(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = UtilsU.lineType1Info(line)
 				if (MF < 6):
 					ifile.readline()
 					line = ifile.readline()
-					(ZAv,AWRv,l1,LCT,NKv,l2,MAT,MF,MT) = line_type1_info(line)
+					(ZAv,AWRv,l1,LCT,NKv,l2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 			if (MAT != -1):
 				if (MF == 6):
 					if (MT == 5):
@@ -2510,55 +2350,55 @@ def PKAS_redtnMF6MT5 (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 						ZAP = [0]*NK; AWP = [0]*NK; Nyld = [0]*NK; NEP = numpy.zeros((NK,400))
 						NL = numpy.zeros((NK,400)); NE6 = [0]*NK; En = numpy.zeros((NK,400))
 						break
-		ifile.close() 
 
-		ifile = open ("tape01", 'r')
+		ifile_rawENDF6.seek(0, 0)
+		ifile = ifile_rawENDF6
 		while True:
 			line = ifile.readline()
 			if (line == ''):
 				break
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 			if (MAT == -1):
 				break
 			if (MT == 0):
 				if (MF == 6):
 					line = ifile.readline()
-					(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = line_type1_info(line)
+					(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = UtilsU.lineType1Info(line)
 				if (MF < 6):
 					ifile.readline()
 					line = ifile.readline()
-					(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = line_type1_info(line)
+					(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = UtilsU.lineType1Info(line)
 			if (MAT != -1):
 				if (MF == 6):
 					if (MT == 5):
 						NK = NKv
 						for NSS in range (NK):
 							line = ifile.readline()
-							(ZAP[NSS],AWP[NSS],LIP,LAW[NSS],NR6,Nyld[NSS],MAT,MF,MT) = line_type1_info(line)
+							(ZAP[NSS],AWP[NSS],LIP,LAW[NSS],NR6,Nyld[NSS],MAT,MF,MT) = UtilsU.lineType1Info(line)
 							temporary1 = [0]*NR6
 							temporary2 = [0]*NR6
-							(temporary1,temporary2) = line_type3_info(ifile,NR6,2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NR6,2)
 							for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								NBT[NSS][N] = value1
 								INTr[NSS][N] = value2
 							temporary1 = [0]*Nyld[NSS]
 							temporary2 = [0]*Nyld[NSS]
-							(temporary1,temporary2) = line_type3_info(ifile,Nyld[NSS],2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,Nyld[NSS],2)
 							for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								Eint6[NSS][N] = value1
 								Yi[NSS][N] = value2
 							if (LAW[NSS] == 1):
 								line = ifile.readline()
-								(c1,c2,LG[NSS],LEP[NSS],NR6,NE6[NSS],MAT,MF,MT) = line_type2_info(line)
-								(NBTp, INTrp) = line_type3_info(ifile,NR6,2)
+								(c1,c2,LG[NSS],LEP[NSS],NR6,NE6[NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
+								(NBTp, INTrp) = UtilsU.lineType3Info(ifile,NR6,2)
 								for i in range (int(NE6[NSS])):
 									line = ifile.readline()
-									(c1,En[NSS][i],ND,NA,NW,NEP[NSS][i],MAT,MF,MT) = line_type2_info(line)
+									(c1,En[NSS][i],ND,NA,NW,NEP[NSS][i],MAT,MF,MT) = UtilsU.lineType2Info(line)
 									if (NA != 0):
 										if (LG[NSS] == 1 or LG[NSS] == 2):
 											temporary = [0]*NW
-											temporary = line_type3_info (ifile,NW,1)
+											temporary = UtilsU.lineType3Info (ifile,NW,1)
 											for J1, value in enumerate(temporary, 0):
 												Ball[J1] = value
 											K1 = 0
@@ -2571,13 +2411,12 @@ def PKAS_redtnMF6MT5 (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 									if (LG[NSS] == 1 and NA == 0):
 										temporary1 = [0]*int(NEP[NSS][i])
 										temporary2 = [0]*int(NEP[NSS][i])
-										(temporary1,temporary2) = line_type3_info(ifile,int(NEP[NSS][i]),2)
+										(temporary1,temporary2) = UtilsU.lineType3Info(ifile,int(NEP[NSS][i]),2)
 										for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 											Enp[NSS][i][j] = value1
 											f[NSS][i][j] = value2
 			else:
 				break
-		ifile.close()
 
 		for i in range (nbge):
 			if (ret[i] >= Eall[0]):
@@ -2697,8 +2536,8 @@ def PKAS_redtnMF6MT5 (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 				if (igtype==12):
 					erg = engrp12()
 
-				nrg = nre + 1
-				gsig = TERPOLAPR (2,nbge,ret,sret,nrg,erg)
+				num_group_limits = nre + 1
+				gsig = TERPOLAPR (2,nbge,ret,sret,num_group_limits,erg)
 				for i in range (nre):
 					if (gsig[i] != 0):
 						sumnorm = 0
@@ -2722,8 +2561,6 @@ def PKAS_redtnMF6MT5 (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 		# for all the sections in MF=6 MT=5
 	# **** the above is done only if MF3 for that MT is present ****
 
-	ofile101.close()
-
 # ----------------------------------------------------------------------------
 	ofile1000 = open ('ToAddAll.txt', 'a')
 	print('', file = ofile1000)
@@ -2741,7 +2578,7 @@ def PKAS_redtnMF6MT5 (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 	# Calculation of PKA spectra due to (n,2n), (n,3n) and (n,4n)
 	# reactions of neutron.
 		
-def PKAS_nxn (MTi,ret,nbge,nbpoints,nre,igtype):
+def PKAS_nxn (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,MTi,ret,nbge,nbpoints,nre,igtype):
 
 	cr4 = [0]*nbge
 	pka4 = numpy.zeros((nbge,nbge))
@@ -2756,61 +2593,61 @@ def PKAS_nxn (MTi,ret,nbge,nbpoints,nre,igtype):
 	al6 = numpy.zeros((4,100,65))
 	Ball = [0]*1000; fr6 = numpy.zeros((1000,5000))
 
-	nrg = nre + 1
+	num_group_limits = nre + 1
 
-	ofile101 = open("Output_RadEMC-RecedU.txt", 'a')
-	print('', file = ofile101)
-	print( ' (n, xn) reaction (MT = ',MTi,') PKA spectra', file = ofile101)
-	print('-----------------------------------------------', file = ofile101)
+	print('', file = ofile_outRMINDD)
+	print( ' (n, xn) reaction (MT = ',MTi,') PKA spectra', file = ofile_outRMINDD)
+	print('-----------------------------------------------', file = ofile_outRMINDD)
 
-	ifile = open ("tape01", 'r')
+	ifile_rawENDF6.seek(0, 0)
+	ifile = ifile_rawENDF6
 	iflpresent = 0
 
 	ifile.readline()
 	line = ifile.readline()
-	(ZA,AWR,l1,LTT,NK,l2, MAT, MF, MT) = line_type1_info(line)
-	ifile.close()
+	(ZA,AWR,l1,LTT,NK,l2, MAT, MF, MT) = UtilsU.lineType1Info(line)
 
-	ifile = open ("tape02", 'r')
+	ifile_preprocessedENDF6.seek(0, 0)
+	ifile = ifile_preprocessedENDF6
 	while True:
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if (MAT != -1):
 			if (MF == 3):
 				if (MT == MTi):
 					iflpresent = 1
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					QM = float(data[0]); QI =  float(data[1])
 					LR = int(data[3]); NR = int(data[4]); NP = int(data[5])
 					E = [0]*NP; sig = [0]*NP
 					ifile.readline()
-					(E, sig) = line_type3_info(ifile,NP,2)
+					(E, sig) = UtilsU.lineType3Info(ifile,NP,2)
 		else:
 			break
-	ifile.close()
 
 	if (iflpresent == 1):
 		if6 = 0
-		ifile = open ("tape01", 'r')
+		ifile_rawENDF6.seek(0, 0)
+		ifile = ifile_rawENDF6
 
 		while True:
 			line = ifile.readline()
 			if (line == ''):
 				break
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 			if (MT == 0):
 				if (MF == 6):
 					line = ifile.readline()
-					(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = line_type1_info(line)
+					(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = UtilsU.lineType1Info(line)
 				if (MF < 6):
 					ifile.readline()
 					line = ifile.readline()
-					(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = line_type1_info(line)
+					(ZAv,AWRv,l1,LCT,NKv,l2, MAT, MF, MT) = UtilsU.lineType1Info(line)
 			if (MAT != -1):
 				if (MF == 6):
 					if (MT == MTi):
@@ -2820,43 +2657,43 @@ def PKAS_nxn (MTi,ret,nbge,nbpoints,nre,igtype):
 						NK = NKv
 						for NSS in range (NK):
 							line = ifile.readline()
-							(ZAP,AWP,LIP,LAW[NSS],NR,NP6[NSS],MAT,MF,MT) = line_type1_info(line)
+							(ZAP,AWP,LIP,LAW[NSS],NR,NP6[NSS],MAT,MF,MT) = UtilsU.lineType1Info(line)
 							temporary1 = [0]*NR
 							temporary2 = [0]*NR
-							(temporary1,temporary2) = line_type3_info(ifile,NR,2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NR,2)
 							for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								NBT[N] = value1
 								INTr[N] = value2
 							temporary1 = [0]*NP6[NSS]
 							temporary2 = [0]*NP6[NSS]
-							(temporary1,temporary2) = line_type3_info(ifile,NP6[NSS],2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NP6[NSS],2)
 							for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								Eint6[NSS][N] = value1
 								yi[NSS][N] = value2
 							if (LAW[NSS] == 2):
 								line = ifile.readline()
-								(c1,c2,l3,l4,NR,NE6[NSS],MAT,MF,MT) = line_type2_info(line)
+								(c1,c2,l3,l4,NR,NE6[NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
 								temporary1 = [0]*NR
 								temporary2 = [0]*NR
-								(temporary1,temporary2) = line_type3_info(ifile,NR,2)
+								(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NR,2)
 								for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 									NBT[N] = value1
 									INTr[N] = value2
 								for i in range (int(NE6[NSS])):
 									line = ifile.readline()
-									(c1,En[NSS][i],LG[NSS],l2,NW,NL[NSS][i], MAT,MF,MT) = line_type2_info(line)
+									(c1,En[NSS][i],LG[NSS],l2,NW,NL[NSS][i], MAT,MF,MT) = UtilsU.lineType2Info(line)
 									NL[NSS][i] = NL[NSS][i] + 1
 									al6[NSS][i][0] = 1
 									temporary = [0]*int(NL[NSS][i])
-									temporary = line_type3_info (ifile,int(NL[NSS][i])-1,1)
+									temporary = UtilsU.lineType3Info (ifile,int(NL[NSS][i])-1,1)
 									for j, value in enumerate (temporary, 1):
 										al6[NSS][i][j] = value
 							if (LAW[NSS] == 1):
 								line = ifile.readline()
-								(c1,c2,LG[NSS],LEP[NSS],NR,NE6[NSS],MAT,MF,MT) = line_type2_info(line)
+								(c1,c2,LG[NSS],LEP[NSS],NR,NE6[NSS],MAT,MF,MT) = UtilsU.lineType2Info(line)
 								temporary1 = [0]*NR
 								temporary2 = [0]*NR
-								(temporary1,temporary2) = line_type3_info(ifile,NR,2)
+								(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NR,2)
 								for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 									NBT[N] = value1
 									INTr[N] = value2
@@ -2864,12 +2701,12 @@ def PKAS_nxn (MTi,ret,nbge,nbpoints,nre,igtype):
 									# 		read(601,*)
 								for i in range (int(NE6[NSS])):
 									line = ifile.readline()
-									(c1,En[NSS][i],ND,NA,NW,NEP[NSS][i],MAT,MF,MT) = line_type2_info(line)
+									(c1,En[NSS][i],ND,NA,NW,NEP[NSS][i],MAT,MF,MT) = UtilsU.lineType2Info(line)
 									if (NA != 0):
 										if (LG[NSS] == 1 or LG[NSS] == 2):
 											Ball = [0]*NW
 											temporary = [0]*NW
-											temporary = line_type3_info (ifile,NW,1)
+											temporary = UtilsU.lineType3Info (ifile,NW,1)
 											for j1, value in enumerate(temporary, 0):
 												Ball[j1] = value
 											K1 = 0
@@ -2882,13 +2719,12 @@ def PKAS_nxn (MTi,ret,nbge,nbpoints,nre,igtype):
 									if (LG[NSS] == 1 and NA == 0):
 										temporary1 = [0]*int(NEP[NSS][i])
 										temporary2 = [0]*int(NEP[NSS][i])
-										(temporary1,temporary2) = line_type3_info(ifile,int(NEP[NSS][i]),2)
+										(temporary1,temporary2) = UtilsU.lineType3Info(ifile,int(NEP[NSS][i]),2)
 										for j, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 											Enp[NSS][i][j] = value1
 											f[NSS][i][j] = value2
 			else:
 				break
-		ifile.close()
 
 		for i in range (nbge):
 			for j in range (NP-1):
@@ -2928,8 +2764,8 @@ def PKAS_nxn (MTi,ret,nbge,nbpoints,nre,igtype):
 			Nrc = 0
 
 		if (if6 == 1 and Nrc != 0):
-			print('', file = ofile101)
-			print('Distribution of recoil nucleus is given in File 6', file = ofile101)
+			print('', file = ofile_outRMINDD)
+			print('Distribution of recoil nucleus is given in File 6', file = ofile_outRMINDD)
 
 			for i in range (int(NE6[Nrc])):
 				for j in range (nbge):
@@ -2996,11 +2832,11 @@ def PKAS_nxn (MTi,ret,nbge,nbpoints,nre,igtype):
 	# (n,2n) reaction.
 
 		if (MTi == 16 and (if6 == 0 or Nrc == 0)):
-			print('', file = ofile101)
-			print('Distribution of recoil nucleus is not given in', file = ofile101)
-			print('File 6. Calculations are performed for (n, 2n)', file = ofile101)
-			print('reaction assuming evaporation model and', file = ofile101)
-			print('isotropic emission of recoil nucleus', file = ofile101)
+			print('', file = ofile_outRMINDD)
+			print('Distribution of recoil nucleus is not given in', file = ofile_outRMINDD)
+			print('File 6. Calculations are performed for (n, 2n)', file = ofile_outRMINDD)
+			print('reaction assuming evaporation model and', file = ofile_outRMINDD)
+			print('isotropic emission of recoil nucleus', file = ofile_outRMINDD)
 	
 			for i in range (nbge):
 				if (cr4[i] != 0):
@@ -3026,8 +2862,6 @@ def PKAS_nxn (MTi,ret,nbge,nbpoints,nre,igtype):
 	# for the iflpresent if statement
 	
 	return(pka4, iflpresent)
-
-	ofile101.close()
 
 # PKAS_nxn function completes here
 # ==========================================================================
@@ -3075,7 +2909,7 @@ def Tinteg3 (A,n1,n2,tht,Em1max,emn):
 
 	# Calculation of PKA spectra due to (n,g) reaction of neutron.
 
-def PKAS_ng (insp,eliso,ret,nbge,nbpoints,nre,igtype):
+def PKAS_ng (ofile_outRMINDD,ifile_rawENDF6,ifile_preprocessedENDF6,insp,eliso,ret,nbge,nbpoints,nre,igtype):
 
 	print("n,g .....")
 	ntm = [0]*nbge; ntmd = [0]*nbge; ncontd = [0]*nbge
@@ -3100,42 +2934,42 @@ def PKAS_ng (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 	NBT15a = [0]*20; INTr15a = [0]*20; NPg15 = [0]*200
 	Eg15 = numpy.zeros((200,200)); g15 = numpy.zeros((200,200)); E15 = [0]*100; Y15 = [0]*100; En15 = [0]*200
 #------------------------------------------------------------
-	nrg = nre + 1
-	
-	ofile101 = open("Output_RadEMC-RecedU.txt", 'a')
-	print('', file = ofile101)
-	print(' (n, g) reaction PKA spectra', file = ofile101)
-	print('-----------------------------------------------', file = ofile101)
+	num_group_limits = nre + 1
+
+	print('', file = ofile_outRMINDD)
+	print(' (n, g) reaction PKA spectra', file = ofile_outRMINDD)
+	print('-----------------------------------------------', file = ofile_outRMINDD)
 
 #------------------------------------------------------------
 		
 	ifl6 = 0
-	ifile = open ("tape01", 'r')
+	ifile_rawENDF6.seek(0, 0)
+	ifile = ifile_rawENDF6
 	while True:
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if (MT == 0):
 			line = ifile.readline()
-			(ZAv,AWRv,L0,LCT,NKv,L2,MAT,MF,MT) = line_type1_info(line)
+			(ZAv,AWRv,L0,LCT,NKv,L2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 		if (MAT != -1):
 			if (MF == 6):
 				if (MT == 102):
 					ifl6 = 1
 					NK6 = NKv
 					line = ifile.readline()
-					(C1,C2,LIP,LAW,NR,NP6,MAT,MF,MT) = line_type2_info(line)
+					(C1,C2,LIP,LAW,NR,NP6,MAT,MF,MT) = UtilsU.lineType2Info(line)
 					temporary1 = [0]*NR
 					temporary2 = [0]*NR
-					(temporary1,temporary2) = line_type3_info(ifile,NR,2)
+					(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NR,2)
 					for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 						NBT[N] = value1
 						INTr[N] = value2
 					temporary1 = [0]*NP6
 					temporary2 = [0]*NP6
-					(temporary1,temporary2) = line_type3_info(ifile,NP6,2)
+					(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NP6,2)
 					for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 						E6[N] = value1
 						Y6[N] = value2
@@ -3154,43 +2988,43 @@ def PKAS_ng (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 								Y6tot[i] = TERPOLIN(intflg,ret[i],E6[j],E6[j+1],Y6[j],Y6[j+1])
 								break
 					line = ifile.readline()
-					(C1,C2,LANG,LEP,NR6,NE6,MAT,MF,MT) = line_type2_info(line)
+					(C1,C2,LANG,LEP,NR6,NE6,MAT,MF,MT) = UtilsU.lineType2Info(line)
 					temporary1 = [0]*NR6
 					temporary2 = [0]*NR6
-					(temporary1,temporary2) = line_type3_info(ifile,NR6,2)
+					(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NR6,2)
 					for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 						NBT6[N] = value1
 						INTr6[N] = value2
 					for i in range (NE6):
 						line = ifile.readline()
-						(C1,En6[i],ND6[i],NA,NW,NPg6[i],MAT,MF,MT) = line_type2_info(line)
+						(C1,En6[i],ND6[i],NA,NW,NPg6[i],MAT,MF,MT) = UtilsU.lineType2Info(line)
 						temporary1 = [0]*NPg6[i]
 						temporary2 = [0]*NPg6[i]
-						(temporary1,temporary2) = line_type3_info(ifile,NPg6[i],2)
+						(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NPg6[i],2)
 						for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 							Eg6[i][N] = value1
 							g6[i][N] = value2
 		else:
 			break
-	ifile.close()
 
 	ifl12 = 0
-	ifile = open ("tape01", 'r')
+	ifile_rawENDF6.seek(0, 0)
+	ifile = ifile_rawENDF6
 	while True:
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 
 		if (MF <= 12 and MT == 0):
 			if (MAT != -1):
 				line = ifile.readline()
-				(ZAv,AWRv,Lo,L1,NKv,L2,MAT,MF,MT) = line_type1_info(line)
+				(ZAv,AWRv,Lo,L1,NKv,L2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 		if (MF == 0):
 			if (MAT != -1):
 				line = ifile.readline()
-				(ZAv,AWRv,Lo,L1,NKv,L2,MAT,MF,MT) = line_type1_info(line)
+				(ZAv,AWRv,Lo,L1,NKv,L2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 		if (MAT != -1):
 			if (MF == 12):
 				if (MT == 102):
@@ -3202,17 +3036,17 @@ def PKAS_ng (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 					EGk = [0]*NK; ESk = [0]*NK; LP = [0]*NK; NBTk12 = numpy.zeros((NK,20)); INTrk12 = numpy.zeros((NK,20))
 					NRk12 = [0]*NK
 					line = ifile.readline()
-					(C1,C2,L1,L2,NR,NP12,MAT,MF,MT) = line_type2_info(line)
+					(C1,C2,L1,L2,NR,NP12,MAT,MF,MT) = UtilsU.lineType2Info(line)
 					E12 = [0]*NP12; Y12 = [0]*NP12
 					temporary1 = [0]*NR
 					temporary2 = [0]*NR
-					(temporary1,temporary2) = line_type3_info(ifile,NR,2)
+					(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NR,2)
 					for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 						NBT[N] = value1
 						INTr[N] = value2
 					temporary1 = [0]*NP12
 					temporary2 = [0]*NP12
-					(temporary1,temporary2) = line_type3_info(ifile,NP12,2)
+					(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NP12,2)
 					for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 						E12[N] = value1
 						Y12[N] = value2
@@ -3239,18 +3073,18 @@ def PKAS_ng (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 							Yk12[NK][N] = Y12[N]
 					if (NK > 1):
 						for i in range (NK):
-							line = ifile501.readline()
-							(EGk[i],ESk[i],LP[i],LF,NRk12[i],NPn12[i],MAT,MF,MT) = line_type2_info(line)
+							line = ifile.readline()
+							(EGk[i],ESk[i],LP[i],LF,NRk12[i],NPn12[i],MAT,MF,MT) = UtilsU.lineType2Info(line)
 							temporary1 = [0]*NRk12[i]
 							temporary2 = [0]*NRk12[i]
-							(temporary1,temporary2) = line_type3_info(ifile,NRk12[i],2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NRk12[i],2)
 							for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								NBTk12[i][N] = value1
 								INTrk12[i][N] = value2
 
 							temporary1 = [0]*NPn12[i]
 							temporary2 = [0]*NPn12[i]
-							(temporary1,temporary2) = line_type3_info(ifile,NPn12[i],2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NPn12[i],2)
 							for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								En12[i][N] = value1
 								Yk12[i][N] = value2
@@ -3279,98 +3113,97 @@ def PKAS_ng (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 											break
 		else:
 			break
-	ifile.close()
 
 	ifl15 = 0
-	ifile = open ("tape01",'r')
+	ifile_rawENDF6.seek(0, 0)
+	ifile = ifile_rawENDF6
 	if (ifl6 == 0):
 		while True:
 			line = ifile.readline()
 			if (line == ''):
 				break
-			data = eachlineinfo(line)
+			data = UtilsU.eachLineInfo(line)
 			MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 			if (MT == 0):
 				line = ifile.readline()
-				(ZAv,AWRv,Lo,L1,NCv,L2,MAT,MF,MT) = line_type1_info(line)
+				(ZAv,AWRv,Lo,L1,NCv,L2,MAT,MF,MT) = UtilsU.lineType1Info(line)
 			if (MAT != -1):
 				if (MF == 15):
 					if (MT == 102):
 						ifl15 = 1
 						NC = NCv
 						line = ifile.readline()
-						(C1,C2,L1,LF,NR,NP15,MAT,MF,MT) = line_type2_info(line)
+						(C1,C2,L1,LF,NR,NP15,MAT,MF,MT) = UtilsU.lineType2Info(line)
 						temporary1 = [0]*NR
 						temporary2 = [0]*NR
-						(temporary1,temporary2) = line_type3_info(ifile,NR,2)
+						(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NR,2)
 						for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 							NBT[N] = value1
 							INTr[N] = value2
 						temporary1 = [0]*NP15
 						temporary2 = [0]*NP15
-						(temporary1,temporary2) = line_type3_info(ifile,NP15,2)
+						(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NP15,2)
 						for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 							E15[N] = value1
 							Y15[N] = value2
 						line = ifile.readline()
-						(C1,C2,L1,L2,NR15a,NE15,MAT,MF,MT) = line_type2_info(line)
+						(C1,C2,L1,L2,NR15a,NE15,MAT,MF,MT) = UtilsU.lineType2Info(line)
 						temporary1 = [0]*NR15a
 						temporary2 = [0]*NR15a
-						(temporary1,temporary2) = line_type3_info(ifile,NR15a,2)
+						(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NR15a,2)
 						for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 							NBT15a[N] = value1
 							INTr15a[N] = value2
 						for i in range (NE15):
 							line = ifile.readline()
-							(C1,En15[i],L1,L2,NR,NPg15[i],MAT,MF,MT) = line_type2_info(line)
+							(C1,En15[i],L1,L2,NR,NPg15[i],MAT,MF,MT) = UtilsU.lineType2Info(line)
 							temporary1 = [0]*NR
 							temporary2 = [0]*NR
-							(temporary1,temporary2) = line_type3_info(ifile,NR,2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NR,2)
 							for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								NBT[N] = value1
 								INTr[N] = value2
 							temporary1 = [0]*NPg15
 							temporary2 = [0]*NPg15
-							(temporary1,temporary2) = line_type3_info(ifile,NPg15,2)
+							(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NPg15,2)
 							for N, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 								Eg15[N] = value1
 								g15[N] = value2
 			else:
 				break
-	ifile.close()
 
 #-----------------------------------------------------------------------------
-	ifile = open ("tape02", 'r')
+	ifile_preprocessedENDF6.seek(0, 0)
+	ifile = ifile_preprocessedENDF6
 	ifile.readline()
 	line = ifile.readline()
-	(ZA,AWR,L0,L1,L2,L3,MAT,MF,MT) = line_type1_info(line)
+	(ZA,AWR,L0,L1,L2,L3,MAT,MF,MT) = UtilsU.lineType1Info(line)
 	while True:
 		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if (MAT != -1):
 			if (MF == 3):
 				if (MT == 102):
 					line = ifile.readline()
-					data = eachlineinfo(line)
+					data = UtilsU.eachLineInfo(line)
 					QM = float(data[0]); QI =  float(data[1])
 					LR = int(data[3]); NR = int(data[4]); NP = int(data[5])
 					ifile.readline()
 					E = [0]*NP; sig = [0]*NP
 					temporary1 = [0]*NP
 					temporary2 = [0]*NP
-					(temporary1,temporary2) = line_type3_info(ifile,NP,2)
+					(temporary1,temporary2) = UtilsU.lineType3Info(ifile,NP,2)
 					for i, (value1, value2) in enumerate(zip(temporary1, temporary2), 0):
 						E[i] = value1
 						sig[i] = value2
 		else:
 			break
-	ifile.close()
 
-	print('', file = ofile101)
-	print('Number of data given for (n, g) cross section is ',NP, file = ofile101)
+	print('', file = ofile_outRMINDD)
+	print('Number of data given for (n, g) cross section is ',NP, file = ofile_outRMINDD)
 #-------------------------------------------------------------
 	Z = int(ZA/1000)
 	A1 = AWR + 1
@@ -3382,13 +3215,14 @@ def PKAS_ng (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 	tm = emc2*A1
 	rtm = 1/tm  
 
-	(Etu, NPt) = UQCE()
+	## unique energy array and number of energy points
+	(NPt, Etu) = UtilsU.uqce(ofile_outRMINDD, ifile_preprocessedENDF6)
 	siget = trptuqce(E,sig,Etu)
 
 	#allocate(Etu(NPt),siget(NPt))
 
-	print('', file = ofile101)
-	print(NPt,' Unique total energy points', file = ofile101)
+	print('', file = ofile_outRMINDD)
+	print(NPt,' Unique total energy points', file = ofile_outRMINDD)
 
 	# Finding cross sections corresponding to the fine energy array
 
@@ -3411,20 +3245,20 @@ def PKAS_ng (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 				break
 
 	if (ifl6 == 1):
-		print('', file = ofile101)
-		print('Emitted photon data are given in File 6', file = ofile101)
-		print('', file = ofile101)
-		print('Neutron energy/ discrete gamma/ continuum gamma', file = ofile101)
+		print('', file = ofile_outRMINDD)
+		print('Emitted photon data are given in File 6', file = ofile_outRMINDD)
+		print('', file = ofile_outRMINDD)
+		print('Neutron energy/ discrete gamma/ continuum gamma', file = ofile_outRMINDD)
 		for i in range (0,NE6+5,5):
-			print('', file = ofile101)
-			print(En6[i],' ',ND6[i],' ',NPg6[i]-ND6[i], file = ofile101)
+			print('', file = ofile_outRMINDD)
+			print(En6[i],' ',ND6[i],' ',NPg6[i]-ND6[i], file = ofile_outRMINDD)
 	if (ifl12 == 1):
-		print('', file = ofile101)
-		print('Emitted photon data are given in File 12', file = ofile101)
+		print('', file = ofile_outRMINDD)
+		print('Emitted photon data are given in File 12', file = ofile_outRMINDD)
 
 	if (ifl15 == 1):
-		print('', file = ofile101)
-		print('Emitted photon data are given in File 15 ', file = ofile101)
+		print('', file = ofile_outRMINDD)
+		print('Emitted photon data are given in File 15 ', file = ofile_outRMINDD)
 		
 	# ENERGY OF THE EMITTED DISCRETE PHOTON FROM FILE 12
 
@@ -3439,15 +3273,15 @@ def PKAS_ng (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 					EGkp[i][j] = EGk[i] + (AWR*ret[j]/(AWR+1))
 				else:
 					EGkp[i][j] = EGk[i]
-		
-		print('', file = ofile101)
-		print('Total number of emitted gamma sections', file = ofile101)
-		print(NKd,' discrete and',NK-NKd,' continuum', file = ofile101)
-		
+
+		print('', file = ofile_outRMINDD)
+		print('Total number of emitted gamma sections', file = ofile_outRMINDD)
+		print(NKd,' discrete and',NK-NKd,' continuum', file = ofile_outRMINDD)
+
 	# For each neutron energy, Total yield over all NK contributions
 	# must be normalized to Y12tot. Total yields are given only
 	# when NK > 1
-		
+
 	if (ifl12 == 1 and NK > 1):
 		for j in range (nbge):
 			sY12 = 0
@@ -3455,7 +3289,7 @@ def PKAS_ng (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 				sY12 = sY12 + Yk12tot[i][j]
 			for i in range (NK):
 				Yk12tot[i][j] = Yk12tot[i][j]*Y12tot[j]/sY12
-		 		
+
  	# AVERAGE OF (Egamma)SQUARE FROM FILE 6 AND FILE 15
 
 
@@ -3502,7 +3336,7 @@ def PKAS_ng (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 								g15t[i][k] = TERPOLIN(iplaw,x,x1,x2,y11,y22)
 						ntm[i] = NPg15[j]
 						break
-		
+
 		for i in range (nbge):
 			if (Yk12tot[NK][i] != 0):
 				for j in range (int(ntm[i])):
@@ -3556,7 +3390,7 @@ def PKAS_ng (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 					ntm[i] = NPg6[j]
 					ntmd[i] = ND6[j]
 					break
-		
+
 		for i in range (nbge):
 			ncontd[i] = ntm[i]-ntmd[i]
 			ndisc = ntmd[i]
@@ -3659,10 +3493,9 @@ def PKAS_ng (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 			dsgmdT[i][j] = sret[i]*dsgmdT[i][j]
 
 	pkamatr = GROUP_INTEG(ret,nbge,nbpoints,nre,dsgmdT)
-	pkamatr = PKAS_NORM_CROSSSEC (insp,102,igtype,nrg,pkamatr)
+	pkamatr = PKAS_NORM_CROSSSEC (insp,102,igtype,num_group_limits,pkamatr,ifile_preprocessedENDF6)
 	PRINTPKAS (eliso,102,nre,pkamatr)
 
-	ofile101.close()
 #-----------------------------------------------------------------------------
 	ofile1000 = open ('ToAddAll.txt', 'a')
 	print('', file = ofile1000)
@@ -3678,32 +3511,31 @@ def PKAS_ng (insp,eliso,ret,nbge,nbpoints,nre,igtype):
 	## The directory of Files (MFs) and the corresponding Sections (MTs)
 	## given in the evaluation are read from File 1 and returned.
 	
-def FILE1 ():
+def FILE1 (ifile_rawENDF6):
 	MFs = [0]*1000; MTs = [0]*1000 
 		# maximum of NXC = 350 (ENDF-102), 
 		# but deviates for Mn55 ENDF/B-VII.1, so changed to 1000 
-	ifile = open('tape01','r')
-	ifile.readline()
-	line = ifile.readline()
-	(ZA,AWR,LRP,LFI,NLIB,NMOD,MAT,MF,MT) = line_type1_info(line)
-	line = ifile.readline()
-	(ELIS,STA,LIS,LISO,num,NFOR,MAT,MF,MT) = line_type1_info(line)
-	line = ifile.readline()
-	(AWI,EMAX,LREL,num,NSUB,NVER,MAT,MF,MT) = line_type1_info(line)
-	line = ifile.readline()
-	(TEMP,c2,LDRV,num,NWD,NXC,MAT,MF,MT) = line_type1_info(line)
+	ifile_rawENDF6.seek(0, 0)
+	ifile_rawENDF6.readline()
+	line = ifile_rawENDF6.readline()
+	(ZA,AWR,LRP,LFI,NLIB,NMOD,MAT,MF,MT) = UtilsU.lineType1Info(line)
+	line = ifile_rawENDF6.readline()
+	(ELIS,STA,LIS,LISO,num,NFOR,MAT,MF,MT) = UtilsU.lineType1Info(line)
+	line = ifile_rawENDF6.readline()
+	(AWI,EMAX,LREL,num,NSUB,NVER,MAT,MF,MT) = UtilsU.lineType1Info(line)
+	line = ifile_rawENDF6.readline()
+	(TEMP,c2,LDRV,num,NWD,NXC,MAT,MF,MT) = UtilsU.lineType1Info(line)
 	for i in range (NWD):
-		ifile.readline()
+		ifile_rawENDF6.readline()
 	for i in range (NXC):
-		line = ifile.readline()
-		data = eachlineinfo(line)
+		line = ifile_rawENDF6.readline()
+		data = UtilsU.eachLineInfo(line)
 		blnk = data[0]; blnk = data[1]
 		MFs[i] = int(data[2]); MTs[i] = int(data[3])
 		NCn = int(data[4]); MODn = int(data[5]); MAT = int(data[6])
 		MF = int(data[7]); MT = int(data[8])
 
 	nfiles = NXC
-	ifile.close()
 
 	return (nfiles,MFs,MTs)
 
@@ -3725,39 +3557,39 @@ def spectrum(En,L):
 	return(fi)
 
 #=======Energy multigrouping=======*		
-		
-def GROUPMULTI (insp,igtype,mttg,nrg):
-	gsdpa = [0]*nrg; Eg = [0]*nrg
-	Ngl = nrg
-	
+
+def GROUPMULTI (insp,igtype,mttg,num_group_limits,ifile_preprocessedENDF6):
+	gsdpa = [0]*num_group_limits; Eg = [0]*num_group_limits
+	Ngl = num_group_limits
+
 	if (insp == 1):
 		ifile407 = open('NeutronSpectrum.txt', 'r')
 		nre = int(ifile407.readline().split()[-1])
-		fi = numpy.zeros(nrg)
+		fi = numpy.zeros(num_group_limits)
 		for i in reversed(range(nre)):
 			fi[i] = float(ifile407.readline().split()[0])
 		fi[-1] = fi[-2]
 		ifile407.close()
-	
-	ifile54 = open ("tape02", 'r')
+
+	ifile_preprocessedENDF6.seek(0, 0)
+	ifile = ifile_preprocessedENDF6
 	while True:
-		line = ifile54.readline()
+		line = ifile.readline()
 		if (line == ''):
 			break
-		data = eachlineinfo(line)
+		data = UtilsU.eachLineInfo(line)
 		MAT = int(data[6]); MF = int(data[7]); MT  = int(data[8])
 		if (MAT != -1):
 			if (MF == 3):
 				if (MT == mttg):
-					line = ifile54.readline()
-					data = eachlineinfo(line)
+					line = ifile.readline()
+					data = UtilsU.eachLineInfo(line)
 					QM = float(data[0]); QI =  float(data[1]); NR = int(data[4]); NP = int(data[5])
 					E = [0]*NP; sdpa = [0]*NP
-					LR = int(ifile54.readline().split()[3])
-					(E,sdpa) = line_type3_info(ifile54,NP,2)
+					LR = int(ifile.readline().split()[3])
+					(E,sdpa) = UtilsU.lineType3Info(ifile,NP,2)
 		else:
 			break
-	ifile54.close()
 
 	if (igtype == 0):
 		ifile406 = open('Energy-GroupLimits.txt', 'r')
@@ -3766,7 +3598,7 @@ def GROUPMULTI (insp,igtype,mttg,nrg):
 		for i in reversed(range(Ngl)):
 			Eg[i] = float(ifile406.readline().split()[0])
 		ifile406.close()
-	
+
 	if (igtype==1):
 		Ngl = 176
 		nre = Ngl-1
@@ -3784,55 +3616,55 @@ def GROUPMULTI (insp,igtype,mttg,nrg):
 		nre = Ngl-1
 		Eg = numpy.zeros(Ngl); gsdpa = numpy.zeros(Ngl)
 		Eg = engrp3()
-            
+
 	if (igtype==4):
 		Ngl = 239
 		nre = Ngl-1
 		Eg = numpy.zeros(Ngl); gsdpa = numpy.zeros(Ngl)
 		Eg = engrp4()
-            
+
 	if (igtype==5): 
 		Ngl = 199
 		nre = Ngl-1
 		Eg = numpy.zeros(Ngl); gsdpa = numpy.zeros(Ngl)
 		Eg = engrp5()
-            
+
 	if (igtype==6):
 		Ngl = 710
 		nre = Ngl-1
 		Eg = numpy.zeros(Ngl); gsdpa = numpy.zeros(Ngl)
 		Eg = engrp6()
-            
+
 	if (igtype==7):
 		Ngl = 641
 		nre = Ngl-1
 		Eg = numpy.zeros(Ngl); gsdpa = numpy.zeros(Ngl)
 		Eg = engrp7()
-            
+
 	if (igtype==8):
 		Ngl = 101
 		nre = Ngl-1
 		Eg = numpy.zeros(Ngl); gsdpa = numpy.zeros(Ngl)
 		Eg = engrp8()
-            
+
 	if (igtype==9):
 		Ngl = 48
 		nre = Ngl-1
 		Eg = numpy.zeros(Ngl); gsdpa = numpy.zeros(Ngl)
 		Eg = engrp9()
-            
+
 	if (igtype==10):
 		Ngl = 101			# DLC-2 group structure
 		nre = Ngl-1
 		Eg = numpy.zeros(Ngl); gsdpa = numpy.zeros(Ngl)
 		Eg = engrp10()
-			
+
 	if (igtype==11):
 		Ngl = 229			# 229 group structure
 		nre = Ngl-1
 		Eg = numpy.zeros(Ngl); gsdpa = numpy.zeros(Ngl)
 		Eg = engrp11()
-            
+
 	if (igtype==12):
 		Ngl = 229			# 229 group structure
 		nre = Ngl-1
@@ -3891,8 +3723,6 @@ def GROUPMULTI (insp,igtype,mttg,nrg):
 			gsdpa[i] = s1/s2
 	
 	return (gsdpa)
-
-# GROUPMULTI function completes here
 
 #==================================================================
 	
