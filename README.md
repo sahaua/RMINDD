@@ -13,107 +13,183 @@ Module_number = 1
 Module_name = "EngdepU"
 
 Element_isotope = 
+
 Raw_ENDF6_file = 
+
 Preprocessed_ENDF6_file = 
+
 MAT_num = 
+
 Num_reaction = 
+
 Reaction_num = 
+
 Atom_displ_model = 
+
 Threshold_Ed = 
+
 b_arcdpa = 
+
 c_arcdpa =
+
 Output_filenames =  
+
 ## multigrouping yes=1 or no=0
+
 Multigroup = 
+
 Energy_group_type_index = 
+
 ## input neutron spectrum yes=1 or no=0
+
 ## if yes, then there should be Energy group limits in 'Energy-GroupLimits.txt' file and
+
 ## the neutron spectrum in 'NeutronSpectrum.txt' file
+
 Input_n_spectrum =  
+
 Num_MT_to_multigroup = 
+
 MTs_to_multigroup = 
+
 
 ## Input and data for module RecedU of RMINDD
 
 Module_number = 2
+
 Module_name = "RecedU"
 
 Element_isotope = 
-Raw_ENDF6_file = 
-Preprocessed_ENDF6_file = 
-MAT_num = 
-Num_reaction = 
-Reaction_num = 
-Num_group_limits = 
-Num_fine_en_points = 
-Energy_group_type_index = 
 
+Raw_ENDF6_file = 
+
+Preprocessed_ENDF6_file = 
+
+MAT_num = 
+
+Num_reaction = 
+
+Reaction_num = 
+
+Num_group_limits = 
+
+Num_fine_en_points = 
+
+Energy_group_type_index = 
 
 ## Input and data for module TransmU of RMINDD
 
 Module_number = 3
+
 Module_name = "TransmU"
 
 Element_isotope = 
-Raw_ENDF6_file = 
-Preprocessed_ENDF6_file = 
-MAT_num = 
-Transmgas_group_file = 
-Transmnucl_group_file = 
-Transmgas_point_file = 
-Transmnucl_point_file = 
 
+Raw_ENDF6_file = 
+
+Preprocessed_ENDF6_file = 
+
+MAT_num = 
+
+Transmgas_group_file = 
+
+Transmnucl_group_file = 
+
+Transmgas_point_file = 
+
+Transmnucl_point_file = 
 
 ## Input and data for module EngdepU of RMINDD
 
 Module_number = 1
+
 Module_name = "EngdepU"
 
 Element_isotope = 
+
 Raw_ENDF6_file = 
+
 Preprocessed_ENDF6_file = 
+
 MAT_num = 
+
 Num_reaction = 
+
 Reaction_num = 
+
 Atom_displ_model = 
+
 Threshold_Ed = 
+
 b_arcdpa = 
+
 c_arcdpa =
+
 Output_filenames =  
+
 ## multigrouping yes=1 or no=0
+
 Multigroup = 
+
 Energy_group_type_index = 
+
 ## input neutron spectrum yes=1 or no=0
+
 ## if yes, then there should be Energy group limits in 'Energy-GroupLimits.txt' file and
+
 ## the neutron spectrum in 'NeutronSpectrum.txt' file
+
 Input_n_spectrum =  
+
 Num_MT_to_multigroup = 
+
 MTs_to_multigroup = 
 
 ## Input and data for module CombinU of RMINDD
+
 ## CombinU requires output files from EngdepU for its calculations
 
 Module_number = 5
+
 Module_name = "CombinU"
 
 Files_directory = 
+
 Num_elements_target = 
+
 Elements_target = 
+
 ## give in the same order as given elements
+
 Element_stoichiometries = 	
+
 Num_isotopes_total = 
+
 ## directories with these names will be searched for required files
+
 Isotopes_evaluated = 
+
 ## to be given in the same order as the isotopes are given
+
 Percent_abundances_all = 
+
 ## better to arrange data files according to the order of name of elements in the target 
+
 Recoil_damage_energy_file = 
+
 Recoil_damage_energy_file = 
+
 Element_Ed_target = 
+
 Element_Ed_target = 
+
 Ed_below_no_displacement = 
+
 Ed_below_no_displacement = 
+
 Atom_dpaXS_type =  		## "MD-based", "NRT-based", "Both"
+
 ## there should be as many damage efficiency file as the number of target elements
+
 Damage_efficiency_file = 
 Damage_efficiency_file =
