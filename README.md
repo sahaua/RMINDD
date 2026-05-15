@@ -7,3 +7,5 @@ Please cite the following article when you use this program:
 U. Saha, "Primary radiation damage due to neutron interactions using inexplicit evaluated nuclear data: a case study in isotopes of tungsten using ENDF/B-VIII.0 and TENDL-2019", Pramana – J. Phys. (2024) 98:5, https://doi.org/10.1007/s12043-023-02682-2
 
 The input cards / keywords / commands must be given through an input file. The keywords (available at present) are listed in the distributed file "Input_RMINDD.txt". Any of the modules can be repeatedly run for same or different ENDF/B file for same or different isotope as per requirement as long as it is numbered properly in creasing order in the sequence in which it is run. For example, if run module EngdepU first with Module_number = 1 and again run it after two modules (say, RecedU and TransmU), then before starting with the module specific keywords for EngdepU number it as Module_number = 4, and so on. 
+
+To execute the code: python3 path/to/RMINDD.py 'input_file_name' 'output_file_name'
