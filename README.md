@@ -8,4 +8,4 @@ U. Saha, "Primary radiation damage due to neutron interactions using inexplicit 
 
 The input cards / keywords / commands must be given through an input file. The keywords (available at present) are listed in the distributed file "Input_RMINDD.txt". Any of the modules can be repeatedly run for same or different ENDF/B file for same or different isotope as per requirement as long as it is numbered properly in creasing order in the sequence in which it is run. For example, if run module EngdepU first with Module_number = 1 and again run it after two modules (say, RecedU and TransmU), then before starting with the module specific keywords for EngdepU number it as Module_number = 4, and so on. 
 
-To execute the code: python3 path/to/RMINDD.py 'input_file_name' 'output_file_name'
+To execute the code: python3 ../../path/to/RMINDD.py <input_file_name> <output_file_name>
